@@ -14,12 +14,12 @@ type CardFromSelectionProps = {
     readonly content: string;
   };
   title?: string,
-  onDrop: (card: CardProps) => void,
+  onDrop: (card: CardProps | null) => void,
 };
 
 export function CardFromSelection({
-  title: originalTitle,
   selection: originalSelection,
+  title: originalTitle = originalSelection.title,
   data,
   onDrop }: CardFromSelectionProps) {
   const [selection, setSelection] = React.useState(originalSelection)
@@ -116,6 +116,12 @@ export function CardFromSelection({
           <p key={i}>{line}</p>
         ))}
       </MiroCard>
-    </div>
+
+      <button
+        className='bg-coconut text-c-crimson p-2 rounded'
+        onClick={() => onDrop(null)}>
+        Cancel
+      </button>
+    </div >
   );
 }

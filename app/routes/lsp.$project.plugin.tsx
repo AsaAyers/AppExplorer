@@ -21,6 +21,7 @@ export const loader = async ({ params, request }: LoaderArgs) => {
   return json({
     projectName,
     path,
+    dir: fsPath.dirname(path),
     tabs: plugins,
   })
 }

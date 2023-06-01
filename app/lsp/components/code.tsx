@@ -2,9 +2,8 @@ import React from "react"
 import type { LinksFunction } from "@remix-run/node";
 import codeStylesheet from './code.css'
 import classNames from "classnames";
-import { MiroShape } from "./miro-shape";
 import { useLatestRef } from "./useLatestRef";
-import { MiroCard } from "./miro-card";
+import invariant from "tiny-invariant";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: codeStylesheet },
@@ -13,19 +12,18 @@ export const links: LinksFunction = () => [
 export type CodeSelection = {
   startLine: number;
   endLine: number;
-  text: string[],
+  text: CodeProps['lines']
+  title?: string
 };
 
-type Props = {
-  line?: number
+export type CodeProps = {
+  firstLine?: number
+  lines: Array<string>
   onSelection?: (data: CodeSelection) => void
-  shapeMeta?: {
-    projectName: string,
-    path: string,
-  }
+  annotations?: Array<AnnotationData>
 };
 
-export const Code = ({ children, line = 1, shapeMeta, onSelection }: React.PropsWithChildren<Props>): JSX.Element => {
+export const Code = ({ lines, firstLine = 1, onSelection, annotations = [] }: React.PropsWithChildren<CodeProps>): JSX.Element => {
   const [lineSelection, setLineSelection] = React.useState<number[]>([])
 
   const selectLine = React.useCallback((line: number) => {
@@ -49,9 +47,8 @@ export const Code = ({ children, line = 1, shapeMeta, onSelection }: React.Props
     if (lineSelection.length === 0) {
       return []
     }
-    const lines = String(children!).split('\n')
     return lines.slice(lineSelection[0], lineSelection[1] + 1)
-  }, [lineSelection, children])
+  }, [lineSelection, lines])
 
   const selectionRef = useLatestRef(onSelection)
   React.useEffect(() => {
@@ -66,29 +63,76 @@ export const Code = ({ children, line = 1, shapeMeta, onSelection }: React.Props
     }
   }, [lineSelection, selectionRef, textSelection])
 
-  const lines = React.useMemo(() => String(children!).split('\n'), [children])
+  const annotatedLines = React.useMemo(() => {
+
+    return lines.map((line, i) => {
+      const annotationsForLine = annotations.filter((annotation) => {
+        return annotation.startLine <= i && annotation.endLine >= i
+      })
+
+
+      return annotationsForLine.reduce<Array<string | JSX.Element>>((lineArray, annotation) => {
+        const segment = lineArray[lineArray.length - 1]
+        invariant(typeof segment === 'string', 'Expected segment to be a string')
+        const processedCharacters = line.length - segment.length
+
+        const start = (annotation.startLine === i ? annotation.startCharacter : 0) - processedCharacters
+        const end = (annotation.endLine === i ? annotation.endCharacter : line.length) - processedCharacters
+        const prefix = segment.slice(0, start)
+        const suffix = segment.slice(end)
+        const annotationText = segment.slice(start, end)
+
+        return [
+          prefix,
+          <span
+            onClick={annotation.onClick}
+            key={annotation.name}
+            className="bg-c-ocean text-coconut"
+          >
+            {annotationText}
+          </span>,
+          suffix,
+        ]
+
+      }, [line])
+
+
+    })
+  }, [annotations, lines])
 
   return (
     <>
       <div className="bg-graphite p-2 m-2 max-h-[75vh] overflow-auto">
         <code
-          className={classNames("whitespace-pre text-white flex flex-col", {
+          className={classNames("code whitespace-pre-wrap text-white flex flex-col", {
           })}
           style={{
-            counterSet: `line ${line - 1}`,
+            counterSet: `line ${firstLine - 1}`,
           }}
         >
 
-          {lines.map((line, i) => (
+          {annotatedLines.map((line, i) => (
             <span
               onClick={() => selectLine(i)}
-              className={classNames({
+              className={classNames('line', {
                 'active': i >= lineSelection[0] && i <= lineSelection[1],
               })}
-              key={i}>{line}</span>
+              key={i}>
+              {line}
+            </span>
           ))}
         </code>
       </div>
     </>
   )
+}
+
+
+export type AnnotationData = {
+  startLine: number
+  startCharacter: number
+  endLine: number
+  endCharacter: number
+  onClick: () => void
+  name: string
 }

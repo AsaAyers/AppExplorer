@@ -13,8 +13,9 @@ type FileOrDirectoryProps = {
 };
 export function FileOrDirectory({ type, project, path, to, name }: FileOrDirectoryProps) {
   const [searchParams] = useSearchParams()
-  const currentFile = '/' + searchParams.get('path')
+  const currentFile = searchParams.get('path') ?? '/';
   const isActive = currentFile.startsWith(path);
+  console.log(currentFile, isActive, path)
   const [expand, setExpand] = React.useState(path === "" || isActive);
   const fetcher = useFetcher<ApiLsResponse>();
 

@@ -69,17 +69,25 @@ export default function ViewFile() {
     })
   }
 
+  const lines = React.useMemo(() => {
+    return data.content.split('\n')
+  }, [data.content])
+
   return (
     <div className="flex">
       <div>
         <div>{currentFile}</div>
         <hr />
         {!selection && (
-          <Code onSelection={handleNewSelection} >{data.content}</Code>
+          <Code
+            onSelection={handleNewSelection}
+            lines={lines}
+          />
         )}
         {selection && (
           <CardFromSelection
             selection={selection}
+            title="wat"
             onDrop={() => setSelection(null)}
             data={data}
           />
