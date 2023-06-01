@@ -1,5 +1,5 @@
 import path from "path";
-import type { Project } from "./lsp.server";
+import type { Project } from "./Project";
 import invariant from "tiny-invariant";
 import { fs } from "~/fs-promises.server";
 
@@ -25,8 +25,8 @@ export async function getProjects() {
 
   return projects;
 }
-async function prepareProject(projectRoot: string) {
-  const appExplorerJsonPath = path.join(projectRoot, "AppExplorer.json");
+async function prepareProject(gitRoot: string): Promise<Project | undefined> {
+  const appExplorerJsonPath = path.join(gitRoot, "AppExplorer.json");
 
   let stat;
   try {
@@ -47,16 +47,21 @@ async function prepareProject(projectRoot: string) {
       "expected a root in AppExplorer.json"
     );
 
-    const pluginFolder = path.resolve(projectRoot, "AppExplorer");
+    const pluginFolder = path.resolve(gitRoot, "AppExplorer");
 
     let plugins: Project["plugins"] = [];
-    if ((await fs.stat(pluginFolder)).isDirectory()) {
-      plugins = await readPlugins(projectConfig.name, pluginFolder);
+    try {
+      if ((await fs.stat(pluginFolder)).isDirectory()) {
+        plugins = await readPlugins(projectConfig.name, pluginFolder);
+      }
+    } catch (e) {
+      // ignore
     }
 
     return {
       name: projectConfig.name,
-      root: path.resolve(projectRoot, projectConfig.root),
+      root: path.resolve(gitRoot, projectConfig.root),
+      projectRoot: gitRoot,
       plugins,
     };
   }

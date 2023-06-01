@@ -3,25 +3,34 @@ import type { LinksFunction } from "@remix-run/node";
 import codeStylesheet from './code.css'
 import classNames from "classnames";
 import { MiroShape } from "./miro-shape";
+import { useLatestRef } from "./useLatestRef";
+import { MiroCard } from "./miro-card";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: codeStylesheet },
 ]
 
+export type CodeSelection = {
+  startLine: number;
+  endLine: number;
+  text: string[],
+};
+
 type Props = {
   line?: number
+  onSelection?: (data: CodeSelection) => void
   shapeMeta?: {
     projectName: string,
     path: string,
   }
 };
 
-export const Code = ({ children, line = 1, shapeMeta }: React.PropsWithChildren<Props>): JSX.Element => {
+export const Code = ({ children, line = 1, shapeMeta, onSelection }: React.PropsWithChildren<Props>): JSX.Element => {
   const [lineSelection, setLineSelection] = React.useState<number[]>([])
 
   const selectLine = React.useCallback((line: number) => {
     // Only select lines if this component has metadata for a shape.
-    if (!shapeMeta) { return }
+    if (!onSelection) { return }
 
     setLineSelection((prev) => {
       const lastSelection = prev[prev.length - 1]
@@ -29,49 +38,39 @@ export const Code = ({ children, line = 1, shapeMeta }: React.PropsWithChildren<
         return [line]
       } else if (lastSelection < line) {
         return [lastSelection, line]
-      } else if (lastSelection > line) {
+      } else {
         return [line, lastSelection]
       }
-      return []
     })
-  }, [shapeMeta])
+  }, [onSelection])
 
 
   const textSelection = React.useMemo(() => {
     if (lineSelection.length === 0) {
-      return ''
+      return []
     }
     const lines = String(children!).split('\n')
-    const selectedLines = lines.slice(lineSelection[0], lineSelection[1] + 1)
-    return selectedLines.map((l, i) => <p key={i}>{l}</p>)
+    return lines.slice(lineSelection[0], lineSelection[1] + 1)
   }, [lineSelection, children])
 
-  console.log({ lineSelection, textSelection })
+  const selectionRef = useLatestRef(onSelection)
+  React.useEffect(() => {
+    const onSelection = selectionRef.current
+    if (textSelection.length > 0 && lineSelection.length === 2 && onSelection) {
+      onSelection({
+        startLine: lineSelection[0],
+        endLine: lineSelection[1],
+        text: textSelection,
+      })
+      setLineSelection([])
+    }
+  }, [lineSelection, selectionRef, textSelection])
 
   const lines = React.useMemo(() => String(children!).split('\n'), [children])
 
   return (
-    <div className="bg-graphite p-2 m-2 max-h-[75vh] overflow-auto">
-      {textSelection.length > 0 && shapeMeta && (
-        <MiroShape
-          content={textSelection}
-          shape="round_rectangle"
-          onDrop={(shape) => {
-            setLineSelection([])
-          }}
-          width={300}
-          height={150}
-          style={{
-            textAlign: 'left',
-            fontSize: 12,
-          }}
-          meta={{
-            ...shapeMeta,
-            lines: lineSelection.join('-'),
-          }}
-        />
-      )}
-      {textSelection.length === 0 && (
+    <>
+      <div className="bg-graphite p-2 m-2 max-h-[75vh] overflow-auto">
         <code
           className={classNames("whitespace-pre text-white flex flex-col", {
           })}
@@ -89,7 +88,7 @@ export const Code = ({ children, line = 1, shapeMeta }: React.PropsWithChildren<
               key={i}>{line}</span>
           ))}
         </code>
-      )}
-    </div>
+      </div>
+    </>
   )
 }

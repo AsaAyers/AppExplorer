@@ -96,7 +96,7 @@ export default function () {
           </Tab>
         ))}
       </nav>
-      <div className="overflow-auto">
+      <div className="overflow-auto max-h-screen">
         <Outlet />
       </div>
     </div>

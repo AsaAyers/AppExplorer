@@ -1,7 +1,8 @@
-import type { DropEvent, Shape } from '@mirohq/websdk-types';
+import type { DropEvent, Shape, WidgetMixin } from '@mirohq/websdk-types';
 import type { ShapeProps } from '@mirohq/websdk-types';
 import classNames from 'classnames';
 import React, { useId } from 'react'
+import { useLatestRef } from './useLatestRef';
 
 const defaultStyles = {
   fillColor: "#F7F5F2",
@@ -15,24 +16,23 @@ const defaultStyles = {
   fontSize: 28,
 }
 
-type Meta = {
+export type Meta = {
   projectName?: string,
   path?: string
 }
 
 
-type Props<M extends Meta> = {
+type Props<M extends Meta> = React.PropsWithChildren<{
   shape?: ShapeProps['shape']
-  content: React.ReactNode,
   onDrop?: (shape: Shape) => void,
   width: number,
   height: number,
   style?: ShapeProps['style']
   meta?: M
-}
+}>
 export const MiroShape = <M extends Meta>({
   shape = 'round_rectangle',
-  content,
+  children,
   width,
   onDrop,
   height,
@@ -46,7 +46,11 @@ export const MiroShape = <M extends Meta>({
     return Object.assign({}, defaultStyles, style)
   }, [style])
 
-  const handleDrop = React.useCallback(async (x: number, y: number) => {
+  const handleDrop = React.useCallback(async ({ x, y, target }: DropEvent) => {
+    if (!target.contains(self.current!)) {
+      return
+    }
+
     const zoom = await miro.board.viewport.getZoom()
     const shapeItem = await miro.board.createShape({
       x,
@@ -60,30 +64,28 @@ export const MiroShape = <M extends Meta>({
         fontSize: Math.round(shapeStyle.fontSize / zoom),
       },
     });
-    await Promise.all(Object.entries(meta || {}).map(async ([key, value]) => {
-      if (value != null) {
-        console.log('set', key, value)
-        return shapeItem.setMetadata(key, value as any)
-      }
-    }))
+    await applyMetaData<M>(meta, shapeItem);
     await shapeItem.sync();
     onDrop?.(shapeItem)
   }, [height, meta, onDrop, shape, shapeStyle, width])
 
-  React.useEffect(() => {
-    async function dropHandle({ x, y, target }: DropEvent) {
-      if (target.dataset.id === id) {
-        handleDrop(x, y);
-      }
-    }
+  const handlerRef = useLatestRef(handleDrop)
 
-    miro.board.ui.on("drop", dropHandle);
-    return () => miro.board.ui.off("drop", dropHandle);
-  }, [id, handleDrop]);
+  React.useEffect(() => {
+    const stableHandler: typeof handlerRef.current = (...args) => handlerRef.current(...args);
+
+    miro.board.ui.on("drop", stableHandler);
+    return () => {
+      // Miro doesn't like it when strict mode causes a handler to be registerd
+      // and immediately unregistered. Adding a delay seems to fix it.
+      new Promise(r => setTimeout(r, 1)).then(() => {
+        miro.board.ui.off("drop", stableHandler);
+      })
+    }
+  }, [handlerRef, id]);
 
   return (
     <div
-      ref={self}
       className={classNames(
         'max-w-xs',
         'miro-draggable draggable-item relative p-2', {
@@ -113,10 +115,18 @@ export const MiroShape = <M extends Meta>({
         fontSize: shapeStyle.fontSize,
       }}
       data-id={id}>
-      <span>
-        {content}
+      <span ref={self}>
+        {children}
       </span>
     </div>
   )
 
+}
+
+export async function applyMetaData<M extends Meta>(meta: M | undefined, shapeItem: WidgetMixin) {
+  await Promise.all(Object.entries(meta || {}).map(async ([key, value]) => {
+    if (value != null) {
+      return shapeItem.setMetadata(key, value as any);
+    }
+  }));
 }

@@ -5,6 +5,8 @@ import { Code } from "~/lsp/components/code";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import * as lspServer from "~/lsp/lsp.server";
+import { readCardData } from "AppExplorer/view-file";
+import { CardFromSelection } from "~/plugin-utils/card-from-selection";
 
 export const loader = async ({ params, request }: LoaderArgs) => {
   const [projectName, project] = await lspServer.requireProject(params);
@@ -31,6 +33,7 @@ export const loader = async ({ params, request }: LoaderArgs) => {
     path,
     fileContent,
     symbols,
+    cardData: await readCardData(fullPath, path, project, projectName),
   } as const);
 };
 
@@ -80,7 +83,7 @@ export default function LanguageServerProtocol() {
     <div className="flex">
 
       <div>
-        <div>Symbols found in {data.path}</div>
+        <div className="text-lg">Symbols found in {data.path}</div>
         <hr />
 
         {data?.type === 'symbols' && (
@@ -108,23 +111,41 @@ function getRange(lines: string[], range: DocumentSymbol['range']) {
   return subset;
 }
 function SymbolViewer({ symbol, lines }: { symbol: DocumentSymbol; lines: string[]; }) {
+  const [selected, setSelected] = React.useState(false);
   const source = React.useMemo(
     () => getRange(lines, symbol.range).join('\n'),
     [lines, symbol.range]
   );
+  const data = useLoaderData<typeof loader>()
 
   delete symbol.children;
 
   return (
-    <li className="flex items-start m-4 border-black border-2j">
-      <div>
-        {symbol.name}
-        <br />
-        (kind: {lookupKind(symbol.kind)})
-      </div>
-      <Code>{JSON.stringify(symbol, null, 2)}</Code>
+    <li className="flex flex-col items-start m-4 border-black border-2j">
+      <>
+        <button
+          className="rounded-full bg-c-ocean text-coconut px-4 py-2 m-2"
+          onClick={() => setSelected(s => !s)}
+          type="button">
+          {symbol.name}
+        </button>
+      </>
 
-      <Code line={symbol.range.start.line}>{source}</Code>
+      {selected && (
+        <>
+          <CardFromSelection
+            selection={{
+              endLine: symbol.range.end.line,
+              startLine: symbol.range.start.line,
+              text: [],
+            }}
+            title={symbol.name}
+            onDrop={() => { setSelected(false) }}
+            data={data.cardData}
+          />
+          <Code>{source}</Code>
+        </>
+      )}
     </li>
   );
 

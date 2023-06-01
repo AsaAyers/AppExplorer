@@ -1,7 +1,7 @@
 import { json } from "@remix-run/node";
 import * as fsPath from "path";
 import { fs } from "~/fs-promises.server";
-import type { Project } from "~/lsp/lsp.server";
+import type { Project } from "~/lsp/Project";
 
 export async function getPathFromQuery(request: Request, project: Project) {
   const url = new URL(request.url);

@@ -12,17 +12,18 @@ import type {
 import { DocumentSymbolRequest } from "vscode-languageserver-protocol";
 import { URI } from "vscode-uri";
 import { fs } from "~/fs-promises.server";
-import { spawn } from "node:child_process";
 import * as rpc from "vscode-jsonrpc";
 import identity from "lodash.identity";
 import path from "path";
 import type { Params } from "@remix-run/react";
 import { getProjects } from "./projects";
-export { getTypescriptConnection } from "./ts";
+import { childProcess } from "./components/child_process.server";
+export { getTypescriptConnection } from "./ts.server";
 
 export type Project = {
   readonly name: string;
   readonly root: string;
+  readonly projectRoot: string;
   // readonly registrations?: Array<Registration>;
   plugins: Array<string>;
 };
@@ -31,16 +32,18 @@ export function launchLanguageServer(
   args: string[]
 ): MessageConnection {
   console.log({ command, args });
-  const childProcess = spawn(command, args, {
+  // I'm not sure why something broke and I had to push this into its own
+  // .server file.
+  const child = childProcess.spawn(command, args, {
     stdio: "pipe",
   });
 
   // Use stdin and stdout for communication:
   let connection = rpc.createMessageConnection(
     // @ts-ignore This does exist
-    new rpc.StreamMessageReader(childProcess.stdout),
+    new rpc.StreamMessageReader(child.stdout),
     // @ts-ignore This does exist
-    new rpc.StreamMessageWriter(childProcess.stdin)
+    new rpc.StreamMessageWriter(child.stdin)
   );
 
   connection.listen();
