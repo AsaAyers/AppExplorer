@@ -103,7 +103,7 @@ export function CardFromSelection({
         title={title}
       >
         {permalink && (
-          <a href={permalink}>{`${data.projectName}:${location}`}</a>
+          <p> <a href={permalink}>{`${data.projectName}:${location}`}</a> </p>
         )}
         {!permalink && (
           <>
@@ -111,7 +111,6 @@ export function CardFromSelection({
             {location}
           </>
         )}
-        <br /> <br />
         {selection.text.map((line, i) => (
           <p key={i}>{line}</p>
         ))}

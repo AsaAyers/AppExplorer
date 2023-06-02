@@ -4,6 +4,7 @@
 
 .code .line {
   display: flex;
+  align-items: flex-start;
 }
 
 .code .line:before {

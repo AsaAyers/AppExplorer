@@ -1,42 +1,16 @@
 import { useLoaderData, useSearchParams } from "@remix-run/react";
-import type { CodeSelection } from "~/lsp/components/code";
+import type { DocumentSymbol } from "vscode-languageserver-protocol";
+import React from "react";
+import type { AnnotationData, CodeSelection } from "~/lsp/components/code";
 import { Code, links as codeLinks } from "~/lsp/components/code";
 import type { LoaderArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import type { Project } from "~/lsp/Project";
-import { requireProject } from "~/lsp/lsp.server";
-import { fs } from "~/fs-promises.server";
-import * as fsPath from "path";
-import React from "react";
-import { getCommitHash, getRemoteURL } from "~/models/git.server";
+import * as lspServer from "~/lsp/lsp.server";
 import { CardFromSelection } from "~/plugin-utils/card-from-selection";
-
-export const links = codeLinks
-
-export const loader = async ({ params, request }: LoaderArgs) => {
-  const [projectName, project] = await requireProject(params);
-  const url = new URL(request.url)
-  const path = url.searchParams.get("path") ?? ''
-  if (typeof path !== "string") {
-    throw new Response("Path is required", { status: 400 })
-  }
-
-  const fullPath = fsPath.join(project.root, path)
-  if (!fullPath.startsWith(project.root)) {
-    throw new Response("Path is invalid", { status: 400 })
-  }
-
-  const stat = await fs.stat(fullPath)
-
-  if (stat.isDirectory()) {
-    throw redirect(`/lsp/${projectName}/?path=${path}`)
-  } else if (stat.isFile()) {
-    return json(await readCardData(fullPath, path, project, projectName));
-  } else {
-    throw new Response("Path is invalid", { status: 400 })
-  }
-}
+import type { Project } from "~/lsp/Project";
+import * as fsPath from "path";
+import { fs } from "~/fs-promises.server";
+import { getRemoteURL, getCommitHash } from "~/models/git.server";
 
 export async function readCardData(fullPath: string, path: string, project: Project, projectName: string) {
   const [remote, content, commitHash] = await Promise.all([
@@ -56,6 +30,37 @@ export async function readCardData(fullPath: string, path: string, project: Proj
   } as const);
 }
 
+export const links = codeLinks
+export const loader = async ({ params, request }: LoaderArgs) => {
+  const [projectName, project] = await lspServer.requireProject(params);
+  const url = new URL(request.url)
+  const path = url.searchParams.get("path")
+  if (typeof path !== "string") {
+    throw new Response("Path is required", { status: 400 })
+  }
+
+  const fullPath = lspServer.resolvePath(project, path);
+
+  // TODO: Make this more generic, so that I can ask for the connection for a file instead of using
+  // a specific language. Right now I'm exploring what I can do with the LSP.
+  const connection = await lspServer.getTypescriptConnection();
+  const { uri, text: fileContent } = await lspServer.openTextDocument(connection, fullPath);
+
+  // This is a list of top level symbols created in the file. The type is
+  // recursive, so this seems to be the module level symbols.
+  const symbols = await lspServer.requestDocumentSymbols(connection, uri);
+
+  return json({
+    type: 'symbols',
+    projectName,
+    path,
+    fileContent,
+    symbols,
+    cardData: await readCardData(fullPath, path, project, projectName),
+  } as const);
+};
+
+
 export default function ViewFile() {
   const data = useLoaderData<typeof loader>()
   const [searchParams] = useSearchParams()
@@ -65,13 +70,41 @@ export default function ViewFile() {
   const handleNewSelection = (selection: CodeSelection) => {
     setSelection({
       ...selection,
-      text: [],
     })
   }
 
   const lines = React.useMemo(() => {
-    return data.content.split('\n')
-  }, [data.content])
+    const lines = data.fileContent.split('\n')
+
+    return lines
+  }, [data.fileContent])
+
+  const symbolToAnnotation = (prefix = '', symbol: DocumentSymbol): Array<AnnotationData> => {
+    const self = ({
+      endCharacter: symbol.selectionRange.end.character,
+      endLine: symbol.selectionRange.end.line,
+      startCharacter: symbol.selectionRange.start.character,
+      startLine: symbol.selectionRange.start.line,
+      name: symbol.name,
+      onClick: () => {
+        setSelection({
+          endLine: symbol.selectionRange.end.line,
+          startLine: symbol.selectionRange.start.line,
+          text: [],
+          title: `${prefix}${symbol.name} (${data.path})`
+        })
+      }
+    });
+
+    if (prefix != '') {
+      prefix += '.'
+    }
+    // console.group(`${prefix}${symbol.name}`)
+    const children = symbol.children?.flatMap(symbolToAnnotation.bind(null, `${prefix}${symbol.name}`)) ?? []
+    // console.groupEnd()
+    return [self].concat(children)
+  };
+  const annotation = data.symbols.flatMap(symbolToAnnotation.bind(null, ''))
 
   return (
     <div className="flex">
@@ -82,18 +115,16 @@ export default function ViewFile() {
           <Code
             onSelection={handleNewSelection}
             lines={lines}
+            annotations={annotation}
           />
         )}
         {selection && (
           <CardFromSelection
             selection={selection}
-            title="wat"
             onDrop={() => setSelection(null)}
-            data={data}
+            data={data.cardData}
           />
         )}
-
-
       </div>
     </div >
   );

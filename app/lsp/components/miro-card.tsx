@@ -42,6 +42,8 @@ export const MiroCard = <M extends Meta>({
     }
 
     const zoom = await miro.board.viewport.getZoom()
+    const description = self.current?.innerHTML ?? '(empty)';
+
     // I'm not using an appCard, because interacting with them requires
     // AppExplorer to be running.  Currently, it just runs on localhost so you
     // can interact with code on your machine.
@@ -51,7 +53,7 @@ export const MiroCard = <M extends Meta>({
       width: width / zoom,
       height: height / zoom,
       title,
-      description: self.current?.innerHTML ?? '(empty)',
+      description: description,
       style,
       tagIds: projectTag ? [projectTag] : [],
       fields,
@@ -95,7 +97,7 @@ export const MiroCard = <M extends Meta>({
       data-id={id}>
       {title}
       <hr />
-      <span ref={self}> {description} </span>
+      <span ref={self}>{description}</span>
     </div>
   )
 
