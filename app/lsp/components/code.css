@@ -1,15 +1,19 @@
-code {
+.code {
   counter-reset: line;
 }
 
-code span:before {
+.code .line {
+  display: flex;
+}
+
+.code .line:before {
   counter-increment: line;
   content: counter(line);
   display: inline-block;
   padding-right: 1em;
 }
 
-code .active,
-code span:hover:before {
+.code .active,
+.code .line:hover:before {
   color: #f00;
 }

@@ -1,11 +1,15 @@
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 import type { DocumentSymbol } from "vscode-languageserver-protocol";
 import React from "react";
-import { Code } from "~/lsp/components/code";
+import type { AnnotationData, CodeSelection } from "~/lsp/components/code";
+import { Code, links as codeLinks } from "~/lsp/components/code";
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import * as lspServer from "~/lsp/lsp.server";
+import { readCardData } from "AppExplorer/view-file";
+import { CardFromSelection } from "~/plugin-utils/card-from-selection";
 
+export const links = codeLinks
 export const loader = async ({ params, request }: LoaderArgs) => {
   const [projectName, project] = await lspServer.requireProject(params);
   const url = new URL(request.url)
@@ -31,101 +35,78 @@ export const loader = async ({ params, request }: LoaderArgs) => {
     path,
     fileContent,
     symbols,
+    cardData: await readCardData(fullPath, path, project, projectName),
   } as const);
 };
 
-export const lookupKind = (kind: DocumentSymbol['kind']): string => {
-  switch (kind) {
-    case 1: return 'File'
-    case 2: return 'Module'
-    case 3: return 'Namespace'
-    case 4: return 'Package'
-    case 5: return 'Class'
-    case 6: return 'Method'
-    case 7: return 'Property'
-    case 8: return 'Field'
-    case 9: return 'Constructor'
-    case 10: return 'Enum'
-    case 11: return 'Interface'
-    case 12: return 'Function'
-    case 13: return 'Variable'
-    case 14: return 'Constant'
-    case 15: return 'String'
-    case 16: return 'Number'
-    case 17: return 'Boolean'
-    case 18: return 'Array'
-    case 19: return 'Object'
-    case 20: return 'Key'
-    case 21: return 'Null'
-    case 22: return 'EnumMember'
-    case 23: return 'Struct'
-    case 24: return 'Event'
-    case 25: return 'Operator'
-    case 26: return 'TypeParameter'
-    default: return 'Unknown'
+
+export default function ViewFile() {
+  const data = useLoaderData<typeof loader>()
+  const [searchParams] = useSearchParams()
+  const currentFile = (searchParams.get('path') ?? '')
+
+  const [selection, setSelection] = React.useState<CodeSelection | null>(null)
+  const handleNewSelection = (selection: CodeSelection) => {
+    setSelection({
+      ...selection,
+      text: [],
+    })
   }
 
-}
-export default function LanguageServerProtocol() {
-  const data = useLoaderData<typeof loader>()
-
   const lines = React.useMemo(() => {
-    if (data?.type === 'symbols') {
-      return data.fileContent.split('\n')
-    }
-    return [] as string[]
-  }, [data]);
+    const lines = data.fileContent.split('\n')
+
+    return lines
+  }, [data.fileContent])
+
+  console.log({ lines })
+
+  const symbolToAnnotation = (symbol: DocumentSymbol): Array<AnnotationData> => {
+    const self = ({
+      endCharacter: symbol.selectionRange.end.character,
+      endLine: symbol.selectionRange.end.line,
+      startCharacter: symbol.selectionRange.start.character,
+      startLine: symbol.selectionRange.start.line,
+      name: symbol.name,
+      onClick: () => {
+        setSelection({
+          endLine: symbol.selectionRange.end.line,
+          startLine: symbol.selectionRange.start.line,
+          text: [],
+          title: symbol.name
+        })
+      }
+    });
+    console.log(symbol.name)
+
+    return [self].concat(
+      symbol.children?.flatMap(symbolToAnnotation) ?? []
+    )
+  };
+  const annotation = data.symbols.flatMap(symbolToAnnotation)
 
   return (
     <div className="flex">
-
       <div>
-        <div>Symbols found in {data.path}</div>
+        <div>{currentFile}</div>
         <hr />
-
-        {data?.type === 'symbols' && (
-          <ul>
-            {data.symbols.map((symbol, i) => (
-              <SymbolViewer lines={lines} symbol={symbol} key={i} />
-            ))}
-            {data.symbols.length === 0 && (
-              <div>
-                No symbols found. Showing source instead.
-                <Code>{data.fileContent}</Code>
-              </div>
-            )}
-          </ul>
+        {!selection && (
+          <Code
+            onSelection={handleNewSelection}
+            lines={lines}
+            annotations={annotation}
+          />
         )}
+        {selection && (
+          <CardFromSelection
+            selection={selection}
+            onDrop={() => setSelection(null)}
+            data={data.cardData}
+          />
+        )}
+
+
       </div>
     </div >
   );
-}
-
-function getRange(lines: string[], range: DocumentSymbol['range']) {
-  let subset = lines.slice(range.start.line, range.end.line + 1);
-  subset[0] = subset[0].slice(range.start.character);
-  subset[subset.length - 1] = subset[subset.length - 1].slice(0, range.end.character);
-  return subset;
-}
-function SymbolViewer({ symbol, lines }: { symbol: DocumentSymbol; lines: string[]; }) {
-  const source = React.useMemo(
-    () => getRange(lines, symbol.range).join('\n'),
-    [lines, symbol.range]
-  );
-
-  delete symbol.children;
-
-  return (
-    <li className="flex items-start m-4 border-black border-2j">
-      <div>
-        {symbol.name}
-        <br />
-        (kind: {lookupKind(symbol.kind)})
-      </div>
-      <Code>{JSON.stringify(symbol, null, 2)}</Code>
-
-      <Code line={symbol.range.start.line}>{source}</Code>
-    </li>
-  );
-
 }

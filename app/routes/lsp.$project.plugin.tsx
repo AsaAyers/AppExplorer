@@ -21,6 +21,7 @@ export const loader = async ({ params, request }: LoaderArgs) => {
   return json({
     projectName,
     path,
+    dir: fsPath.dirname(path),
     tabs: plugins,
   })
 }
@@ -96,7 +97,7 @@ export default function () {
           </Tab>
         ))}
       </nav>
-      <div className="overflow-auto">
+      <div className="overflow-auto max-h-screen">
         <Outlet />
       </div>
     </div>

@@ -2,26 +2,33 @@ import React from "react"
 import type { LinksFunction } from "@remix-run/node";
 import codeStylesheet from './code.css'
 import classNames from "classnames";
-import { MiroShape } from "./miro-shape";
+import invariant from "tiny-invariant";
+import { useLatestRef } from "./useLatestRef";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: codeStylesheet },
 ]
 
-type Props = {
-  line?: number
-  shapeMeta?: {
-    projectName: string,
-    path: string,
-  }
+export type CodeSelection = {
+  startLine: number;
+  endLine: number;
+  text: CodeProps['lines']
+  title?: string
 };
 
-export const Code = ({ children, line = 1, shapeMeta }: React.PropsWithChildren<Props>): JSX.Element => {
+export type CodeProps = {
+  firstLine?: number
+  lines: Array<string>
+  onSelection?: (data: CodeSelection) => void
+  annotations?: Array<AnnotationData>
+};
+
+export const Code = ({ lines, firstLine = 1, onSelection, annotations = [] }: React.PropsWithChildren<CodeProps>): JSX.Element => {
   const [lineSelection, setLineSelection] = React.useState<number[]>([])
 
   const selectLine = React.useCallback((line: number) => {
     // Only select lines if this component has metadata for a shape.
-    if (!shapeMeta) { return }
+    if (!onSelection) { return }
 
     setLineSelection((prev) => {
       const lastSelection = prev[prev.length - 1]
@@ -29,68 +36,103 @@ export const Code = ({ children, line = 1, shapeMeta }: React.PropsWithChildren<
         return [line]
       } else if (lastSelection < line) {
         return [lastSelection, line]
-      } else if (lastSelection > line) {
+      } else {
         return [line, lastSelection]
       }
-      return []
     })
-  }, [shapeMeta])
+  }, [onSelection])
 
 
   const textSelection = React.useMemo(() => {
     if (lineSelection.length === 0) {
-      return ''
+      return []
     }
-    const lines = String(children!).split('\n')
-    const selectedLines = lines.slice(lineSelection[0], lineSelection[1] + 1)
-    return selectedLines.map((l, i) => <p key={i}>{l}</p>)
-  }, [lineSelection, children])
+    return lines.slice(lineSelection[0], lineSelection[1] + 1)
+  }, [lineSelection, lines])
 
-  console.log({ lineSelection, textSelection })
+  const selectionRef = useLatestRef(onSelection)
+  React.useEffect(() => {
+    const onSelection = selectionRef.current
+    if (textSelection.length > 0 && lineSelection.length === 2 && onSelection) {
+      onSelection({
+        startLine: lineSelection[0],
+        endLine: lineSelection[1],
+        text: textSelection,
+      })
+      setLineSelection([])
+    }
+  }, [lineSelection, selectionRef, textSelection])
 
-  const lines = React.useMemo(() => String(children!).split('\n'), [children])
+  const annotatedLines = React.useMemo(() => {
+
+    return lines.map((line, i) => {
+      const annotationsForLine = annotations.filter((annotation) => {
+        return annotation.startLine <= i && annotation.endLine >= i
+      })
+
+
+      return annotationsForLine.reduce<Array<string | JSX.Element>>((lineArray, annotation) => {
+        const segment = lineArray[lineArray.length - 1]
+        invariant(typeof segment === 'string', 'Expected segment to be a string')
+        const processedCharacters = line.length - segment.length
+
+        const start = (annotation.startLine === i ? annotation.startCharacter : 0) - processedCharacters
+        const end = (annotation.endLine === i ? annotation.endCharacter : line.length) - processedCharacters
+        const prefix = segment.slice(0, start)
+        const suffix = segment.slice(end)
+        const annotationText = segment.slice(start, end)
+
+        return [
+          prefix,
+          <span
+            onClick={annotation.onClick}
+            key={annotation.name}
+            className="bg-c-ocean text-coconut"
+          >
+            {annotationText}
+          </span>,
+          suffix,
+        ]
+
+      }, [line])
+
+
+    })
+  }, [annotations, lines])
 
   return (
-    <div className="bg-graphite p-2 m-2 max-h-[75vh] overflow-auto">
-      {textSelection.length > 0 && shapeMeta && (
-        <MiroShape
-          content={textSelection}
-          shape="round_rectangle"
-          onDrop={(shape) => {
-            setLineSelection([])
-          }}
-          width={300}
-          height={150}
-          style={{
-            textAlign: 'left',
-            fontSize: 12,
-          }}
-          meta={{
-            ...shapeMeta,
-            lines: lineSelection.join('-'),
-            fileId: `${shapeMeta.projectName}/${shapeMeta.path}`
-          }}
-        />
-      )}
-      {textSelection.length === 0 && (
+    <>
+      <div className="bg-graphite p-2 m-2 max-h-[75vh] overflow-auto">
         <code
-          className={classNames("whitespace-pre text-white flex flex-col", {
+          className={classNames("code whitespace-pre-wrap text-white flex flex-col", {
           })}
           style={{
-            counterSet: `line ${line - 1}`,
+            counterSet: `line ${firstLine - 1}`,
           }}
         >
 
-          {lines.map((line, i) => (
+          {annotatedLines.map((line, i) => (
             <span
               onClick={() => selectLine(i)}
-              className={classNames({
+              className={classNames('line', {
                 'active': i >= lineSelection[0] && i <= lineSelection[1],
               })}
-              key={i}>{line}</span>
+              key={i}>
+              {line}
+            </span>
           ))}
         </code>
-      )}
-    </div>
+      </div>
+    </>
   )
+}
+
+
+export type AnnotationData = {
+  startLine: number
+  startCharacter: number
+  endLine: number
+  endCharacter: number
+  onClick: () => void
+  name: string
 }
