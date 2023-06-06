@@ -42,43 +42,25 @@ export function CardFromSelection({
     return null
   }, [data.commitHash, data.remote, location])
 
+  const header = (
+    <>
+      {permalink && (
+        <p> <a href={permalink}>{`${data.projectName}:${location}`}</a> </p>
+      )}
+      {!permalink && (
+        <>
+          Remote: {data.remote}<br />
+          {location}
+        </>
+      )}
+    </>
+  )
+
   const [title, setTitle] = React.useState<string>(originalTitle ?? "")
 
 
   return (
-    <div className="p-2 v-full">
-
-      <div className="flex flex-col gap-1 p-1 mt-3 v-full bg-coconut text-c-navy">
-        <label htmlFor="title">Title</label>
-
-        <input
-          onChange={(e) => { setTitle(e.target.value) }}
-          type="text"
-          name="title"
-          placeholder="Title"
-          value={title} />
-
-        <label htmlFor="text">Text</label>
-        <textarea
-          className='flex-grow'
-          onChange={(e) => {
-            const lines = e.target.value.split('\n');
-            setSelection({
-              ...selection,
-              text: lines,
-            });
-          }}
-          style={{
-            height: 10 + "em",
-          }}
-          name="text"
-          value={selection.text.join('\n')} />
-
-        <div className='mb-4'>
-          Drag the card onto the board when ready
-        </div>
-      </div>
-
+    <div>
       <MiroCard
         onDrop={onDrop}
         width={300}
@@ -101,23 +83,53 @@ export function CardFromSelection({
           remote: data.remote,
         }}
         title={title}
-      >
-        {permalink && (
-          <p> <a href={permalink}>{`${data.projectName}:${location}`}</a> </p>
-        )}
-        {!permalink && (
+        editTitle={
+          <div className="form-group-small">
+            <label htmlFor="title">Title</label>
+
+            <input
+              onChange={(e) => { setTitle(e.target.value) }}
+              className="input"
+              type="text"
+              name="title"
+              id="title"
+              placeholder="Title"
+              value={title} />
+          </div>
+        }
+        editDescription={
           <>
-            Remote: {data.remote}<br />
-            {location}
+            {header}
+            <div className="form-group-small">
+              <label htmlFor="text">Description</label>
+              <textarea
+                className='flex-grow textarea'
+                placeholder=""
+                onChange={(e) => {
+                  const lines = e.target.value.split('\n');
+                  setSelection({
+                    ...selection,
+                    text: lines,
+                  });
+                }}
+                style={{
+                  height: 10 + "em",
+                }}
+                name="text"
+                id="text"
+                value={selection.text.join('\n')} />
+            </div>
           </>
-        )}
+        }
+      >
+        {header}
         {selection.text.map((line, i) => (
           <p key={i}>{line}</p>
         ))}
       </MiroCard>
 
       <button
-        className='bg-coconut text-c-crimson p-2 rounded'
+        className='button button-secondary'
         onClick={() => onDrop(null)}>
         Cancel
       </button>

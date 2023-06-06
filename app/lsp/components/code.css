@@ -1,5 +1,16 @@
 .code {
   counter-reset: line;
+  white-space: pre-wrap;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--blackAlpha80);
+  color: var(--white);
+}
+
+.code .peek {
+  background-color: var(--white);
+  color: var(--black);
+  padding: var(--space-small);
 }
 
 .code .line {
@@ -17,4 +28,8 @@
 .code .active,
 .code .line:hover:before {
   color: #f00;
+}
+
+.annotation {
+  background-color: var(--blue900);
 }

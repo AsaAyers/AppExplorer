@@ -21,9 +21,18 @@ export type CodeProps = {
   lines: Array<string>
   onSelection?: (data: CodeSelection) => void
   annotations?: Array<AnnotationData>
+  peek?: number
+  children: React.ReactNode,
 };
 
-export const Code = ({ lines, firstLine = 1, onSelection, annotations = [] }: React.PropsWithChildren<CodeProps>): JSX.Element => {
+export const Code = ({
+  lines,
+  peek,
+  children,
+  firstLine = 1,
+  onSelection,
+  annotations = []
+}: React.PropsWithChildren<CodeProps>): JSX.Element => {
   const [lineSelection, setLineSelection] = React.useState<number[]>([])
 
   const selectLine = React.useCallback((line: number) => {
@@ -64,7 +73,6 @@ export const Code = ({ lines, firstLine = 1, onSelection, annotations = [] }: Re
   }, [lineSelection, selectionRef, textSelection])
 
   const annotatedLines = React.useMemo(() => {
-
     return lines.map((line, i) => {
       const annotationsForLine = annotations.filter((annotation) => {
         return annotation.startLine <= i && annotation.endLine >= i
@@ -87,7 +95,7 @@ export const Code = ({ lines, firstLine = 1, onSelection, annotations = [] }: Re
           <span
             onClick={annotation.onClick}
             key={annotation.name}
-            className="bg-c-ocean text-coconut"
+            className="annotation"
           >
             {annotationText}
           </span>,
@@ -95,23 +103,20 @@ export const Code = ({ lines, firstLine = 1, onSelection, annotations = [] }: Re
         ]
 
       }, [line])
-
-
     })
   }, [annotations, lines])
 
   return (
     <>
-      <div className="bg-graphite p-2 m-2 max-h-[75vh] overflow-auto">
-        <code
-          className={classNames("code whitespace-pre-wrap text-white flex flex-col", {
-          })}
-          style={{
-            counterSet: `line ${firstLine - 1}`,
-          }}
-        >
+      <code
+        className="code"
+        style={{
+          counterSet: `line ${firstLine - 1}`,
+        }}
+      >
 
-          {annotatedLines.map((line, i) => (
+        {annotatedLines.map((line, i) => (
+          <React.Fragment key={i}>
             <span
               onClick={() => selectLine(i)}
               className={classNames('line', {
@@ -120,9 +125,14 @@ export const Code = ({ lines, firstLine = 1, onSelection, annotations = [] }: Re
               key={i}>
               {line}
             </span>
-          ))}
-        </code>
-      </div>
+            {peek && peek === i && children && (
+              <div className="peek">
+                {children}
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </code>
     </>
   )
 }

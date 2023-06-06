@@ -4,6 +4,7 @@ import React from "react";
 import type { AnnotationData, CodeSelection } from "~/lsp/components/code";
 import { Code, links as codeLinks } from "~/lsp/components/code";
 import type { LoaderArgs } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import * as lspServer from "~/lsp/lsp.server";
 import { CardFromSelection } from "~/plugin-utils/card-from-selection";
@@ -11,6 +12,7 @@ import type { Project } from "~/lsp/Project";
 import * as fsPath from "path";
 import { fs } from "~/fs-promises.server";
 import { getRemoteURL, getCommitHash } from "~/models/git.server";
+import { getPathFromQuery } from "~/plugin-utils/require-file-from-query";
 
 export async function readCardData(fullPath: string, path: string, project: Project, projectName: string) {
   const [remote, content, commitHash] = await Promise.all([
@@ -33,13 +35,11 @@ export async function readCardData(fullPath: string, path: string, project: Proj
 export const links = codeLinks
 export const loader = async ({ params, request }: LoaderArgs) => {
   const [projectName, project] = await lspServer.requireProject(params);
-  const url = new URL(request.url)
-  const path = url.searchParams.get("path")
-  if (typeof path !== "string") {
-    throw new Response("Path is required", { status: 400 })
+  const { fullPath, path, stat } = await getPathFromQuery(request, project)
+  if (stat.isDirectory()) {
+    return redirect(`/lsp/${projectName}/?path=${path}`)
   }
 
-  const fullPath = lspServer.resolvePath(project, path);
 
   // TODO: Make this more generic, so that I can ask for the connection for a file instead of using
   // a specific language. Right now I'm exploring what I can do with the LSP.
@@ -63,8 +63,6 @@ export const loader = async ({ params, request }: LoaderArgs) => {
 
 export default function ViewFile() {
   const data = useLoaderData<typeof loader>()
-  const [searchParams] = useSearchParams()
-  const currentFile = (searchParams.get('path') ?? '')
 
   const [selection, setSelection] = React.useState<CodeSelection | null>(null)
   const handleNewSelection = (selection: CodeSelection) => {
@@ -106,25 +104,35 @@ export default function ViewFile() {
   };
   const annotation = data.symbols.flatMap(symbolToAnnotation.bind(null, ''))
 
+
   return (
     <div className="flex">
       <div>
-        <div>{currentFile}</div>
-        <hr />
-        {!selection && (
-          <Code
-            onSelection={handleNewSelection}
-            lines={lines}
-            annotations={annotation}
-          />
-        )}
-        {selection && (
-          <CardFromSelection
-            selection={selection}
-            onDrop={() => setSelection(null)}
-            data={data.cardData}
-          />
-        )}
+        <form method="get" action="./view-file">
+          <div className="form-group">
+            <div className="input-group">
+              <label className="h2">Filename:</label>
+              <input className="input" name="path" type="text" defaultValue={data.path} />
+              <button className="button button-primary" type="submit">
+                Go
+              </button>
+            </div>
+          </div>
+        </form>
+        <Code
+          onSelection={handleNewSelection}
+          lines={lines}
+          annotations={annotation}
+          peek={selection?.startLine}
+        >
+          {selection && (
+            <CardFromSelection
+              selection={selection}
+              onDrop={() => setSelection(null)}
+              data={data.cardData}
+            />
+          )}
+        </Code>
       </div>
     </div >
   );

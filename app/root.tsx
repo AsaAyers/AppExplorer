@@ -11,10 +11,9 @@ import {
 import { cssBundleHref } from "@remix-run/css-bundle";
 
 import { getUser } from "~/session.server";
-import tailwindStylesheetUrl from "~/styles/tailwind.css";
 
 export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: tailwindStylesheetUrl },
+  { rel: "stylesheet", href: "https://unpkg.com/mirotone@^5/dist/styles.css" },
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
 ];
 

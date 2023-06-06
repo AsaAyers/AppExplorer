@@ -71,35 +71,30 @@ export default function () {
   }, [key])
 
   return (
-    <div className="flex-1">
+    <div style={{ overflow: 'auto', maxHeight: '100vh' }}>
       <nav className={classNames(
-        'p-1 flex gap-1', {
+        'tabs', {
         'flex-row': !expand,
         'flex-col': expand,
       }
       )}>
-        {!expand && (
-          <button type="button" onClick={() => setExpand(e => !e)}>
-            Menu
-          </button>
-        )}
-        <Tab
-          expand={expand}
-          to={`/lsp/${projectName}/?path=${path}`}>
-          Browse
-        </Tab>
-        {tabs.map(tab => (
+        <div className="tabs-header-list">
           <Tab
-            key={tab.name}
             expand={expand}
-            to={`/lsp/${projectName}/plugin/${tab.path}?path=${path}`}>
-            {tab.name}
+            to={`/lsp/${projectName}/?path=${path}`}>
+            Browse
           </Tab>
-        ))}
+          {tabs.map(tab => (
+            <Tab
+              key={tab.name}
+              expand={expand}
+              to={`/lsp/${projectName}/plugin/${tab.path}?path=${path}`}>
+              {tab.name}
+            </Tab>
+          ))}
+        </div>
       </nav>
-      <div className="overflow-auto max-h-screen">
-        <Outlet />
-      </div>
+      <Outlet />
     </div>
   )
 }
@@ -108,12 +103,14 @@ function Tab({ to, children, expand }: React.PropsWithChildren<{ to: string, exp
   return (
     <NavLink
       className={({ isActive }) => classNames(
-        'flex-grow',
-        "rounded-full bg-c-ocean text-coconut", {
-        'bg-dropboxBlue': isActive,
-        'hidden': !expand && !isActive,
-        "px-4 py-2": expand
+        'tab', {
+        'tab-active': isActive,
+        'hidden': !isActive,
       })}
+      style={{
+        padding: 'var(--space-xxsmall)',
+        margin: 'var(--space-xxsmall)',
+      }}
       to={to}>
       {children}
     </NavLink>

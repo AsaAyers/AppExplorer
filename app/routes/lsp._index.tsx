@@ -11,22 +11,27 @@ export default function () {
   const data = useLoaderData<typeof loader>()
 
   return (
-    <div className="bg-coconut text-c-ocean ">
-      <p>
-        The following projects are available for exploration:
-      </p>
-
-      <div className="flex flex-col max-w-md">
-        {Object.keys(data.projects).map((projectName) => (
-          <Link
-            key={projectName}
-            className="rounded-full bg-c-ocean text-coconut px-4 py-2 m-2"
-            to={"./" + projectName}>
-            {projectName}
-          </Link>
-        ))}
-      </div>
-
+    <div className="">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Projects</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.keys(data.projects).map((projectName) => (
+            <tr key={projectName}>
+              <td>
+                <Link
+                  className="link"
+                  to={"./" + projectName}>
+                  {projectName}
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

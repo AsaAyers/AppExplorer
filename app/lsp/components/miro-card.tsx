@@ -1,5 +1,4 @@
-import type { CardProps, DropEvent } from '@mirohq/websdk-types';
-import classNames from 'classnames';
+import type { CardProps, DropEvent, TagColor } from '@mirohq/websdk-types';
 import React, { useId } from 'react'
 import type { Meta } from './miro-shape';
 import { useLatestRef } from "./useLatestRef";
@@ -17,6 +16,8 @@ type Props<M extends Meta> = Pick<CardProps,
 > & React.PropsWithChildren<{
   onDrop: (card: CardProps) => void,
   meta?: M
+  editTitle?: JSX.Element,
+  editDescription?: JSX.Element,
 }>
 
 export const MiroCard = <M extends Meta>({
@@ -26,6 +27,8 @@ export const MiroCard = <M extends Meta>({
   height = 150,
   style = {},
   title,
+  editTitle,
+  editDescription,
   children: description,
   meta,
   fields,
@@ -79,26 +82,42 @@ export const MiroCard = <M extends Meta>({
   }, [handlerRef, id]);
 
 
-
   return (
-    <div
-      className={classNames(
-        'border-2 border-[#0000FF] border-l-8',
-        'miro-draggable relative p-2', {
-      }
-      )}
-      style={{
-        // backgroundColor: shapeStyle.fillColor,
-        aspectRatio: `${width}/${height}`,
-        // color: shapeStyle.color,
-        // borderColor: shapeStyle.borderColor,
-        // fontSize: shapeStyle.fontSize,
-      }}
-      data-id={id}>
-      {title}
-      <hr />
-      <span ref={self}>{description}</span>
+    <div className="app-card miro-draggable">
+      <h1 className="app-card--title">
+        {editTitle ?? title}
+      </h1>
+      <h1 className="app-card--description p-medium">
+        {editDescription ?? description}
+      </h1>
+      <span style={{ display: 'none' }} ref={self}>{description}</span>
+      <div className="app-card--body">
+        <div className="app-card--tags">
+          <Tag>
+            {meta?.projectName}
+          </Tag>
+          {fields?.map((field, i) => (
+            <Tag key={i}>
+              {field.value}
+            </Tag>
+          ))}
+
+        </div>
+      </div>
     </div>
   )
-
 }
+
+type TagProps = React.PropsWithChildren<{
+  background?: TagColor,
+}>
+
+function Tag({ children, background }: TagProps) {
+  return <span className="tag" style={{
+    // @ts-ignore TS doesn't seem to know about setting css variables
+    '--background': background,
+  }}>
+    {children}
+  </span>;
+}
+

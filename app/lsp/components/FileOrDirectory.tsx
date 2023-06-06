@@ -33,12 +33,12 @@ export function FileOrDirectory({ type, project, path, to, name }: FileOrDirecto
   if (type === 'file') {
     return (
       <li className={classNames(
-        "before:content-['_📄']",
         {
           "bg-dropboxBlue": isActive,
           "text-coconut": isActive,
         }
       )} >
+        📄
         <Link to={"/lsp/" + project + "/" + to + path} onClick={e => e.stopPropagation()}>
           {name}
         </Link>
@@ -47,9 +47,7 @@ export function FileOrDirectory({ type, project, path, to, name }: FileOrDirecto
   } else if (type === "directory") {
     return (
       <li
-        className={classNames('directory block', {
-          "before:content-['_📁']": expand === false,
-          "before:content-['_📂']": expand === true,
+        className={classNames('', {
           "bg-dropboxBlue": isActive,
           "text-coconut": isActive,
         })}
@@ -59,13 +57,10 @@ export function FileOrDirectory({ type, project, path, to, name }: FileOrDirecto
         }
         }
       >
+        {expand ? '📂' : '📁'}
         {name} /
         {expand && data?.type === 'directory' && (
-          <ul className={classNames(
-            "pl-4",
-            'bg-coconut',
-            'text-graphite'
-          )}>
+          <ul>
             {data.children.map((child) => (
               <FileOrDirectory
                 key={child.name}
