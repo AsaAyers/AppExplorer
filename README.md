@@ -15,6 +15,7 @@ refresh the page after starting AppExplorer
 ```sh
 git clone git@github.com:dropbox/AppExplorer.git
 cd AppExplorer
+cp .env.example .env
 npm install
 npm run dev
 ```
