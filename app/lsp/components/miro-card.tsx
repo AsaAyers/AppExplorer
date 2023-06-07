@@ -4,6 +4,7 @@ import type { Meta } from './miro-shape';
 import { useLatestRef } from "./useLatestRef";
 import { applyMetaData } from './miro-shape';
 import { useTag } from './useTag';
+import { useMiroDrop } from '~/plugin-utils/use-miro-drop';
 
 type Props<M extends Meta> = Pick<CardProps,
   | 'height'
@@ -66,21 +67,7 @@ export const MiroCard = <M extends Meta>({
     onDrop?.(shapeItem)
   }, [fields, height, meta, onDrop, projectTag, style, title, width])
 
-  const handlerRef = useLatestRef(handleDrop)
-
-  React.useEffect(() => {
-    const stableHandler: typeof handlerRef.current = (...args) => handlerRef.current(...args);
-
-    miro.board.ui.on("drop", stableHandler);
-    return () => {
-      // Miro doesn't like it when strict mode causes a handler to be registerd
-      // and immediately unregistered. Adding a delay seems to fix it.
-      new Promise(r => setTimeout(r, 1)).then(() => {
-        miro.board.ui.off("drop", stableHandler);
-      })
-    }
-  }, [handlerRef, id]);
-
+  useMiroDrop(handleDrop);
 
   return (
     <div className="app-card miro-draggable">

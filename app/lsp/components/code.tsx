@@ -84,11 +84,19 @@ export const Code = ({
         invariant(typeof segment === 'string', 'Expected segment to be a string')
         const processedCharacters = line.length - segment.length
 
-        const start = (annotation.startLine === i ? annotation.startCharacter : 0) - processedCharacters
-        const end = (annotation.endLine === i ? annotation.endCharacter : line.length) - processedCharacters
+        let start = (annotation.startLine === i ? annotation.startCharacter : 0) - processedCharacters
+        let end = (annotation.endLine === i ? annotation.endCharacter : line.length) - processedCharacters
+        if (annotation.startLine < i) {
+          start = 0
+        }
+        if (annotation.endLine > i) {
+          end = line.length - processedCharacters
+        }
+
+
         const prefix = segment.slice(0, start)
         const suffix = segment.slice(end)
-        const annotationText = segment.slice(start, end)
+        let annotationText = segment.slice(start, end)
 
         return [
           prefix,
@@ -145,4 +153,5 @@ export type AnnotationData = {
   endCharacter: number
   onClick: () => void
   name: string
+  dragId: string
 }

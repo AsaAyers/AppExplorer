@@ -78,12 +78,13 @@ export default function ViewFile() {
   }, [data.fileContent])
 
   const symbolToAnnotation = (prefix = '', symbol: DocumentSymbol): Array<AnnotationData> => {
-    const self = ({
+    const self: AnnotationData = ({
       endCharacter: symbol.selectionRange.end.character,
       endLine: symbol.selectionRange.end.line,
       startCharacter: symbol.selectionRange.start.character,
       startLine: symbol.selectionRange.start.line,
       name: symbol.name,
+      dragId: `${prefix}${symbol.name}`,
       onClick: () => {
         setSelection({
           endLine: symbol.selectionRange.end.line,

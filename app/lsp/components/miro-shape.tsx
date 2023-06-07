@@ -2,6 +2,7 @@ import type { WidgetMixin, AppDataValue, DropEvent, Shape, ShapeProps } from '@m
 import classNames from 'classnames';
 import React, { useId } from 'react'
 import { useLatestRef } from './useLatestRef';
+import { useMiroDrop } from '~/plugin-utils/use-miro-drop';
 
 const defaultStyles = {
   fillColor: "#F7F5F2",
@@ -19,18 +20,18 @@ const defaultStyles = {
 export type Meta = {
   projectName?: string,
   path?: string
-}
+} & Record<string, AppDataValue>
 
 
-type Props = React.PropsWithChildren<{
+type Props<M extends Meta> = React.PropsWithChildren<{
   shape?: ShapeProps['shape']
   onDrop?: (shape: Shape) => void,
   width: number,
   height: number,
   style?: ShapeProps['style']
-  meta?: Record<string, AppDataValue>
+  meta?: M
 }>
-export const MiroShape = ({
+export const MiroShape = <M extends Meta>({
   shape = 'round_rectangle',
   children,
   width,
@@ -38,7 +39,7 @@ export const MiroShape = ({
   height,
   style = {},
   meta,
-}: Props) => {
+}: Props<M>) => {
   const id = useId()
   const self = React.useRef<HTMLDivElement>(null)
 
@@ -69,20 +70,7 @@ export const MiroShape = ({
     onDrop?.(shapeItem)
   }, [height, meta, onDrop, shape, shapeStyle, width])
 
-  const handlerRef = useLatestRef(handleDrop)
-
-  React.useEffect(() => {
-    const stableHandler: typeof handlerRef.current = (...args) => handlerRef.current(...args);
-
-    miro.board.ui.on("drop", stableHandler);
-    return () => {
-      // Miro doesn't like it when strict mode causes a handler to be registerd
-      // and immediately unregistered. Adding a delay seems to fix it.
-      new Promise(r => setTimeout(r, 1)).then(() => {
-        miro.board.ui.off("drop", stableHandler);
-      })
-    }
-  }, [handlerRef, id]);
+  useMiroDrop(handleDrop)
 
   return (
     <div
