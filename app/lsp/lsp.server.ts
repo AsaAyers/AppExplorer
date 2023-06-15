@@ -18,15 +18,9 @@ import path from "path";
 import type { Params } from "@remix-run/react";
 import { getProjects } from "./projects";
 import { childProcess } from "./components/child_process.server";
+import type { Project } from "./Project";
 export { getTypescriptConnection } from "./ts.server";
 
-export type Project = {
-  readonly name: string;
-  readonly root: string;
-  readonly projectRoot: string;
-  // readonly registrations?: Array<Registration>;
-  plugins: Array<string>;
-};
 export function launchLanguageServer(
   command: string,
   args: string[]

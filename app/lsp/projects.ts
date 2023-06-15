@@ -2,69 +2,67 @@ import path from "path";
 import type { Project } from "./Project";
 import invariant from "tiny-invariant";
 import { fs } from "~/fs-promises.server";
+import { getRemoteURL } from "~/models/git.server";
 
 const LSPProjects: Record<Project["name"], Project> = {};
 
 export async function getProjects() {
   const projects = LSPProjects;
 
-  const project = await prepareProject(path.join(__dirname, "../"));
+  const root = path.join(__dirname, "../");
+  const project = await prepareProject(root);
   if (project) {
     LSPProjects[project.name] = project;
   }
 
-  const REPO_ROOT = process.env.REPO_ROOT;
+  const r = await Object.keys(process.env)
+    .filter((key) => key.startsWith("REPO"))
+    .map((key) => process.env[key])
+    .reduce(async (acc, repo) => {
+      const tmp = await acc;
 
-  // if REPO_ROOT contains an AppExplorer.json, read the file and add it to LSPProjects
-  if (typeof REPO_ROOT === "string") {
-    const project = await prepareProject(REPO_ROOT);
-    if (project) {
-      LSPProjects[project.name] = project;
-    }
-  }
+      if (typeof repo === "string") {
+        const project = await prepareProject(path.join(root, repo));
+        if (project) {
+          tmp[project.name] = project;
+        }
+      }
+      return acc;
+    }, Promise.resolve(projects));
 
-  return projects;
+  return r;
 }
 async function prepareProject(gitRoot: string): Promise<Project | undefined> {
-  const appExplorerJsonPath = path.join(gitRoot, "AppExplorer.json");
-
   let stat;
   try {
-    stat = await fs.stat(appExplorerJsonPath);
+    stat = await fs.stat(gitRoot);
+    if (!stat.isDirectory()) {
+      return;
+    }
   } catch (e) {
     return;
   }
-  if (stat.isFile()) {
-    const projectConfig = JSON.parse(
-      await fs.readFile(appExplorerJsonPath, "utf8")
-    );
-    invariant(
-      typeof projectConfig.name === "string",
-      "expected a name in AppExplorer.json"
-    );
-    invariant(
-      typeof projectConfig.root === "string",
-      "expected a root in AppExplorer.json"
-    );
+  const projectConfig = {
+    root: gitRoot,
+    name: path.basename(gitRoot),
+  };
 
-    const pluginFolder = path.resolve(gitRoot, "AppExplorer");
+  const pluginFolder = path.resolve(gitRoot, "AppExplorer");
 
-    let plugins: Project["plugins"] = [];
-    try {
-      if ((await fs.stat(pluginFolder)).isDirectory()) {
-        plugins = await readPlugins(projectConfig.name, pluginFolder);
-      }
-    } catch (e) {
-      // ignore
+  let plugins: Project["plugins"] = [];
+  try {
+    if ((await fs.stat(pluginFolder)).isDirectory()) {
+      plugins = await readPlugins(projectConfig.name, pluginFolder);
     }
-
-    return {
-      name: projectConfig.name,
-      root: path.resolve(gitRoot, projectConfig.root),
-      projectRoot: gitRoot,
-      plugins,
-    };
+  } catch (e) {
+    // ignore
   }
+  return {
+    name: projectConfig.name,
+    root: gitRoot,
+    remote: await getRemoteURL(gitRoot),
+    plugins,
+  };
 }
 
 async function readPlugins(projectName: string, pluginFolder: string) {

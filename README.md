@@ -20,11 +20,11 @@ npm install
 npm run dev
 ```
 
-To explore your codebase, this uses an environment variable `REPO_ROOT` and `AppExplorer.json`.
+To explore other projects add numbered environment variables to `.env`
 
 ```sh
-echo '{"name":"OtherProject","root":"src"}' > ../other-project/AppExplorer.json
-REPO_ROOT=../other-project npm run dev
+REPO1="../project-a"
+REPO2="../project-b"
 ```
 
 ## Project config

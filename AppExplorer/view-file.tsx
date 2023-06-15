@@ -24,7 +24,7 @@ export async function readCardData(fullPath: string, path: string, project: Proj
 
   return ({
     path,
-    gitPath: fsPath.relative(project.projectRoot, fullPath),
+    gitPath: fsPath.relative(project.root, fullPath),
     remote,
     commitHash,
     projectName,
