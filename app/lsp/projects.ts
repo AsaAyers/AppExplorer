@@ -2,7 +2,7 @@ import path from "path";
 import type { Project } from "./Project";
 import invariant from "tiny-invariant";
 import { fs } from "~/fs-promises.server";
-import { getRemoteURL } from "~/models/git.server";
+import { getRemoteURLs } from "~/models/git.server";
 
 const LSPProjects: Record<Project["name"], Project> = {};
 
@@ -60,7 +60,7 @@ async function prepareProject(gitRoot: string): Promise<Project | undefined> {
   return {
     name: projectConfig.name,
     root: gitRoot,
-    remote: await getRemoteURL(gitRoot),
+    remotes: await getRemoteURLs(gitRoot),
     plugins,
   };
 }

@@ -1,28 +1,30 @@
-import type { TagProps } from '@mirohq/websdk-types';
-import React from 'react';
+import type { TagProps } from "@mirohq/websdk-types";
+import React from "react";
 
-
-export function useTag(title: string | undefined, color: TagProps['color'] = 'blue') {
+export function useTag(
+  title: string | undefined,
+  color: TagProps["color"] = "blue"
+) {
   const [id, setId] = React.useState<string | undefined>(undefined);
   React.useEffect(() => {
     if (!title) {
-      return
+      return;
     }
 
     const run = async () => {
-      const tags = await miro.board.get({ type: 'tag' });
-      let tag = tags.find(t => t.title === title);
+      const tags = await miro.board.get({ type: "tag" });
+      let tag = tags.find((t) => t.title === title);
 
       if (!tag) {
         tag = await miro.board.createTag({
           title,
-          type: 'tag',
-          color
+          type: "tag",
+          color,
         });
       }
       setId(tag.id);
     };
-    run().catch(e => console.error('error creating tag', e));
+    run().catch((e) => console.error("error creating tag", e));
   }, [color, title]);
 
   return id;

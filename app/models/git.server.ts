@@ -1,38 +1,43 @@
 import * as child from "child_process";
 import * as path from "path";
+import { fs } from "~/fs-promises.server";
 
 // git rev-parse --short HEAD
 
-export function getCommitHash(fullPath: string): string {
+export async function getCommitHash(fullPath: string): Promise<string> {
+  const stat = await fs.stat(fullPath);
   const hash = child.spawnSync("git", ["rev-parse", "--short", "HEAD"], {
     encoding: "utf-8",
-    // TODO: Figure out why I had to add this .git folder here.  Before I added
-    // it, it claimed it couldn't find a git repo.
-    cwd: path.dirname(fullPath) + "/.git",
+    cwd: stat.isDirectory() ? fullPath : path.dirname(fullPath),
   });
 
   return hash.stdout.trim();
 }
 
-export function getRemoteURL(fullPath: string): string {
-  const hash = child.spawnSync("git", ["remote", "-v"], {
+export async function getRemoteURLs(fullPath: string): Promise<string[]> {
+  const stat = await fs.stat(fullPath);
+  const cwd = stat.isDirectory() ? fullPath : path.dirname(fullPath);
+
+  const gitRemote = child.spawnSync("git", ["remote"], {
     encoding: "utf-8",
-    // TODO: Figure out why I had to add this .git folder here.  Before I added
-    // it, it claimed it couldn't find a git repo.
-    cwd: path.dirname(fullPath) + "/.git",
+    cwd,
   });
 
-  const github = String(hash.stdout).match(
-    /git@github.com:([^/\s]+)\/([^/\s]+)(.git)/
+  const remotes = String(gitRemote.stdout).trim().split("\n");
+  remotes.length = 1;
+
+  return Promise.all(
+    remotes.map(async (remoteName) => {
+      const gitRemoteUrl = child.spawnSync(
+        "git",
+        ["remote", "get-url", remoteName],
+        {
+          encoding: "utf-8",
+          cwd,
+        }
+      );
+
+      return String(gitRemoteUrl.stdout).trim();
+    })
   );
-
-  if (github) {
-    return github[0];
-  }
-
-  if (hash.stderr) {
-    console.warn(`Unable to read remote URL for ${fullPath}\n`, hash.stderr);
-  }
-
-  return "https://example.com/unknown_remote";
 }

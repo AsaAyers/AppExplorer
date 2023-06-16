@@ -1,5 +1,5 @@
 import React from "react";
-import "@mirohq/websdk-types"
+import "@mirohq/websdk-types";
 import { Link } from "@remix-run/react";
 
 async function init() {
@@ -15,7 +15,6 @@ export default function Index() {
   return (
     <div>
       <Link to="/lsp">LSP</Link>
-
     </div>
   );
 }
