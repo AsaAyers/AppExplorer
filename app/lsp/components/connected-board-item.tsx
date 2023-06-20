@@ -1,8 +1,11 @@
 import type {
   AppCard,
   AppCardProps,
+  AppData,
+  AppDataValue,
   BoardNode,
   CardProps,
+  Item,
   Shape,
   ShapeProps,
 } from "@mirohq/websdk-types";
@@ -11,10 +14,11 @@ import identity from "lodash.identity";
 import React from "react";
 import invariant from "tiny-invariant";
 import { useMiroDrop } from "~/plugin-utils/use-miro-drop";
-import { useNewKeyOnItemUpdates } from "./use-new-key-on-item-updates";
+import { useMiroJiggle } from "./use-miro-jiggle";
 import { usePromiseState } from "./use-promise-state";
 import { assertNever } from "./assertNever";
 import classNames from "classnames";
+import { d } from "vitest/dist/types-e3c9754d";
 
 export type ConnectedResponse<T extends ImplementedTypes> = {
   type: T;
@@ -25,12 +29,20 @@ type PropMap = {
   app_card: AppCardProps;
   shape: ShapeProps;
 };
+type PropsForType<T extends ImplementedTypes> = T extends "card"
+  ? CardProps
+  : T extends "app_card"
+  ? AppCardProps
+  : T extends "shape"
+  ? ShapeProps
+  : {};
 
-type ImplementedTypes = keyof PropMap;
+type ImplementedTypes = "card" | "app_card" | "shape";
 
-async function findNodeByDataSource(
+async function findNodeWithMeta(
   type: ImplementedTypes,
-  dataSource: string
+  id: string,
+  keyValue: string
 ) {
   const existingItems = await miro.board.get({ type });
   return existingItems.reduce(async (m, node) => {
@@ -38,7 +50,7 @@ async function findNodeByDataSource(
     if (match && match.type === type) return match;
 
     if (node.type === type) {
-      if ((await node.getMetadata("dataSource")) === dataSource) {
+      if ((await node.getMetadata(id)) === keyValue) {
         return node;
       }
     }
@@ -48,9 +60,9 @@ async function findNodeByDataSource(
 async function createOrUpdate<Type extends ImplementedTypes>(
   type: Type,
   dataSource: string,
-  props: PropMap[typeof type],
+  props: PropsForType<Type>,
   node?: Extract<BoardNode, { type: Type }>
-) {
+): Promise<Extract<BoardNode, { type: Type }>> {
   switch (node?.type) {
     case "app_card":
     case "card":
@@ -60,11 +72,9 @@ async function createOrUpdate<Type extends ImplementedTypes>(
         actual === dataSource,
         () => `dataSource mismatch. Found: ${actual} Expected: ${dataSource}`
       );
-      console.log("before", JSON.stringify(node, null, 2));
       Object.assign(node, props);
-      console.log("after", JSON.stringify(node, null, 2));
       await node.sync();
-      break;
+      return node;
     }
     default: {
       const withMeta = async (item: Promise<BoardNode>) => {
@@ -77,10 +87,13 @@ async function createOrUpdate<Type extends ImplementedTypes>(
       // "AppCardProps", but it's not convinced they match here.
       switch (type) {
         case "app_card":
+          // @ts-expect-error
           return withMeta(miro.board.createAppCard(props as AppCardProps));
         case "card":
+          // @ts-expect-error
           return withMeta(miro.board.createCard(props as CardProps));
         case "shape":
+          // @ts-expect-error
           return withMeta(miro.board.createShape(props as ShapeProps));
         default:
           assertNever(type);
@@ -88,38 +101,59 @@ async function createOrUpdate<Type extends ImplementedTypes>(
     }
   }
 }
-type Props<Type extends keyof PropMap> = {
-  apiEndpoint: string;
+type Props<
+  Type extends keyof PropMap,
+  MetaKeys extends string = "apiEndpoint"
+> = {
   type: Type;
+  meta: Record<MetaKeys, AppDataValue> & Record<string, AppDataValue>;
+  id: MetaKeys;
   Component: React.ComponentType<
-    PropMap[Type] & {
+    PropsForType<Type> & {
       node?: Extract<BoardNode, { type: Type }>;
     }
   >;
 };
 
-export function ConnectedBoardItem<T extends ImplementedTypes>({
-  apiEndpoint,
+export function ConnectedBoardItem<T extends ImplementedTypes & string>({
+  meta,
+  id,
   Component,
   type,
 }: Props<T>) {
-  const key = useNewKeyOnItemUpdates();
+  const jiggle = useMiroJiggle();
+  const apiEndpoint = meta.apiEndpoint;
+  invariant(typeof apiEndpoint === "string", "apiEndpoint must be a string");
+
+  const keyValue = meta[id];
   const node = usePromiseState(async () => {
-    if (key) {
-      return findNodeByDataSource(type, apiEndpoint);
+    if (jiggle && keyValue) {
+      invariant(typeof keyValue === "string", "keyValue must be a string");
+      return findNodeWithMeta(type, id, keyValue);
     }
-  }, [type, apiEndpoint, key]);
+  }, [jiggle, keyValue, id, type]);
 
-  const fetcher = useFetcher<{
-    type: ImplementedTypes;
-    props: PropMap[ImplementedTypes];
-  }>();
-
+  type Result = {
+    type: T;
+    props: PropsForType<T>;
+  };
+  const fetcher = useFetcher<Result>();
   React.useEffect(() => {
     if (fetcher.state === "idle" && !fetcher.data) {
       fetcher.load(apiEndpoint);
     }
-  }, [apiEndpoint, fetcher]);
+  }, [apiEndpoint, fetcher.data, fetcher]);
+  // @ts-expect-error https://github.com/remix-run/remix/issues/6632
+  if (fetcher.data && fetcher.data?.type !== type) {
+    throw new Error(
+      // @ts-expect-error https://github.com/remix-run/remix/issues/6632
+      "type mismatch. expected " + type + " got " + fetcher.data?.type
+    );
+  }
+
+  const boardItemProps: PropsForType<T> =
+    // @ts-expect-error https://github.com/remix-run/remix/issues/6632
+    fetcher.data?.props ?? loadingProps(type);
 
   const self = React.useRef<HTMLDivElement>(null);
   useMiroDrop(async ({ x, y, target }) => {
@@ -136,55 +170,44 @@ export function ConnectedBoardItem<T extends ImplementedTypes>({
       position.y = node.value.y;
     }
 
-    console.log({
-      ...fetcher.data?.props,
-      ...position,
-    });
-
-    createOrUpdate(
+    const item = await createOrUpdate(
       type,
       apiEndpoint,
-      // @ts-expect-error
       {
-        ...fetcher.data?.props,
+        ...boardItemProps,
         ...position,
       },
       node.state === "resolved" ? (node.value as any) : undefined
     );
+    await Object.entries(meta).reduce(async (i, [key, value]) => {
+      (await i).setMetadata(key, value);
+      return i;
+    }, Promise.resolve(item as Item));
   });
 
-  // @ts-expect-error
-  let data: PropMap[T] = fetcher.data?.props ?? loadingProps(type);
-
-  if (fetcher.data && fetcher.data?.type !== type) {
-    throw new Error(
-      "type mismatch. expected " + type + " got " + fetcher.data?.type
-    );
-  }
-
-  const viewOnBoard = () => {
-    if (node.state === "resolved" && node.value) {
-      // TODO: See if the node is in a frame and zoom to the frame instead
-
-      miro.board.viewport.zoomTo([node.value]);
+  const viewOnBoard = async (node: Item): Promise<void> => {
+    if ("parentId" in node && node.parentId) {
+      const parent = await miro.board.getById(node.parentId);
+      if (parent && parent.type !== "tag") {
+        return viewOnBoard(parent);
+      }
     }
+    miro.board.viewport.zoomTo([node]);
   };
 
   const diff = React.useMemo(() => {
-    if (key && fetcher.data && node.state === "resolved" && node.value) {
+    if (jiggle && boardItemProps && node.state === "resolved" && node.value) {
       const n = node.value;
-      const keys = Object.keys(fetcher.data.props);
+      const keys = Object.keys(boardItemProps);
       return keys.filter((k) => {
-        // @ts-expect-error
-        const currentValue = JSON.stringify(fetcher.data.props[k]);
-        // @ts-expect-error
-        const nodeValue = JSON.stringify(n[k]);
-
+        const key = k as keyof PropsForType<any>;
+        const currentValue = JSON.stringify(boardItemProps[key]);
+        const nodeValue = JSON.stringify(n[key]);
         return currentValue !== nodeValue;
       });
     }
     return [];
-  }, [fetcher.data, key, node.state, node.value]);
+  }, [boardItemProps, jiggle, node.state, node.value]);
 
   return (
     <div ref={self} className="miro-draggable">
@@ -193,7 +216,7 @@ export function ConnectedBoardItem<T extends ImplementedTypes>({
         className={classNames("button button-small button-primary", {
           "button-loading": node.state === "running",
         })}
-        onClick={viewOnBoard}
+        onClick={() => viewOnBoard(node.value!)}
       >
         <div>
           View on board
@@ -217,24 +240,34 @@ export function ConnectedBoardItem<T extends ImplementedTypes>({
           </ul>
         </div>
       )}
-      <Component {...data} />
+      {/* @ts-expect-error */}
+      <Component {...boardItemProps} />
     </div>
   );
 }
-function loadingProps(type: ImplementedTypes): PropMap[ImplementedTypes] {
+
+function loadingProps<Type extends ImplementedTypes>(
+  type: Type
+): PropsForType<Type> {
   switch (type) {
     case "app_card": {
+      // @ts-expect-error
       return identity<AppCardProps>({
+        type,
         title: "loading...",
       });
     }
     case "card": {
+      // @ts-expect-error
       return identity<CardProps>({
+        type,
         title: "loading...",
       });
     }
     case "shape": {
+      // @ts-expect-error
       return identity<ShapeProps>({
+        type,
         content: "loading...",
       });
     }

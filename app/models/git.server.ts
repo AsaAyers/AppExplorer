@@ -24,7 +24,6 @@ export async function getRemoteURLs(fullPath: string): Promise<string[]> {
   });
 
   const remotes = String(gitRemote.stdout).trim().split("\n");
-  remotes.length = 1;
 
   return Promise.all(
     remotes.map(async (remoteName) => {

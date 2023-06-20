@@ -20,7 +20,11 @@ export default function () {
           key={`/api/${projectName}/card`}
           type="app_card"
           Component={ProjectCard}
-          apiEndpoint={`/api/${projectName}/card`}
+          id="apiEndpoint"
+          meta={{
+            apiEndpoint: `/api/${projectName}/card`,
+            target: `/lsp/${projectName}`,
+          }}
         />
       ))}
     </div>

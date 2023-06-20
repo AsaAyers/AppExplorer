@@ -24,7 +24,7 @@ export function useTag(
       }
       setId(tag.id);
     };
-    run().catch((e) => console.error("error creating tag", e));
+    run().catch((e) => console.error(`error creating tag: ${title}`, e));
   }, [color, title]);
 
   return id;
