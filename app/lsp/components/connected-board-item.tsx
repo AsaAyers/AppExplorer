@@ -15,10 +15,9 @@ import React from "react";
 import invariant from "tiny-invariant";
 import { useMiroDrop } from "~/plugin-utils/use-miro-drop";
 import { useMiroJiggle } from "./use-miro-jiggle";
-import { usePromiseState } from "./use-promise-state";
 import { assertNever } from "./assertNever";
 import classNames from "classnames";
-import { d } from "vitest/dist/types-e3c9754d";
+import { useIsMiroConnected, useMiroQuery } from "./miro-context";
 
 export type ConnectedResponse<T extends ImplementedTypes> = {
   type: T;
@@ -121,17 +120,18 @@ export function ConnectedBoardItem<T extends ImplementedTypes & string>({
   Component,
   type,
 }: Props<T>) {
-  const jiggle = useMiroJiggle();
   const apiEndpoint = meta.apiEndpoint;
   invariant(typeof apiEndpoint === "string", "apiEndpoint must be a string");
 
   const keyValue = meta[id];
-  const node = usePromiseState(async () => {
-    if (jiggle && keyValue) {
-      invariant(typeof keyValue === "string", "keyValue must be a string");
-      return findNodeWithMeta(type, id, keyValue);
+  const isConnected = useIsMiroConnected()
+  const nodeQueryState = useMiroQuery(async () => {
+    if (typeof keyValue === "string") {
+      console.log('findNodeWithMeta', type, id, keyValue)
+      return findNodeWithMeta(type, id, keyValue)
     }
-  }, [jiggle, keyValue, id, type]);
+  }, [keyValue, id, type]);
+  const nodeOnBoard = nodeQueryState.value
 
   type Result = {
     type: T;
@@ -162,12 +162,12 @@ export function ConnectedBoardItem<T extends ImplementedTypes & string>({
     }
 
     let position: { x?: number; y?: number } = { x, y };
-    if (node.value?.parentId) {
+    if (nodeOnBoard?.parentId) {
       delete position.x;
       delete position.y;
-    } else if (node.value) {
-      position.x = node.value.x;
-      position.y = node.value.y;
+    } else if (nodeOnBoard) {
+      position.x = nodeOnBoard.x;
+      position.y = nodeOnBoard.y;
     }
 
     const item = await createOrUpdate(
@@ -177,7 +177,8 @@ export function ConnectedBoardItem<T extends ImplementedTypes & string>({
         ...boardItemProps,
         ...position,
       },
-      node.state === "resolved" ? (node.value as any) : undefined
+      // @ts-ignore
+      nodeOnBoard
     );
     await Object.entries(meta).reduce(async (i, [key, value]) => {
       (await i).setMetadata(key, value);
@@ -196,35 +197,33 @@ export function ConnectedBoardItem<T extends ImplementedTypes & string>({
   };
 
   const diff = React.useMemo(() => {
-    if (jiggle && boardItemProps && node.state === "resolved" && node.value) {
-      const n = node.value;
+    if (boardItemProps && nodeOnBoard) {
       const keys = Object.keys(boardItemProps);
       return keys.filter((k) => {
         const key = k as keyof PropsForType<any>;
         const currentValue = JSON.stringify(boardItemProps[key]);
-        const nodeValue = JSON.stringify(n[key]);
+        const nodeValue = JSON.stringify(nodeOnBoard[key]);
         return currentValue !== nodeValue;
       });
     }
     return [];
-  }, [boardItemProps, jiggle, node.state, node.value]);
+  }, [boardItemProps, nodeOnBoard]);
 
   return (
     <div ref={self} className="miro-draggable">
-      <button
-        disabled={node.state !== "resolved"}
-        className={classNames("button button-small button-primary", {
-          "button-loading": node.state === "running",
-        })}
-        onClick={() => viewOnBoard(node.value!)}
-      >
-        <div>
-          View on board
-          {node.state === "timeout" && (
-            <span className="label label-warning">Timeout</span>
-          )}
-        </div>
-      </button>
+      {isConnected && (
+        <button
+          disabled={!nodeOnBoard}
+          className={classNames("button button-small button-primary", {
+            "button-loading": nodeQueryState.state === "running"
+          })}
+          onClick={() => viewOnBoard(nodeOnBoard!)}
+        >
+          <div>
+            View on board
+          </div>
+        </button>
+      )}
       {diff.length > 0 && (
         <div>
           Updates Available (Drag the card onto the board to apply):

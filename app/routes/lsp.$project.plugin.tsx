@@ -30,13 +30,13 @@ export async function getPlugins(projectName: string) {
   const plugins = routeFiles
     .filter(
       (file) =>
+        file !== "lsp.tsx" &&
         file !== "lsp.$project.tsx" &&
         (file.startsWith(`lsp.plugin.${projectName}.`) ||
           file.startsWith(`lsp.$project.`))
     )
     .flatMap((pluginFilename) => {
       const parts = pluginFilename.split(".");
-      console.log(parts);
       invariant(parts.shift() === "lsp", "Expected to start with lsp");
       invariant(parts.shift() === "$project", "Missing $project");
       invariant(parts.pop() === "tsx", "Expected to end with tsx");

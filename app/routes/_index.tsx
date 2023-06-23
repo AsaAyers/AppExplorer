@@ -9,13 +9,20 @@ async function init() {
 
   miro.board.ui.on("app_card:open", async (event) => {
     const { appCard } = event;
-    console.log("app_card:open", appCard);
-
     const target = await appCard.getMetadata("target");
-
-    console.log("open", appCard, target);
     if (typeof target === "string" && target[0] === "/") {
-      await miro.board.ui.openModal({ url: target });
+      await miro.board.ui.openPanel({ url: target });
+    }
+  });
+
+  miro.board.ui.on("selection:update", async (event) => {
+    if (event.items.length === 1) {
+      const item = event.items[0];
+      const data = await item.getMetadata();
+      if (data.projectName && data.path) {
+        const url = `/lsp/${data.projectName}/plugin/AppExplorer/view-file/?path=${data.path}`;
+        await miro.board.ui.openPanel({ url });
+      }
     }
   });
 }

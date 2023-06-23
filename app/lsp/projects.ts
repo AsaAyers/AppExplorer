@@ -102,7 +102,10 @@ async function readPlugins(projectName: string, pluginFolder: string) {
             console.log("Saving updates to", source);
             await fs.copyFile(destination, source);
           } else {
-            console.log("Plugin already installed, skipping");
+            console.log(
+              "Plugin already installed, skipping",
+              `${projectName}.${plugin}`
+            );
           }
           return `${projectName}.${plugin}`;
         }
