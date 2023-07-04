@@ -1,0 +1,6 @@
+ul.browseProject,
+.browseProject ul {
+  overflow: auto;
+  /* This is shown in a sidebar, so deeply nested folders can be hard to reach */
+  padding-inline-start: 0.5em;
+}

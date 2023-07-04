@@ -3,6 +3,7 @@ import React from "react";
 import { useFetcher } from "react-router-dom";
 import type { ApiLsResponse } from "../../routes/lsp_.api_.$project_.ls";
 import classNames from "classnames";
+import styles from './file-or-directory.module.css'
 
 type FileOrDirectoryProps = {
   type: "file" | "directory";
@@ -40,9 +41,8 @@ export function FileOrDirectory({
   if (type === "file") {
     return (
       <li
-        className={classNames({
-          "bg-dropboxBlue": isActive,
-          "text-coconut": isActive,
+        className={classNames(styles.file, {
+          [styles.active]: isActive,
         })}
       >
         📄
@@ -57,9 +57,9 @@ export function FileOrDirectory({
   } else if (type === "directory") {
     return (
       <li
-        className={classNames("", {
-          "bg-dropboxBlue": isActive,
-          "text-coconut": isActive,
+        className={classNames(styles.directory, {
+          [styles.active]: isActive,
+          [styles.expand]: expand,
         })}
         onClick={(event) => {
           event.stopPropagation();

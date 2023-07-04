@@ -5,6 +5,9 @@ import { useLoaderData } from "@remix-run/react";
 // Files that end in .server are excluded from the browser bundle.
 import { requireProject } from "~/lsp/lsp.server";
 import { FileOrDirectory } from "../lsp/components/FileOrDirectory";
+import styles from './lsp.$project._index.module.css'
+
+
 
 export const loader = async ({ params, request }: LoaderArgs) => {
   const [projectName] = await requireProject(params);
@@ -21,7 +24,7 @@ export default function () {
   const { projectName } = useLoaderData<typeof loader>();
 
   return (
-    <ul className="flex bg-coconut w-full h-full overflow-auto">
+    <ul className={styles.browseProject}>
       <FileOrDirectory
         project={projectName}
         path=""
