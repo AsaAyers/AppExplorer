@@ -1,137 +1,119 @@
-# AppExplorer
+# AppExplorer Prototype (Archived Open-Source Prototype)
 
-[Public AppExplorer board](https://miro.com/app/board/uXjVL0VAGdA=/?share_link_id=273783644676)
+This repository contains the original open-source prototype of AppExplorer.
 
-**The primary output of AppExplorer is architecture diagrams.**
+It is no longer the active development repository.
 
-These diagrams can be exported as images from Miro and integrated into standard
-documentation tools, serving as long-term references for the codebase. While
-Miro provides a dynamic and collaborative space for team members actively
-working on the code, the exported diagrams ensure the documentation remains
-accessible and useful for broader audiences, including stakeholders not directly
-involved in development.
+## What this prototype is
 
-## What problem does this solve?
+AppExplorer started as a VSCode + Miro prototype for building architecture
+diagrams that stay connected to real code.
 
-AppExplorer assists in making archetecture diagrams of your code using Miro as
-an infinite whiteboard. It doesn't automatically scan things, instead it allows
-you to walk the codebase as you naturally would and attach the referenced code
-to your Miro diagrams. It does this by creating AppExplorer cards in Miro that
-also link to source control.
+The core idea is still the same:
 
-It sits on top of VSCode's Language Server support. So it works with any
-language that you have a a language server for. These are usually installed as
-VSCode extensions for languages that don't come with VSCode. The Outline view is
-also powered by the same lanaguage server support. If the outline view is
-empty, you may need to install an extension for the current language.
+- developers explore a codebase in VSCode
+- meaningful code elements are attached to a diagram
+- the diagram becomes a navigable, high-level view of the system
+- the result can serve as living documentation tied to the implementation
 
-Diagrams may be as complex or as simple as you need. It is your job to decide
-which abstractions you're going to jump over with a connection line and optional
-explanation, and which pieces are you linking to and making a card for.
+This prototype proved out that workflow.
 
-## Workflow - Planning
+## Status of this repository
 
-When planning a new project, you might want to use shapes instead of cards to
-digram how the system should interact with the different pieces. Add any context
-you need, like design images, notes, comments, etc.
+This repository is now effectively frozen.
 
-As you build the different pieces, come back with AppExplorer and attach cards
-near or replacing the shapes. Sometimes things didn't go exactly to plan, or you
-have to take some shortcut that leaves some technical debt. This is a great
-place to document that in as much detail as you'd like. It's an infinite
-whiteboard, sometimes you need to just have a separate frame to explain a
-concept instead of adding to some existing frame.
+I am no longer publishing ongoing AppExplorer development here, and future work
+is happening in a private repository.
 
-Toward the end of the project, the Miro board should have a lot of good
-information. You may want to export each frame as an image and store it in your
-knowledge management system with a link back to the frame. The link back is
-important for future developers, so they can link to Miro and then link out to
-source control.
+You are welcome to read this code as a historical prototype, but you should not
+expect this repository to track the current product.
 
-## Workflow - Documenting legacy systems
+## Important limitation of the prototype
 
-When navigating around many similarly-named things, it can be hard to keep track
-of everything. With legacy systems that have evolved over time, it's hard to get
-a good high level overview of what's going on. By anchoring code to an
-AppExplorer card on the board you can work through building up a diagram of the
-existing code a piece at a time. This is also all developer-guided, so don't
-just link to where "Go to Definition" would land you. Sometimes you want to
-pretend that next layer doesn't exist, and go link to what's going to be
-relevant to the future maintenance of the application.
+AppExplorer `<= 0.2` was built around a localhost server.
 
-## Tooling
+That means the prototype depends on a local development setup and a Miro app
+configured to talk to that local server. In practice, this makes the prototype
+useful for development and experimentation, but not for a hosted team workflow.
 
-AppExplorer is a VSCode Extension that leverages VSCode's Language Server
-support. This is much easier than coding directly against language servers and
-having to figure out exactly how to configure and launch each one.
+It also means non-developer stakeholders, such as PMs, cannot fully interact
+with cards unless the local development environment is running correctly. They
+can view diagrams on the board, but the interactive behavior depends on the
+localhost-based prototype architecture.
 
-This extension also hosts a webserver on http://localhost:9042/ that is a Miro
-extension. Miro was chosen because it's the most flexible solution with the most
-features. I could make diagrams with graphviz, but I lose the ability to
-customize the layout. This tool is not a scanner, it's for leaving a trail as
-you walk your codebase.
+As AppExplorer moves to a hosted model, that old setup is no longer the path
+forward.
 
-# Public AppExplorer Board
+## Where AppExplorer is going
 
-The best way to understand what AppExplorer does is to explore its output. I've
-used AppExplorer on its own codebase to create the [Public AppExplorer
-board](https://miro.com/app/board/uXjVL0VAGdA=/?share_link_id=273783644676). At
-a high level, you can see how the frames connect to form a rough overview of the
-system's conceptual parts. Zoom in to explore AppExplorer cards, which include
-tags like `VSCode Extension` or `Miro`, and find additional context through shapes,
-stickies, cards, and screenshots of VSCode.
+AppExplorer is being rebuilt as a hosted product with a permanent domain and
+server-backed Miro integration.
 
-At a high level, the concept here is to zoom in and out to whatever level is
-comfortable and useful to you.
+That change is necessary to support real team usage instead of requiring every
+workflow to depend on `localhost`.
 
-Who is this for and what should they get out of it?
+The current direction is a paid Miro app where:
 
-- For project managers: Gain a high-level overview to identify opportunities for applying AppExplorer to future projects.
-- For lead developers: Explore diagrams that inspire similar documentation for new or legacy projects.
-- For developers: See the benefits of navigating between code details and big-picture views to understand the system better.
-- For engineering managers: Appreciate how easy-to-update, code-linked documentation can accelerate onboarding and project comprehension.
-- For potential contributors: Find clear starting points for contributing to the project.
+- subscriptions are required to create cards
+- someone on a team needs an active subscription for card details to be opened
+- the product works through hosted infrastructure instead of the original
+  localhost-only prototype
 
-Everyone should be able to comment on the board, so that's a good place to ask
-for clarification on things. Once I update the board to contain the answer and
-reply, comments get resolved and hidden.
+That also means the open-source prototype in this repository will diverge from
+the active product.
 
-## Requirements
+## Public behind-the-scenes overview
 
-This extension requires Miro and to enable the [AppExplorer](https://miro.com/oauth/authorize/?response_type=code&client_id=3458764531189693223&redirect_uri=%2Fconfirm-app-install%2F) addon.
+Even though the active source code is no longer being published here, I am still
+publishing a public Miro board that explains AppExplorer’s codebase at a
+high level.
 
-## Getting Started
+That board is the best way to understand the product direction without reading
+the private source repository.
 
-The project is still in an active enough stage that every commit should be a
-release. It's not worth the extra effort at the moment, so the best way to run
-AppExplorer is to checkout main and build it locally.
+**Public board:**  
+[AppExplorer Public Board](https://miro.com/app/board/uXjVL0VAGdA=/?share_link_id=273783644676)
 
-```
-git clone git@github.com:dropbox/AppExplorer.git
-cd AppExplorer
+## Should you use this repository?
 
-git pull main
-npm install -g @vscode/vsce   # On first install
-npm install                   # after updates
+Use this repository if you want to:
 
-# Run
-rm *.vsix; vsce pack; code --install-extension app-explorer-*.vsix
-```
+- inspect the original prototype
+- understand the early technical direction
+- see how the VSCode + Miro localhost approach worked
+- compare the prototype against the public board
 
-### Running Remotely
+Do **not** use this repository if you are looking for:
 
-When using VSCode connected to a remote system or WSL you may not have the
-`code` command available. In this case, you'll need to build without installing
-on the command line:
+- the current production code
+- the active Miro app
+- hosted onboarding or subscription support
+- a stable path for adoption
 
-```
-# Run
-rm *.vsix; vsce pack
-```
+## Why leave this repository up?
 
-And then in VSCode run `Extensions: Install from VSIX...` and select the file
-that `vsce pack` built.
+Because the prototype is still useful as a record of how the idea started.
 
-## Release Notes
+The open-source version demonstrated the core concept:
+architecture diagrams can be anchored to real code instead of drifting into
+stale documentation.
 
-- Its best to just build from `main` at this point.
+That idea is continuing, even though the implementation and delivery model are
+changing.
+
+## License
+
+This repository remains available under the license already published here for
+the prototype.
+
+That license applies to this archived prototype repository only. It does not
+grant rights to future private versions of AppExplorer unless explicitly stated
+elsewhere.
+
+## Final note
+
+If you found this repository because you want to understand what AppExplorer is,
+start with https://appexplorer.dev.
+
+This repo is the prototype.
+The active product has moved on.

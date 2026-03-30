@@ -3,10 +3,8 @@ import { CardData } from "../EventTypes";
 import { HandlerContext, selectRangeInEditor } from "../extension";
 import { getGitHubUrl } from "../get-github-url";
 import { getRelativePath } from "../get-relative-path";
-import { LocationFinder } from "../location-finder";
 import { createDebug } from "../utils/create-debug";
 import { CHECKPOINT } from "../utils/log-checkpoint";
-import { SymbolAnchor } from "./create-card";
 const debug = createDebug("app-explorer:browse");
 
 export async function selectBoard(cardStorage: HandlerContext["cardStorage"]) {
@@ -48,7 +46,7 @@ export const makeBrowseHandler = (context: HandlerContext) =>
       cardsByBoard: cardStorage.getCardsByBoard(),
     });
     const navigateTo = cardStorage.navigateTo;
-    const locationFinder = new LocationFinder();
+    const locationFinder = context.locationFinder;
     type CardQuickPickItem = vscode.QuickPickItem & {
       miroLink: string;
     };
@@ -136,7 +134,7 @@ export const makeBrowseHandler = (context: HandlerContext) =>
           card.miroLink!,
         );
         const dest = await locationFinder.findCardDestination(card);
-        const status = (await goToCardCode(card))
+        const status = (await goToCardCode(context, card))
           ? "connected"
           : "disconnected";
         if (card.miroLink) {
@@ -178,16 +176,12 @@ export const makeBrowseHandler = (context: HandlerContext) =>
     }
   };
 
-export async function findCardDestination(
+export async function goToCardCode(
+  context: Pick<HandlerContext, "locationFinder">,
   card: CardData,
-): Promise<SymbolAnchor | vscode.Uri | null> {
-  const locationFinder = new LocationFinder();
-  return locationFinder.findCardDestination(card);
-}
-
-export async function goToCardCode(card: CardData, preview = false) {
-  const locationFinder = new LocationFinder();
-  const symbol = await locationFinder.findCardDestination(card);
+  preview = false,
+) {
+  const symbol = await context.locationFinder.findCardDestination(card);
 
   if (symbol && "range" in symbol) {
     const editor = await vscode.window.showTextDocument(symbol.uri, {

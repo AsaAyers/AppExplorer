@@ -4,8 +4,8 @@ import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
 import { goToCardCode } from "./commands/browse";
 import { CardData, WorkspaceRegistrationRequest } from "./EventTypes";
 import { getGitHubUrl } from "./get-github-url";
-import { LocationFinder } from "./location-finder";
 import { EventsFrom, EventsTo, RoutedEvents } from "./socket-events";
+import { HandlerContext } from "./extension";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -19,16 +19,16 @@ export class WorkspaceCardStorage
     EventsFrom<"workspace">
   >;
 
-  #locationFinder: LocationFinder;
   #workspaceId: string;
+  #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
     workspaceId: string,
     storageAdapter: StorageAdapter,
     serverUrl: string,
-    locationFinder: LocationFinder,
+    handlerContext: Pick<HandlerContext, "locationFinder">,
   ) {
     super(storageAdapter);
-    this.#locationFinder = locationFinder;
+    this.#handlerContext = handlerContext;
     this.#workspaceId = workspaceId;
     this.debug = this.debug.extend("workspace");
 
@@ -181,10 +181,11 @@ export class WorkspaceCardStorage
 
   public navigateTo = async (card: CardData, preview = false) => {
     this.debug("Navigating to card", { card, preview });
-    const dest = await this.#locationFinder.findCardDestination(card);
+    const dest =
+      await this.#handlerContext.locationFinder.findCardDestination(card);
 
     // Only connect if it's able to reach the symbol
-    const success = await goToCardCode(card, preview);
+    const success = await goToCardCode(this.#handlerContext, card, preview);
     const status = success ? "connected" : "disconnected";
 
     if (card.miroLink) {

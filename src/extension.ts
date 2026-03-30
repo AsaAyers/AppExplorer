@@ -28,6 +28,7 @@ import { WorkspaceCardStorage } from "./workspace-card-storage";
 const debug = createDebug("app-explorer:extension");
 export type HandlerContext = {
   cardStorage: WorkspaceCardStorage;
+  locationFinder: LocationFinder;
   waitForConnections: () => Promise<void>;
 };
 
@@ -61,7 +62,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // new VSCodeAdapter(context),
     new MemoryAdapter(),
     `http://localhost:${serverPort}`,
-    locationFinder,
+    { locationFinder },
   );
   listenToAllEvents(cardStorage, (eventName, ...args) => {
     debug("storage event", eventName, args);
@@ -92,6 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // Create handler context with the proxy as the only CardStorage
   const handlerContext: HandlerContext = {
     cardStorage,
+    locationFinder,
     async waitForConnections() {
       debug("Waiting for connections...");
       if (handlerContext.cardStorage.getConnectedBoards().length > 0) {

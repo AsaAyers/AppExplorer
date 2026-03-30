@@ -3,7 +3,7 @@
   "displayName": "app-explorer",
   "description": "Helps build documentation while navigating through code",
   "version": "0.2.0",
-  "publisher": "dropbox",
+  "publisher": "asa-ayers",
   "repository": "https://github.com/dropbox/AppExplorer",
   "engines": {
     "vscode": "^1.98.0"
