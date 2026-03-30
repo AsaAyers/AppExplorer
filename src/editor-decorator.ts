@@ -22,8 +22,10 @@ export class EditorDecorator {
   subscriptions: vscode.Disposable[] = [];
 
   #handlerContext: HandlerContext;
+  #locationFinder: LocationFinder;
   constructor(handlerContext: HandlerContext) {
     this.#handlerContext = handlerContext;
+    this.#locationFinder = handlerContext.locationFinder;
     this.#decorator = vscode.window.createTextEditorDecorationType({
       backgroundColor: new vscode.ThemeColor("appExplorer.background"),
       overviewRulerColor: new vscode.ThemeColor("appExplorer.rulerColor"),
@@ -40,12 +42,29 @@ export class EditorDecorator {
     this.#activeEdtior = vscode.window.activeTextEditor;
 
     this.subscriptions.push(
+      vscode.window.onDidChangeActiveTextEditor((e) => {
+        this.#activeEdtior = e;
+        this.triggerUpdate();
+      }),
+
+      vscode.workspace.onDidOpenTextDocument((doc) => {
+        if (doc === this.#activeEdtior?.document) {
+          this.triggerUpdate();
+        }
+      }),
+
       vscode.workspace.onDidChangeTextDocument(
         (event) => {
+          debug(
+            "document",
+            event.document.uri.toString(),
+            this.#activeEdtior?.document.uri.toString(),
+          );
           if (
             this.#activeEdtior &&
             event.document === this.#activeEdtior.document
           ) {
+            debug("triggerUpdate");
             this.triggerUpdate(true);
           }
         },
@@ -114,8 +133,9 @@ export class EditorDecorator {
     debug("Selected cards", selectedIds);
     const document = editor.document;
     const cards = this.getCardsInEditor(editor);
-    const locationFinder = new LocationFinder();
-    const symbols = await locationFinder.findSymbolsInDocument(document.uri);
+    const symbols = await this.#locationFinder.findSymbolsInDocument(
+      document.uri,
+    );
 
     const ranges = cards.flatMap((card): CardDecoration[] => {
       if (card?.type === "symbol") {
