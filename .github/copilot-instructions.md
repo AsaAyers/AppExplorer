@@ -47,7 +47,7 @@ AppExplorer is a VSCode extension designed to integrate Miro boards with VSCode,
 
 1. Clone the repository:
    ```bash
-   git clone git@github.com:dropbox/AppExplorer.git
+   git clone git@github.com:AsaAyers/AppExplorer.git
    cd AppExplorer
    ```
 2. Install dependencies:

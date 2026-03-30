@@ -80,7 +80,7 @@ export class E2ETestUtils {
     debug(`[E2ETestUtils] Using test port from environment: ${testPort}`);
 
     // Ensure the extension is activated before trying to use its commands
-    const extension = vscode.extensions.getExtension("dropbox.app-explorer");
+    const extension = vscode.extensions.getExtension("asa-ayers.app-explorer");
     if (extension && !extension.isActive) {
       debug("[E2ETestUtils] Activating AppExplorer extension...");
       await extension.activate();

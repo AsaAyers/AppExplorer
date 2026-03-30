@@ -59,6 +59,11 @@ export class EditorDecorator {
 
       vscode.workspace.onDidChangeTextDocument(
         (event) => {
+          debug(
+            "document",
+            event.document.uri.toString(),
+            this.#activeEdtior?.document.uri.toString(),
+          );
           if (
             this.#activeEdtior &&
             event.document === this.#activeEdtior.document

@@ -13,7 +13,7 @@ suite("Extension Activation Tests", () => {
     debug("Testing extension activation...");
 
     // Get the extension
-    const extension = vscode.extensions.getExtension("dropbox.app-explorer");
+    const extension = vscode.extensions.getExtension("asa-ayers.app-explorer");
     debug("Extension found:", !!extension);
     debug("Extension active:", extension?.isActive);
 
@@ -58,7 +58,7 @@ suite("Extension Activation Tests", () => {
     this.timeout(15000);
 
     // Ensure extension is activated
-    const extension = vscode.extensions.getExtension("dropbox.app-explorer");
+    const extension = vscode.extensions.getExtension("asa-ayers.app-explorer");
     if (extension && !extension.isActive) {
       await extension.activate();
     }
