@@ -9,7 +9,6 @@ export default defineConfig({
   files: ".tests-out/**/*.test.cjs",
   workspaceFolder: "./sample-workspace",
   env: {
-    FORCE_HOST: "true",
     DEBUG,
     MIRO_TEST_EMAIL: process.env.MIRO_TEST_EMAIL,
     MIRO_TEST_PASSWORD: process.env.MIRO_TEST_PASSWORD,

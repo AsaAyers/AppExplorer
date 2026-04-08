@@ -34,7 +34,6 @@ export type HandlerContext = {
 
 export type ExtensionApi = {
   __watchOutput: (debugValue: string, callback: (line: string) => void) => void;
-  pauseServer: () => void;
 };
 
 declare global {
@@ -224,9 +223,6 @@ export async function activate(
 
   debug(CHECKPOINT.done("activate"));
   return {
-    pauseServer() {
-      serverLauncher.pauseServer();
-    },
     __watchOutput(debugValue: string, callback: (line: string) => void) {
       createDebug.enable(debugValue);
 

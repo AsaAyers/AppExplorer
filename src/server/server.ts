@@ -24,7 +24,7 @@ import { listenToAllEvents } from "../test/helpers/listen-to-all-events";
 import { bindHandlers } from "../utils/bindHandlers";
 import { createDebug } from "../utils/create-debug";
 import { SidebarServer } from "./sidebar-server";
-import { ExtensionApi } from "../extension";
+
 const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");
 
@@ -76,11 +76,7 @@ export class MiroServer {
 
     app.post("/reset", (_req, res) => {
       debug("Resetting server state");
-      const extensionApi = vscode.extensions.getExtension<ExtensionApi>(
-        "asa-ayers.app-explorer",
-      )!.exports;
-      extensionApi.pauseServer();
-
+      this.httpServer.close();
       return res.status(200).json({ success: true });
     });
     app.use(morgan("tiny"));
@@ -522,7 +518,6 @@ export class MiroServer {
   dispose() {
     this.subscriptions.forEach((s) => s.dispose());
     this.httpServer.closeAllConnections();
-    this.httpServer.close();
   }
 
   async onMiroConnection(socket: MiroServerSocket) {

@@ -39,6 +39,10 @@ export class Logger {
   }
 
   logMonitor: undefined | ((line: string) => void);
+
+  /**
+   * This is used for capturing test logs, so it only needs to keep track of 1 callback at a time.
+   */
   monitor(callback: (line: string) => void): { dispose(): unknown } {
     this.logMonitor = callback;
     return {
