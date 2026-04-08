@@ -239,7 +239,9 @@ function setUpdateCommandContext(context: vscode.ExtensionContext) {
     undefined;
   try {
     myPackagedJson = JSON.parse(
-      path.join(context.extensionPath, "package.json"),
+      fs.readFileSync(path.join(context.extensionPath, "package.json"), {
+        encoding: "utf8",
+      }),
     );
     if (!myPackagedJson) {
       return;

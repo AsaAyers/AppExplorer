@@ -172,7 +172,7 @@ export class MiroServer {
       });
 
       // Start listening on the port
-      this.httpServer.listen(port, () => {
+      this.httpServer.listen(port, "127.0.0.1", () => {
         debug("Server started successfully", { port });
         resolve();
       });

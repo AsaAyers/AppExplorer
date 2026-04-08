@@ -48,8 +48,8 @@ export async function createBrowserPage(
   blockSessionLinkCapture(false);
 
   const debugValue = process.env.DEBUG || "";
-  page.exposeBinding("getDebugNamespace", () => debugValue);
-  page.exposeFunction("captureBrowserLogs", (message: string) => {
+  await page.exposeBinding("getDebugNamespace", () => debugValue);
+  await page.exposeFunction("captureBrowserLogs", (message: string) => {
     // eslint-disable-next-line no-console
     console.log("[Browser Log]", message);
   });

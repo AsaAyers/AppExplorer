@@ -48,8 +48,8 @@ export class E2ETestUtils {
   static #logCapture: { getCapturedLogs: () => string[]; dispose: () => void };
 
   /**
-   * Get the test port from environment variable
-   * This should be called to get the port for server communication
+   * Instead of trying to make a test port work, the tests shut down the running
+   * server.
    */
   static getTestPort(): number {
     return 4092;

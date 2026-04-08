@@ -49,7 +49,7 @@ suiteFn("Create Card", function () {
     }
   });
 
-  test("Login on test board", async () => {
+  test("Login on test board", async function () {
     this.timeout(120000);
     invariant(page, "Page should be defined after setup");
     await openTestBoard(page);
@@ -72,7 +72,7 @@ suiteFn("Create Card", function () {
     });
 
     const cardTitleSelector = ".app-card--title";
-    sidebar
+    await sidebar
       .locator(appCardSelector)
       .locator(cardTitleSelector)
       .getByText(/callback$/)
@@ -92,7 +92,7 @@ suiteFn("Create Card", function () {
     const canvas = page.locator("#main-canvas");
 
     log("make card");
-    card.dragTo(canvas, {
+    await card.dragTo(canvas, {
       steps: 50,
       targetPosition: {
         x: pageWidthInPixels / 2,
@@ -104,12 +104,12 @@ suiteFn("Create Card", function () {
     const modal = getModal(page);
     // In VSCode, close the currently open file.
     log("close active editor");
-    vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
 
     // modal.getByLabel("Title").fill("Debounce Callback");
     await videoDelay("Jump to code");
     log("jump to code");
-    modal.getByRole("button", { name: "Jump To Code" }).click();
+    await modal.getByRole("button", { name: "Jump To Code" }).click();
 
     await waitFor(
       () => {
@@ -158,7 +158,9 @@ async function openTestBoard(page: Page) {
 
   const sidebar = getSidebar(page);
 
-  sidebar.getByText("Explore your code here").waitFor({ state: "visible" });
+  await sidebar
+    .getByText("Explore your code here")
+    .waitFor({ state: "visible" });
   await page.evaluate(zoomToTestFrame);
   await page.evaluate(cleanFrame);
 }

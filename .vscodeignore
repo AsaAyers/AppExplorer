@@ -4,6 +4,6 @@
 !public/**
 public/*.map
 !app-explorer.cjs
-!readme.md
+!README.md
 !LICENSE
 
