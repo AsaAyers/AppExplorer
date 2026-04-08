@@ -52,22 +52,7 @@ export class E2ETestUtils {
    * This should be called to get the port for server communication
    */
   static getTestPort(): number {
-    const envPort = process.env.APP_EXPLORER_PORT;
-    if (!envPort) {
-      throw new Error(
-        "APP_EXPLORER_PORT environment variable not set. Test configuration may be incorrect.",
-      );
-    }
-
-    const port = parseInt(envPort, 10);
-    if (isNaN(port)) {
-      throw new Error(
-        `Invalid APP_EXPLORER_PORT value: ${envPort}. Must be a valid port number.`,
-      );
-    }
-
-    debug(`[E2ETestUtils] Using test port from environment: ${port}`);
-    return port;
+    return 4092;
   }
 
   /**

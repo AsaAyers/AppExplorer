@@ -32,7 +32,19 @@ export type HandlerContext = {
   waitForConnections: () => Promise<void>;
 };
 
-export async function activate(context: vscode.ExtensionContext) {
+export type ExtensionApi = {
+  __watchOutput: (debugValue: string, callback: (line: string) => void) => void;
+  pauseServer: () => void;
+};
+
+declare global {
+  var extensionContext: vscode.ExtensionContext;
+}
+
+export async function activate(
+  context: vscode.ExtensionContext,
+): Promise<ExtensionApi> {
+  globalThis.extensionContext = context;
   logger.storeLogs(context.logUri);
   debug(CHECKPOINT.start("activate"));
   setUpdateCommandContext(context);
@@ -212,13 +224,33 @@ export async function activate(context: vscode.ExtensionContext) {
 
   debug(CHECKPOINT.done("activate"));
   return {
-    // IDK what to use this for, I just want to verify it works.
-    appExplorer: true,
+    pauseServer() {
+      serverLauncher.pauseServer();
+    },
+    __watchOutput(debugValue: string, callback: (line: string) => void) {
+      createDebug.enable(debugValue);
+
+      context.subscriptions.push(logger.monitor(callback));
+      debug(`Watching output ${debugValue}`);
+      callback(`Watching output ${debugValue}`);
+    },
   };
 }
 
 function setUpdateCommandContext(context: vscode.ExtensionContext) {
   let updateWorkspacePath: string | undefined = undefined;
+  let myPackagedJson: Awaited<typeof import("../package.json")> | undefined =
+    undefined;
+  try {
+    myPackagedJson = JSON.parse(
+      path.join(context.extensionPath, "package.json"),
+    );
+    if (!myPackagedJson) {
+      return;
+    }
+  } catch {
+    return;
+  }
   if (vscode.workspace.workspaceFolders) {
     for (const folder of vscode.workspace.workspaceFolders) {
       const packageJsonPath = path.join(folder.uri.fsPath, "package.json");
@@ -227,7 +259,11 @@ function setUpdateCommandContext(context: vscode.ExtensionContext) {
           const packageJson = JSON.parse(
             fs.readFileSync(packageJsonPath, "utf8"),
           );
-          if (packageJson.name === "app-explorer") {
+          if (
+            packageJson.name === myPackagedJson.name &&
+            packageJson.version === myPackagedJson.version &&
+            packageJson.publisher === myPackagedJson.publisher
+          ) {
             updateWorkspacePath = folder.uri.fsPath;
             MiroServer.publicPath = path.join(
               path.dirname(packageJsonPath),

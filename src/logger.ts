@@ -38,6 +38,21 @@ export class Logger {
     baseDebug.log = this.log;
   }
 
+  logMonitor: undefined | ((line: string) => void);
+  monitor(callback: (line: string) => void): { dispose(): unknown } {
+    this.logMonitor = callback;
+    return {
+      dispose: () => {
+        this.logMonitor = undefined;
+      },
+    };
+  }
+
+  appendLine(line: string) {
+    this.outputChannel.appendLine(line);
+    this.logMonitor?.(line);
+  }
+
   log = (message: unknown, ...args: unknown[]) => {
     const formatedMessage = formatWithOptions(
       { colors: false, compact: true, maxArrayLength: 10, sorted: true },

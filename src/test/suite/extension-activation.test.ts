@@ -53,30 +53,4 @@ suite("Extension Activation Tests", () => {
 
     debug("Extension activation test completed successfully");
   });
-
-  test("Extension context is available", async function () {
-    this.timeout(15000);
-
-    // Ensure extension is activated
-    const extension = vscode.extensions.getExtension("asa-ayers.app-explorer");
-    if (extension && !extension.isActive) {
-      await extension.activate();
-    }
-
-    // Test that the extension activated successfully and returned the expected result
-    assert.ok(extension, "Extension should be found");
-    assert.ok(extension?.isActive, "Extension should be active");
-
-    // Check that the activation result contains the expected properties
-    const activationResult = extension?.exports;
-    debug("Extension activation result:", activationResult);
-
-    // The extension should return an object with appExplorer: true
-    assert.ok(activationResult, "Extension should return activation result");
-    assert.strictEqual(
-      activationResult.appExplorer,
-      true,
-      "AppExplorer should be enabled",
-    );
-  });
 });

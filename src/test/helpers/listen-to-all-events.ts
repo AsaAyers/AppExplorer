@@ -1,4 +1,4 @@
-import * as EventEmitter from "events";
+import * as EventEmitter from "node:events";
 
 export function listenToAllEvents(
   ee: EventEmitter,

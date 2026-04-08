@@ -19,6 +19,7 @@ export class ServerLauncher {
   private featureFlagManager: FeatureFlagManager;
   subscriptions: { dispose: () => void }[] = [];
   #workspaceId: string;
+  server: MiroServer | undefined;
 
   constructor(
     featureFlagManager: FeatureFlagManager,
@@ -143,6 +144,11 @@ export class ServerLauncher {
 
     debug("Starting server launch", { serverUrl });
 
+    while (this.paused) {
+      debug("Server launch is paused, waiting...");
+      await delay(100);
+    }
+
     try {
       // Create and start server instance with proper error handling
       // Use the same port as ServerDiscovery for consistency
@@ -161,6 +167,7 @@ export class ServerLauncher {
       });
 
       this.subscriptions.push(server);
+      this.server = server;
       return {
         mode: "server",
         server,
@@ -208,5 +215,21 @@ export class ServerLauncher {
     this.serverDiscovery.dispose();
     this.subscriptions.forEach((subscription) => subscription.dispose());
     debug("ServerLauncher disposed");
+  }
+
+  paused = false;
+  pauseTimeout: NodeJS.Timeout | null = null;
+  pauseServer() {
+    debug("Pausing server launch for testing purposes");
+    this.paused = true;
+    if (this.pauseTimeout) {
+      clearTimeout(this.pauseTimeout);
+    }
+    this.pauseTimeout = setTimeout(() => {
+      debug("Automatically unpausing server launch after timeout");
+      this.paused = false;
+    }, 5000);
+    this.server?.dispose();
+    this.server = undefined;
   }
 }
