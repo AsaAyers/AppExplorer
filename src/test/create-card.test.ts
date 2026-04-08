@@ -14,7 +14,12 @@ import { launchBrowser, createBrowserPage } from "./helpers/browser";
 
 const log = createDebug("app-explorer:create-card-test");
 
-suite("Create Card", function () {
+const MIRO_TEST_EMAIL = process.env.MIRO_TEST_EMAIL ?? "";
+const MIRO_TEST_PASSWORD = process.env.MIRO_TEST_PASSWORD ?? "";
+
+const suiteFn = MIRO_TEST_EMAIL && MIRO_TEST_PASSWORD ? suite : suite.skip;
+
+suiteFn("Create Card", function () {
   let browser: Browser | undefined;
   let context: BrowserContext | undefined;
   let page: Page | undefined;
@@ -106,18 +111,23 @@ suite("Create Card", function () {
     log("jump to code");
     modal.getByRole("button", { name: "Jump To Code" }).click();
 
-    await waitFor(() => {
-      const activeEditor = vscode.window.activeTextEditor;
-      assert.ok(
-        activeEditor,
-        "There should be an active editor after clicking Jump To Code",
-      );
-      const activeFileName = activeEditor.document.fileName;
-      assert.ok(
-        activeFileName.endsWith("helpers.ts"),
-        `Active file should be helpers.ts, but got ${activeFileName}`,
-      );
-    });
+    await waitFor(
+      () => {
+        const activeEditor = vscode.window.activeTextEditor;
+        assert.ok(
+          activeEditor,
+          "There should be an active editor after clicking Jump To Code",
+        );
+        const activeFileName = activeEditor.document.fileName;
+        assert.ok(
+          activeFileName.endsWith("helpers.ts"),
+          `Active file should be helpers.ts, but got ${activeFileName}`,
+        );
+      },
+      {
+        timeout: 10000,
+      },
+    );
     log("assertions passed");
   });
 });
