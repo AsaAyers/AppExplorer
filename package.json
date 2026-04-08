@@ -2,7 +2,7 @@
   "name": "app-explorer",
   "displayName": "app-explorer",
   "description": "Helps build documentation while navigating through code",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "asa-ayers",
   "repository": "https://github.com/AsaAyers/AppExplorer",
   "engines": {
