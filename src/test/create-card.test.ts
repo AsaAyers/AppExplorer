@@ -61,7 +61,13 @@ suiteFn("Create Card", function () {
     });
 
     // move the cursor to where "func.apply" appears in the file
-    const position = doc.positionAt(doc.getText().indexOf("func.apply"));
+    const funcApplyIndex = doc.getText().indexOf("func.apply");
+    assert.notStrictEqual(
+      funcApplyIndex,
+      -1,
+      'Expected "func.apply" to exist in src/utils/helpers.ts',
+    );
+    const position = doc.positionAt(funcApplyIndex);
     helpersFile.selection = new vscode.Selection(position, position);
 
     const sidebar = getSidebar(page);
