@@ -15,10 +15,16 @@ export default function BackgroundClient() {
   const { isPaid } = useClientSession();
   const boardId = React.use(boardIdPromise);
 
-  React.useMemo(() => {
-    if (!disabled) {
-      return new BackgroundMiroHandler(isPaid, boardId);
+  React.useEffect(() => {
+    if (disabled) {
+      return;
     }
+
+    const handler = new BackgroundMiroHandler(isPaid, boardId);
+
+    return () => {
+      handler.dispose();
+    };
   }, [boardId, isPaid]);
 
   return <div>Miro opens this page in an invisible iframe</div>;
