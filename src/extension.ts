@@ -37,7 +37,6 @@ export async function activate(
 ): Promise<ExtensionApi> {
   globalThis.extensionContext = context;
   logger.storeLogs(context.logUri);
-  debug("activate");
   setUpdateCommandContext(context);
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", true);
 
@@ -167,7 +166,6 @@ export async function activate(
     setUpdateCommandContext(context);
   });
 
-  debug("activate done");
   return {
     __watchOutput(debugValue: string, callback: (line: string) => void) {
       createDebug.enable(debugValue);
