@@ -6,7 +6,6 @@ import { MemoryAdapter } from "./card-storage";
 import { makeAttachCardHandler } from "./commands/attach-card";
 import { makeNewCardHandler } from "./commands/create-card";
 import { makeDebugMockClientHandler } from "./commands/debug-mock-client";
-import { makeWorkspaceBoardHandler } from "./commands/manage-workspace-boards";
 import { makeNavigationHandler } from "./commands/navigate";
 import { makeRenameHandler } from "./commands/rename-board";
 import { makeTagCardHandler } from "./commands/tag-card";
@@ -187,10 +186,6 @@ export async function activate(
     vscode.commands.registerCommand(
       "app-explorer.renameBoard",
       makeRenameHandler(handlerContext),
-    ),
-    vscode.commands.registerCommand(
-      "app-explorer.manageWorkspaceBoards",
-      makeWorkspaceBoardHandler(handlerContext),
     ),
     vscode.commands.registerCommand(
       "app-explorer.launchMockMiroClient",
