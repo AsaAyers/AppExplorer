@@ -22,10 +22,15 @@ import { DemoFile } from "@demo/index";
 import * as vscode from "vscode";
 
 class Range {
+  public readonly start: vscode.Position;
+  public readonly end: vscode.Position;
   constructor(
-    public readonly start: vscode.Position,
-    public readonly end: vscode.Position,
-  ) {}
+    start: vscode.Position,
+    end: vscode.Position,
+  ) {
+    this.start = start;
+    this.end = end;
+  }
 
   contains(position: vscode.Position) {
     if (position.line < this.start.line || position.line > this.end.line) {
@@ -51,17 +56,27 @@ class Range {
 }
 
 class Position {
+  public readonly line: number;
+  public readonly character: number;
   constructor(
-    public readonly line: number,
-    public readonly character: number,
-  ) {}
+    line: number,
+    character: number,
+  ) {
+    this.line = line;
+    this.character = character;
+  }
 }
 
 class Selection {
+  public readonly anchor: Position;
+  public readonly active: Position;
   constructor(
-    public readonly anchor: Position,
-    public readonly active: Position,
-  ) {}
+    anchor: Position,
+    active: Position,
+  ) {
+    this.anchor = anchor;
+    this.active = active;
+  }
 
   get start() {
     return this.anchor;
@@ -490,7 +505,10 @@ export function resetFakeVSCodeAdapter() {
 
 class OutputChannel implements vscode.OutputChannel {
   #text = "";
-  constructor(public readonly name: string) {}
+  public readonly name: string;
+  constructor(name: string) {
+    this.name = name;
+  }
   append(value: string): void {
     this.#text += `${value}`;
   }

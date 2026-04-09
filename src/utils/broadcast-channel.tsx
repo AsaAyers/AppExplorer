@@ -17,8 +17,10 @@ export const log = debugLog(`channel`);
  */
 export class AppExplorerChannel implements Disposable {
   private channel: BroadcastChannel;
+  private boardId: string;
 
-  constructor(private boardId: string) {
+  constructor(boardId: string) {
+    this.boardId = boardId;
     this.channel = new BroadcastChannel(boardId);
     const pathname =
       typeof window !== "undefined" ? window.location.pathname : "node";

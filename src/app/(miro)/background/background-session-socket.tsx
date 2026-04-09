@@ -63,14 +63,18 @@ export class BackgroundSessionSocket extends AppEventHandler<"miroBackground"> {
 
   #cardsAroundCursor: CardData[] | null = [];
   #cardsAroundCursorPath = "";
+  private boardId: string;
+  public readonly channel: AppExplorerChannel;
   constructor(
     id: string,
     hexKey: string,
-    private boardId: string,
-    public readonly channel: AppExplorerChannel,
+    boardId: string,
+    channel: AppExplorerChannel,
     options: BrowserSessionSocketOptions = {},
   ) {
     super("miroBackground", "socket");
+    this.boardId = boardId;
+    this.channel = channel;
     this.id = id;
     this.miroAdapter = options.miroAdapter ?? getMiroAdapter();
     this.textLinks = this.miroAdapter.getCollection("textLinks");

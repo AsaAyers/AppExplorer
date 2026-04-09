@@ -12,7 +12,10 @@ import { debugLog } from "@/utils/debug-log";
 const log = debugLog("location-finder");
 
 export class LocationFinder {
-  constructor(protected vscode: VSCodeAdapter) {}
+  protected vscode: VSCodeAdapter;
+  constructor(vscode: VSCodeAdapter) {
+    this.vscode = vscode;
+  }
   async findSymbolsInDocument(uri: UriType): Promise<Array<SymbolAnchor>> {
     const symbols =
       (await this.vscode.executeCommand<

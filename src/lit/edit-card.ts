@@ -107,7 +107,7 @@ export class EditCardElement extends AppElement {
         miro.board.ui.closeModal();
       }
     } catch (error) {
-      debug.error("AppExplorer: Error opening app card", error);
+      debug("AppExplorer: Error opening app card", error);
     }
   };
 

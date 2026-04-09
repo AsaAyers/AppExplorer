@@ -59,16 +59,18 @@ export class WorkspaceHandler extends AppEventHandler<"workspace"> {
   vscodeAdapter: VSCodeAdapter;
   private readonly resolveRelativePath: ResolveRelativePath;
   private readonly resolveGitHubUrl: ResolveGitHubUrl;
+  private hexKey: string;
 
   constructor(
     sessionId: string,
-    private hexKey: string,
+    hexKey: string,
     isDev: boolean,
     cardStorage: WorkspaceCardStorage,
     locationFinder: Pick<LocationFinder, "findCardDestination">,
     options: WorkspaceSessionSocketOptions = {},
   ) {
     super("workspace", "socket");
+    this.hexKey = hexKey;
     this.baseUrl = isDev
       ? "https://dev.appexplorer.dev"
       : "https://appexplorer.dev";

@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 
 export class FakeUri {
-  constructor(public fsPath: string) {}
+  public fsPath: string;
+  constructor(fsPath: string) {
+    this.fsPath = fsPath;
+  }
   public static parse(location: string) {
     return new FakeUri(location) as unknown as vscode.Uri;
   }

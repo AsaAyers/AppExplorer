@@ -28,7 +28,9 @@ const log = debugLog("miro-adapter:fake");
 
 export class FakeMiroAdapter implements MiroAdapter {
   private adapterChannel = new BroadcastChannel("miroAdapter");
-  constructor(private boardId = "board-test") {
+  private boardId: string;
+  constructor(boardId = "board-test") {
+    this.boardId = boardId;
     this.onDrop(this.syncSend);
     this.onItemsDelete(this.syncSend);
     this.onItemsUpdate(this.syncSend);
@@ -440,10 +442,12 @@ export class FakeAppCard implements FakeCardData {
   height: number;
   fields?: [];
   metadata?: Map<string, unknown>;
+  private miroAdapter: FakeMiroAdapter;
   constructor(
-    private miroAdapter: FakeMiroAdapter,
+    miroAdapter: FakeMiroAdapter,
     data: FakeCardData,
   ) {
+    this.miroAdapter = miroAdapter;
     this.id = data.id;
     this.type = data.type;
     this.status = data.status;
@@ -509,10 +513,12 @@ export class FakeText implements FakeTextData {
   height: number;
   x: number;
   y: number;
+  private miroAdapter: FakeMiroAdapter;
   constructor(
-    private miroAdapter: FakeMiroAdapter,
+    miroAdapter: FakeMiroAdapter,
     data: FakeTextData,
   ) {
+    this.miroAdapter = miroAdapter;
     this.id = data.id;
     this.type = data.type;
     this.content = data.content;

@@ -73,14 +73,16 @@ export abstract class AppEventHandler<
     return undefined as EventResult<EventFrom<Target, EventName>>;
   }
 
+  protected target: Target;
   protected channel?: AppExplorerChannel;
   protected socket?: NamedSocket<Target>;
   protected log: ReturnType<typeof debugLog>;
 
   constructor(
-    protected target: Target,
+    target: Target,
     transport: Transport,
   ) {
+    this.target = target;
     this.log = debugLog(`handler:${target}:${transport}`);
   }
 

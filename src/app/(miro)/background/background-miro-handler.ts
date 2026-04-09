@@ -45,12 +45,17 @@ export class BackgroundMiroHandler extends AppEventHandler<
   session: BackgroundSessionSocket | null = null;
   cardsAroundCursor = { cards: [] as CardData[] | null, path: "" };
 
+  private boardId: string;
+  private options: BackgroundMiroOptions;
+
   constructor(
     isPaid: boolean,
-    private boardId: string,
-    private options: BackgroundMiroOptions = {},
+    boardId: string,
+    options: BackgroundMiroOptions = {},
   ) {
     super("miroBackground", "channel");
+    this.boardId = boardId;
+    this.options = options;
     this.isPaid = isPaid;
     this.miroAdapter = options.miroAdapter ?? getMiroAdapter();
     this.channel = new AppExplorerChannel(boardId);
