@@ -3,7 +3,6 @@ import path from "node:path";
 import * as vscode from "vscode";
 import { AppExplorerLens } from "./app-explorer-lens";
 import { MemoryAdapter } from "./card-storage";
-import { makeAttachCardHandler } from "./commands/attach-card";
 import { makeNewCardHandler } from "./commands/create-card";
 import { makeDebugMockClientHandler } from "./commands/debug-mock-client";
 import { makeNavigationHandler } from "./commands/navigate";
@@ -172,10 +171,6 @@ export async function activate(
     vscode.commands.registerCommand(
       "app-explorer.createCard",
       makeNewCardHandler(handlerContext),
-    ),
-    vscode.commands.registerCommand(
-      "app-explorer.attachCard",
-      makeAttachCardHandler(handlerContext),
     ),
     vscode.commands.registerCommand(
       "app-explorer.launchMockMiroClient",
