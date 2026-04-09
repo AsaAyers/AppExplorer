@@ -7,7 +7,6 @@ import { makeAttachCardHandler } from "./commands/attach-card";
 import { makeNewCardHandler } from "./commands/create-card";
 import { makeDebugMockClientHandler } from "./commands/debug-mock-client";
 import { makeNavigationHandler } from "./commands/navigate";
-import { makeTagCardHandler } from "./commands/tag-card";
 import { registerUpdateCommand } from "./commands/update-extension";
 import { EditorDecorator } from "./editor-decorator";
 import { FeatureFlagManager } from "./feature-flag-manager";
@@ -177,10 +176,6 @@ export async function activate(
     vscode.commands.registerCommand(
       "app-explorer.attachCard",
       makeAttachCardHandler(handlerContext),
-    ),
-    vscode.commands.registerCommand(
-      "app-explorer.tagCard",
-      makeTagCardHandler(handlerContext),
     ),
     vscode.commands.registerCommand(
       "app-explorer.launchMockMiroClient",

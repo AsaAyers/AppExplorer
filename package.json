@@ -39,10 +39,6 @@
         "title": "AppExplorer: Attach Card to Code"
       },
       {
-        "command": "app-explorer.tagCard",
-        "title": "AppExplorer: Tag Selected Cards"
-      },
-      {
         "command": "app-explorer.navigate",
         "title": "AppExplorer: Navigate to Card"
       },
@@ -89,10 +85,6 @@
         },
         {
           "command": "app-explorer.attachCard",
-          "when": "appExplorer.enabled"
-        },
-        {
-          "command": "app-explorer.tagCard",
           "when": "appExplorer.enabled"
         },
         {
