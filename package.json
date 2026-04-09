@@ -59,10 +59,6 @@
         "title": "AppExplorer: Navigate to Card"
       },
       {
-        "command": "app-explorer.connect",
-        "title": "AppExplorer: Start Local Miro Server"
-      },
-      {
         "command": "app-explorer.updateExtension",
         "title": "AppExplorer: Update Extension"
       },
@@ -126,10 +122,6 @@
         {
           "command": "app-explorer.navigate",
           "when": "appExplorer.enabled"
-        },
-        {
-          "command": "app-explorer.connect",
-          "when": "!appExplorer.enabled"
         },
         {
           "command": "app-explorer.updateExtension",
