@@ -43,10 +43,6 @@
         "title": "AppExplorer: Tag Selected Cards"
       },
       {
-        "command": "app-explorer.renameBoard",
-        "title": "AppExplorer: Rename Board"
-      },
-      {
         "command": "app-explorer.navigate",
         "title": "AppExplorer: Navigate to Card"
       },
@@ -97,10 +93,6 @@
         },
         {
           "command": "app-explorer.tagCard",
-          "when": "appExplorer.enabled"
-        },
-        {
-          "command": "app-explorer.renameBoard",
           "when": "appExplorer.enabled"
         },
         {
