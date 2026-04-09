@@ -163,12 +163,6 @@ export async function activate(
   }
 
   context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "app-explorer.internal.logFile",
-      (DEBUG: string) => {
-        return baseLogger.getLogFile(DEBUG);
-      },
-    ),
     new EditorDecorator(handlerContext),
     vscode.languages.registerCodeLensProvider(
       { scheme: "file" },

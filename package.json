@@ -35,10 +35,6 @@
         "title": "AppExplorer: Create Card"
       },
       {
-        "command": "app-explorer.internal.logFile",
-        "title": "AppExplorer: [INTERNAL] Get Log File Path"
-      },
-      {
         "command": "app-explorer.attachCard",
         "title": "AppExplorer: Attach Card to Code"
       },
@@ -98,10 +94,6 @@
         {
           "command": "app-explorer.createCard",
           "when": "appExplorer.enabled"
-        },
-        {
-          "command": "app-explorer.internal.logFile",
-          "when": "app-explorer.never"
         },
         {
           "command": "app-explorer.attachCard",
