@@ -16,7 +16,6 @@ import { MiroServer } from "./server/server";
 import { StatusBarManager } from "./status-bar-manager";
 import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
 import { createDebug } from "./utils/create-debug";
-import { CHECKPOINT } from "./utils/log-checkpoint";
 import { WorkspaceCardStorage } from "./workspace-card-storage";
 const debug = createDebug("app-explorer:extension");
 export type HandlerContext = {
@@ -38,7 +37,7 @@ export async function activate(
 ): Promise<ExtensionApi> {
   globalThis.extensionContext = context;
   logger.storeLogs(context.logUri);
-  debug(CHECKPOINT.start("activate"));
+  debug("activate");
   setUpdateCommandContext(context);
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", true);
 
@@ -168,7 +167,7 @@ export async function activate(
     setUpdateCommandContext(context);
   });
 
-  debug(CHECKPOINT.done("activate"));
+  debug("activate done");
   return {
     __watchOutput(debugValue: string, callback: (line: string) => void) {
       createDebug.enable(debugValue);

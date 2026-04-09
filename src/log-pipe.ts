@@ -5,8 +5,6 @@ import * as net from "net";
 import * as path from "path";
 import * as readline from "readline";
 import invariant from "tiny-invariant";
-import { checkpointRegex } from "./utils/log-checkpoint";
-
 type ReaderDisposer = {
   dispose: () => void;
 };
@@ -303,26 +301,6 @@ export class LogPipe {
       this.subscriptions.push(disposeServer);
       this.winReaderCleanup = disposeServer;
     }
-  }
-
-  /**
-   * Capture logs starting after an optional precondition is met.
-   */
-  async capture(): Promise<{
-    getCapturedLogs: () => string[];
-    dispose: () => void;
-  }> {
-    const captured: string[] = [];
-    const disposer = await this.getReader((line) => {
-      if (line.match(checkpointRegex)) {
-        captured.push(line);
-      }
-    });
-
-    return {
-      getCapturedLogs: () => [...captured],
-      dispose: () => disposer.dispose(),
-    };
   }
 
   /**
