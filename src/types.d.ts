@@ -4,8 +4,17 @@ declare module "*?raw" {
   export default content;
 }
 
-namespace debug {
-  interface Debugger {
-    error: (...args: unknown[]) => void;
-  }
+declare module "*.png" {
+  const content: string;
+  export default content;
+}
+declare module "*.txt" {
+  const content: string;
+  export default content;
+}
+
+declare module "*.svg" {
+  import type { StaticImageData } from "next/image";
+  const src: StaticImageData;
+  export default src;
 }

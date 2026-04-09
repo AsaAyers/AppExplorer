@@ -3,6 +3,9 @@ import { BoardInfo, CardStorage } from "./card-storage";
 import { WorkspaceServerSocket } from "./server/server";
 
 export type SymbolCardData = {
+  id: string;
+  x: number;
+  y: number;
   boardId: string;
   type: "symbol";
   title: string;

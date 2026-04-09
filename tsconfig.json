@@ -17,7 +17,7 @@
     "module": "commonjs",
     "target": "ES2022",
     "noEmit": true,
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2023", "DOM"],
     "sourceMap": true,
     "strict": true,
     "checkJs": true,
@@ -33,9 +33,14 @@
     "skipLibCheck": true /* Skip type checking of declaration files. */,
     "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
     "incremental": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
     "isolatedModules": true,
     "jsx": "react-jsx",
+    "paths": {
+      "@demo/*": ["./src/app/(website)/demo/demo-text-files/*"],
+      "@public/*": ["./public/*"],
+      "@/*": ["./src/*"]
+    },
     "plugins": [
       {
         "name": "next"

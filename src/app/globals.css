@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  --grass-h: 93;
+  --grass-s: 44%;
+  --grass-l: 35%;
+  --mountain-h: 355;
+  --mountain-s: 100%;
+  --mountain-l: 38%;
+  --path-h: 49;
+  --path-s: 18%;
+  --path-l: 42%;
+  --sun-h: 42;
+  --sun-s: 100%;
+  --sun-l: 50%;
+  --water-h: 196;
+  --water-s: 50%;
+  --water-l: 40%;
+
+  /*
+   * Surface scale usage:
+   * - surface-1: Page/base canvas and large section backgrounds.
+   * - surface-2: Raised containers such as cards, panels, and grouped blocks.
+   * - surface-3: Highest neutral emphasis (hovered cards, selected rows, pressed/active neutral states).
+    * Keep text contrast stable by pairing text with on-surface-{1,2,3} tokens.
+   */
+  --surface-h: 49;
+  --surface-s: 18%;
+  --surface-1-l: 97%;
+  --surface-2-l: 94%;
+  --surface-3-l: 90%;
+
+  --text-muted-h: 49;
+  --text-muted-s: 8%;
+  --text-muted-l: 38%;
+  --text-subtle-h: 49;
+  --text-subtle-s: 7%;
+  --text-subtle-l: 47%;
+}
+
+@theme inline {
+  --color-grass: hsl(var(--grass-h), var(--grass-s), var(--grass-l));
+  --color-mountain: hsl(
+    var(--mountain-h),
+    var(--mountain-s),
+    var(--mountain-l)
+  );
+  --color-path: hsl(var(--path-h), var(--path-s), var(--path-l));
+  --color-sun: hsl(var(--sun-h), var(--sun-s), var(--sun-l));
+  --color-water: hsl(var(--water-h), var(--water-s), var(--water-l));
+
+  /* Neutral semantic surfaces consumed via bg-surface-{1,2,3}. */
+  --color-surface-1: hsl(
+    var(--surface-h),
+    var(--surface-s),
+    var(--surface-1-l)
+  );
+  --color-surface-2: hsl(
+    var(--surface-h),
+    var(--surface-s),
+    var(--surface-2-l)
+  );
+  --color-surface-3: hsl(
+    var(--surface-h),
+    var(--surface-s),
+    var(--surface-3-l)
+  );
+
+  --color-primary: var(--color-grass);
+  --color-secondary: var(--color-water);
+  --color-borders: var(--color-path);
+  --color-attention: var(--color-mountain);
+
+  --color-primary-foreground: hsl(var(--grass-h), var(--grass-s), 90%);
+  --color-primary-hover: hsl(
+    var(--grass-h) var(--grass-s) calc(var(--grass-l) - 10%)
+  );
+  --color-primary-muted: hsl(
+    var(--grass-h) calc(var(--grass-s) - 30%) calc(var(--grass-l) + 10%)
+  );
+
+  --color-secondary-foreground: hsl(var(--water-h), var(--water-s), 90%);
+  --color-secondary-emphasis: hsl(
+    var(--water-h) var(--water-s) calc(var(--water-l) - 18%)
+  );
+  --color-secondary-hover: hsl(
+    var(--water-h) var(--water-s) calc(var(--water-l) - 10%)
+  );
+  --color-secondary-muted: hsl(
+    var(--water-h) calc(var(--water-s) - 30%) calc(var(--water-l) + 10%)
+  );
+
+  --color-sun-foreground: hsl(var(--sun-h), var(--sun-s), 90%);
+  --color-sun-hover: hsl(var(--sun-h) var(--sun-s) calc(var(--sun-l) - 10%));
+  --color-sun-muted: hsl(
+    var(--sun-h) calc(var(--sun-s) - 30%) calc(var(--sun-l) + 10%)
+  );
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-text-muted: hsl(
+    var(--text-muted-h),
+    var(--text-muted-s),
+    var(--text-muted-l)
+  );
+  --color-text-subtle: hsl(
+    var(--text-subtle-h),
+    var(--text-subtle-s),
+    var(--text-subtle-l)
+  );
+  --color-inverse-surface: hsl(var(--grass-h), calc(var(--grass-s) - 8%), 22%);
+  --color-inverse-foreground: hsl(
+    var(--grass-h),
+    calc(var(--grass-s) - 20%),
+    94%
+  );
+
+  /*
+   * On-color tokens: use text-on-* to ensure readable text against each bg-* role.
+   * Example pairings: bg-surface-2 + text-on-surface-2, bg-secondary-muted + text-on-secondary-muted.
+   */
+  /* contrast: 17.93 on --color-background */
+  --color-on-background: var(--color-foreground);
+  /* contrast: 16.89 on --color-surface-1 */
+  --color-on-surface-1: var(--color-foreground);
+  /* contrast: 6.41 on --color-surface-1 */
+  --color-on-surface-1-quiet: #5b5b5a;
+  /* contrast: 6.92 on --color-surface-1 */
+  --color-on-surface-1-normal: #565655;
+  /* contrast: 8.49 on --color-surface-1 */
+  --color-on-surface-1-strong: #494948;
+  /* contrast: 4.51 on --color-surface-2 */
+  --color-on-surface-2: #307690;
+  /* contrast: 4.54 on --color-surface-2 */
+  --color-on-surface-2-quiet: #4f7380;
+  /* contrast: 4.52 on --color-surface-2 */
+  --color-on-surface-2-normal: #497484;
+  /* contrast: 4.54 on --color-surface-2 */
+  --color-on-surface-2-strong: #457486;
+  /* contrast: 14.62 on --color-surface-3 */
+  --color-on-surface-3: var(--color-foreground);
+  /* contrast: 4.50 on --color-primary */
+  --color-on-primary: #fcfdfb;
+  /* contrast: 4.52 on --color-primary-muted */
+  --color-on-primary-muted: #121411;
+  /* contrast: 4.52 on --color-secondary */
+  --color-on-secondary: #fcfefe;
+  /* contrast: 4.51 on --color-secondary-muted */
+  --color-on-secondary-muted: #0e2129;
+  /* contrast: 4.54 on --color-sun */
+  --color-on-sun: #544f44;
+  /* contrast: 5.96 on --color-sun-muted */
+  --color-on-sun-muted: hsl(var(--sun-h), calc(var(--sun-s) - 70%), 20%);
+  /* contrast: 5.77 on --color-attention */
+  --color-on-attention: hsl(var(--mountain-h), 16%, 96%);
+  /* contrast: 8.44 on --color-inverse-surface */
+  --color-on-inverse-surface: var(--color-inverse-foreground);
+
+  --shadow-surface-1:
+    0 1px 2px hsl(var(--surface-h) 18% 14% / 0.08),
+    0 6px 18px hsl(var(--surface-h) 18% 14% / 0.06);
+  --shadow-surface-2:
+    0 2px 5px hsl(var(--surface-h) 18% 14% / 0.1),
+    0 12px 28px hsl(var(--surface-h) 18% 14% / 0.09);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.twgrid {
+  display: grid;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.app-card {
+  & .app-card-arrow {
+    opacity: 0;
+    right: -1rem;
+    color: black;
+    top: 50%;
+
+    & svg {
+      position: absolute;
+      right: -16;
+      height: 36px;
+      width: 56px;
+      top: -18px;
+    }
+  }
+
+  &.is-selected[data-attach-selected="true"] .app-card-arrow {
+    opacity: 100;
+    right: unset;
+    left: -1rem;
+  }
+}
+
+.demo-grid {
+  grid-template-rows: 5em auto;
+}
+
+#demo-cards.has-selection
+  .app-card[data-attach-selected="true"]
+  .app-card-arrow {
+  opacity: 100;
+}
