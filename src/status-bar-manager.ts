@@ -19,7 +19,6 @@ export class StatusBarManager {
       vscode.StatusBarAlignment.Right,
       100,
     );
-    this.statusBar.command = "app-explorer.browseCards";
     debug("Setup status bar");
 
     // Create event listener functions that can be removed later

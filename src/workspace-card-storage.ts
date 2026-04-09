@@ -1,11 +1,10 @@
 import { Socket, io as socketIO } from "socket.io-client";
 import * as vscode from "vscode";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
-import { goToCardCode } from "./commands/browse";
 import { CardData, WorkspaceRegistrationRequest } from "./EventTypes";
 import { getGitHubUrl } from "./get-github-url";
 import { EventsFrom, EventsTo, RoutedEvents } from "./socket-events";
-import { HandlerContext } from "./extension";
+import { HandlerContext, selectRangeInEditor } from "./extension";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -260,4 +259,29 @@ export class WorkspaceCardStorage
     });
     return status === "connected";
   };
+}
+
+async function goToCardCode(
+  context: Pick<HandlerContext, "locationFinder">,
+  card: CardData,
+  preview = false,
+) {
+  const symbol = await context.locationFinder.findCardDestination(card);
+
+  if (symbol && "range" in symbol) {
+    const editor = await vscode.window.showTextDocument(symbol.uri, {
+      preview,
+      preserveFocus: preview,
+    });
+    selectRangeInEditor(symbol.range, editor);
+    return true;
+  } else if (symbol) {
+    await vscode.window.showTextDocument(symbol, {
+      preview,
+      preserveFocus: preview,
+    });
+    return false;
+  }
+  vscode.window.showWarningMessage(`Unable to open ${card.path}`);
+  return false;
 }

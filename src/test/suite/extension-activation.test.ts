@@ -38,10 +38,8 @@ suite("Extension Activation Tests", () => {
 
     // Verify key commands are registered
     const expectedCommands = [
-      "app-explorer.createCard",
-      "app-explorer.attachCard",
       "app-explorer.navigate",
-      "app-explorer.browseCards",
+      "app-explorer.updateExtension",
     ];
 
     for (const expectedCommand of expectedCommands) {

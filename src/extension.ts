@@ -4,7 +4,6 @@ import * as vscode from "vscode";
 import { AppExplorerLens } from "./app-explorer-lens";
 import { MemoryAdapter } from "./card-storage";
 import { makeAttachCardHandler } from "./commands/attach-card";
-import { makeBrowseHandler } from "./commands/browse";
 import { makeNewCardHandler } from "./commands/create-card";
 import { makeDebugMockClientHandler } from "./commands/debug-mock-client";
 import { makeWorkspaceBoardHandler } from "./commands/manage-workspace-boards";
@@ -185,10 +184,6 @@ export async function activate(
     vscode.commands.registerCommand(
       "app-explorer.navigate",
       makeNavigationHandler(handlerContext),
-    ),
-    vscode.commands.registerCommand(
-      "app-explorer.browseCards",
-      makeBrowseHandler(handlerContext),
     ),
     vscode.commands.registerCommand(
       "app-explorer.createCard",
