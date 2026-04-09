@@ -6,10 +6,10 @@ import React from "react";
 
 import Loading from "@/app/(miro)/loading";
 import { CardsAroundCursor } from "@/components/cards-around-cursor";
-import { useChannelData } from "@/lib/broadcast-channel";
-import { debugLog } from "@/lib/debug-log";
-import { useForegroundMiro } from "@/lib/foreground-miro-handler";
-import { randomHex } from "@/lib/to-hex";
+import { useChannelData } from "@/utils/broadcast-channel";
+import { debugLog } from "@/utils/debug-log";
+import { useForegroundMiro } from "@/utils/foreground-miro-handler";
+import { randomHex } from "@/utils/to-hex";
 
 const log = debugLog("app-explorer:sidebar:create");
 const installUrl =

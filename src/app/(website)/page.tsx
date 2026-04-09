@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import appExplorerLogo from "@/assets/logo/app-explorer.svg";
-import { routeMetrics } from "@/lib/metrics";
+import { routeMetrics } from "@/utils/metrics";
 
 export const metadata: Metadata = {
   title: "Public Preview",

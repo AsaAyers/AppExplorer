@@ -3,7 +3,7 @@
 import React from "react";
 
 import Loading from "@/app/(miro)/loading";
-import { getMiroAdapter } from "@/lib/miro/adapter";
+import { getMiroAdapter } from "@/utils/miro/adapter";
 
 export default function AuthDonePage() {
   React.useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useForegroundMiro } from "@/lib/foreground-miro-handler";
+import { useForegroundMiro } from "@/utils/foreground-miro-handler";
 
 export function UpgradeButton() {
   const foreground = useForegroundMiro();

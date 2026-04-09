@@ -3,7 +3,7 @@ import React from "react";
 
 import { useDemoSession } from "@/app/(website)/demo/useDemoSession";
 import { CardsAroundCursor } from "@/components/cards-around-cursor";
-import { useForegroundMiro } from "@/lib/foreground-miro-handler";
+import { useForegroundMiro } from "@/utils/foreground-miro-handler";
 
 export default function CardsAroundCursorPage() {
   const [{ sessionId, sessionHexKey }] = useDemoSession();

@@ -23,3 +23,5 @@ app-explorer.cjs.map
 screenshots/
 *.png
 .next/
+code.deb
+*.tsbuildinfo

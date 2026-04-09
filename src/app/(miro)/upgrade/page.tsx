@@ -2,9 +2,9 @@
 
 import invariant from "tiny-invariant";
 
-import { isPaid } from "@/lib/is-paid";
-import prisma from "@/lib/prisma";
-import { readSession } from "@/lib/session";
+import { isPaid } from "@/utils/is-paid";
+import prisma from "@/utils/prisma";
+import { readSession } from "@/utils/session";
 
 export async function setPaid() {
   const { userId } = await readSession();

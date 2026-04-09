@@ -3,9 +3,9 @@ import type { NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 
 import { delay } from "@/extension/utils/delay";
-import { debugLog } from "@/lib/debug-log";
-import initMiroAPI from "@/lib/init-miro-api";
-import { readSession } from "@/lib/session";
+import { debugLog } from "@/utils/debug-log";
+import initMiroAPI from "@/utils/init-miro-api";
+import { readSession } from "@/utils/session";
 
 const log = debugLog("app-explorer:redirect");
 

@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 
-import { getOrigin } from "@/lib/get-origin";
-import { updateSession } from "@/lib/session";
+import { getOrigin } from "@/utils/get-origin";
+import { updateSession } from "@/utils/session";
 
 export async function GET(req: NextRequest) {
   const path = req.nextUrl.searchParams.get("path");

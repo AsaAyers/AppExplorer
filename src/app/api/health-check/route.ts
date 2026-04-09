@@ -1,5 +1,5 @@
-import { debugLog } from "@/lib/debug-log";
-import prisma from "@/lib/prisma";
+import { debugLog } from "@/utils/debug-log";
+import prisma from "@/utils/prisma";
 
 const log = debugLog("app-explorer:health-check");
 

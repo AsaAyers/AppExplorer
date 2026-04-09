@@ -2,7 +2,7 @@
 import React from "react";
 
 import { BackgroundMiroHandler } from "@/app/(miro)/background/background-miro-handler";
-import { getMiroAdapter } from "@/lib/miro/adapter";
+import { getMiroAdapter } from "@/utils/miro/adapter";
 
 const miro = getMiroAdapter({ forceFake: true });
 const boardIdPromise = miro.getBoardId();

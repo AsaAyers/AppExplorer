@@ -6,11 +6,11 @@ import invariant from "tiny-invariant";
 
 import { AppExplorerCard } from "@/components/app-explorer-card";
 import { CardData } from "@/extension/types";
-import { useChannelData } from "@/lib/broadcast-channel";
-import { debugLog } from "@/lib/debug-log";
-import { isAppCard } from "@/lib/is-app-card";
-import { getMiroAdapter, MiroAdapter } from "@/lib/miro/adapter";
-import { updateCard } from "@/lib/update-card";
+import { useChannelData } from "@/utils/broadcast-channel";
+import { debugLog } from "@/utils/debug-log";
+import { isAppCard } from "@/utils/is-app-card";
+import { getMiroAdapter, MiroAdapter } from "@/utils/miro/adapter";
+import { updateCard } from "@/utils/update-card";
 
 const log = debugLog("app-explorer:card-page");
 

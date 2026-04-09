@@ -1,8 +1,8 @@
 "use server";
 
-import { debugLog } from "@/lib/debug-log";
-import initMiroAPI from "@/lib/init-miro-api";
-import { createWebsocketKey, readSession } from "@/lib/session";
+import { debugLog } from "@/utils/debug-log";
+import initMiroAPI from "@/utils/init-miro-api";
+import { createWebsocketKey, readSession } from "@/utils/session";
 
 const log = debugLog("app-explorer:client-session-action");
 export type ClientSession = {

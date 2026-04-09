@@ -3,7 +3,7 @@ import classNames from "classnames";
 import React from "react";
 
 import { CardData } from "@/extension/types";
-import { distance } from "@/lib/distance";
+import { distance } from "@/utils/distance";
 
 export function DistanceToCard({
   className,

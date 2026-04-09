@@ -5,7 +5,7 @@ import React from "react";
 
 import { ClientSessionProvider } from "@/components/client-session";
 import { getClientSessionAction } from "@/components/client-session-action";
-import { ProvideChannelContext } from "@/lib/broadcast-channel";
+import { ProvideChannelContext } from "@/utils/broadcast-channel";
 
 export const dynamic = "force-dynamic";
 

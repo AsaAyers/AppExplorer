@@ -7,9 +7,9 @@ import React from "react";
 import { DistanceToCard } from "@/app/(miro)/sidebar/list/distance-to-card";
 import { AppExplorerCard } from "@/components/app-explorer-card";
 import { CardData } from "@/extension/types";
-import { debugLog } from "@/lib/debug-log";
-import { useForegroundMiro } from "@/lib/foreground-miro-handler";
-import { getMiroAdapter } from "@/lib/miro/adapter";
+import { debugLog } from "@/utils/debug-log";
+import { useForegroundMiro } from "@/utils/foreground-miro-handler";
+import { getMiroAdapter } from "@/utils/miro/adapter";
 
 const log = debugLog("app-explorer:list");
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import invariant from "tiny-invariant";
 
-import { getOrigin } from "@/lib/get-origin";
+import { getOrigin } from "@/utils/get-origin";
 
 export async function GET(
   req: NextRequest,

@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 
-import { decrypt } from "@/lib/crypto";
+import { decrypt } from "@/utils/crypto";
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);

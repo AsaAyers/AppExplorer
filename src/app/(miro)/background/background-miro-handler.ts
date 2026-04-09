@@ -13,16 +13,16 @@ import {
 import { AppEventHandler } from "@/extension/app-event-handler";
 import { AppEventUnion, CardData } from "@/extension/types";
 import { delay } from "@/extension/utils/delay";
-import { AppExplorerChannel } from "@/lib/broadcast-channel";
-import { debugLog } from "@/lib/debug-log";
+import { AppExplorerChannel } from "@/utils/broadcast-channel";
+import { debugLog } from "@/utils/debug-log";
 import {
   extractCardData,
   extractCardDataWithAdapter,
-} from "@/lib/extract-card-data";
-import { isAppCard } from "@/lib/is-app-card";
-import { getMiroAdapter, MiroAdapter } from "@/lib/miro/adapter";
-import { toCardSelectedSocketEvent } from "@/lib/miro/contracts";
-import { updateCard } from "@/lib/update-card";
+} from "@/utils/extract-card-data";
+import { isAppCard } from "@/utils/is-app-card";
+import { getMiroAdapter, MiroAdapter } from "@/utils/miro/adapter";
+import { toCardSelectedSocketEvent } from "@/utils/miro/contracts";
+import { updateCard } from "@/utils/update-card";
 
 const log = debugLog("handler:background");
 

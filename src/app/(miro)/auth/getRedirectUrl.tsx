@@ -1,8 +1,8 @@
 "use server";
 import invariant from "tiny-invariant";
 
-import initMiroAPI from "@/lib/init-miro-api";
-import { readSession } from "@/lib/session";
+import initMiroAPI from "@/utils/init-miro-api";
+import { readSession } from "@/utils/session";
 
 export async function getRedirectUrl() {
   const { miro } = await initMiroAPI();

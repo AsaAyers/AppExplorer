@@ -7,10 +7,10 @@ import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import { SocketEvent, zEncryptedEvent } from "@/extension/app-events";
-import { decrypt } from "@/lib/crypto";
-import { debugLog } from "@/lib/debug-log";
-import { EncryptableMiroState, MIRO_COOKIE } from "@/lib/init-miro-api";
-import { eventMetrics, sessionMetrics } from "@/lib/metrics";
+import { decrypt } from "@/utils/crypto";
+import { debugLog } from "@/utils/debug-log";
+import { EncryptableMiroState, MIRO_COOKIE } from "@/utils/init-miro-api";
+import { eventMetrics, sessionMetrics } from "@/utils/metrics";
 
 const log = debugLog("sockets:main");
 const SESSION_NAMESPACE_REGEX = /^\/session\/[a-f0-9]{32}$/i;

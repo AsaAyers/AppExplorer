@@ -15,7 +15,7 @@ import {
   installMiroApp,
 } from "@/app/(website)/install-buttons";
 import appExplorerLogo from "@/assets/logo/app-explorer.svg";
-import { debugLog } from "@/lib/debug-log";
+import { debugLog } from "@/utils/debug-log";
 
 const log = debugLog("app-explorer:demo2:layout");
 

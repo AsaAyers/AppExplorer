@@ -1,0 +1,30 @@
+FROM docker/sandbox-templates:copilot AS base
+
+
+FROM base AS deps
+USER root
+RUN apt update && apt install -y ca-certificates curl gnupg
+RUN install -m 0755 -d /etc/apt/keyrings \
+	&& curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+	&& chmod a+r /etc/apt/keyrings/nodesource.gpg \
+	&& echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
+	&& apt update \
+	&& apt install -y nodejs
+
+COPY code.deb /tmp/code.deb
+RUN apt install -y /tmp/code.deb
+RUN corepack enable yarn
+RUN npx playwright install --with-deps chromium
+
+# USER agent
+# WORKDIR /home/agent/workspace
+# COPY package.json yarn.lock ./
+# RUN yarn install --frozen-lockfile
+
+
+FROM deps AS runner
+USER agent
+# WORKDIR /home/agent/workspace
+# COPY . .
+# COPY --from=deps /home/agent/workspace/node_modules ./node_modules
+

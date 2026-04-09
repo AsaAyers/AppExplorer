@@ -13,16 +13,16 @@ import { AppEventHandler, NamedSocket } from "@/extension/app-event-handler";
 import { AppEventDestinations, HandlersFor } from "@/extension/app-events";
 import { EventsTo, CardData } from "@/extension/types";
 import { hexToKey } from "@/extension/utils/hex-to-key";
-import { AppExplorerChannel } from "@/lib/broadcast-channel";
-import { debugLog } from "@/lib/debug-log";
-import { isAppCard } from "@/lib/is-app-card";
+import { AppExplorerChannel } from "@/utils/broadcast-channel";
+import { debugLog } from "@/utils/debug-log";
+import { isAppCard } from "@/utils/is-app-card";
 import {
   getMiroAdapter,
   MiroAdapter,
   MiroCollection,
-} from "@/lib/miro/adapter";
-import { updateCard } from "@/lib/update-card";
-import { zoomIntoCards } from "@/lib/zoom-into-cards";
+} from "@/utils/miro/adapter";
+import { updateCard } from "@/utils/update-card";
+import { zoomIntoCards } from "@/utils/zoom-into-cards";
 
 const log = debugLog("app-explorer:miro:background:session");
 

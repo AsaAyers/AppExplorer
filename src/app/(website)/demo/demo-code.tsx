@@ -8,11 +8,11 @@ import "@/app/(website)/demo/demo-code.css";
 import { useDemoFile } from "@/app/(website)/demo/demo-cards-around-cursor";
 import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
 import { useDemoSession } from "@/app/(website)/demo/useDemoSession";
-import { MemoryAdapter } from "@/extension/card-storage";
+import { MemoryAdapter } from "@/card-storage";
 import { getVSCodeAdapter } from "@/extension/vscode-adapter/adapter";
-import { WorkspaceCardStorage } from "@/extension/workspace-card-storage";
+import { WorkspaceCardStorage } from "@/workspace-card-storage";
 import { WorkspaceHandler } from "@/extension/workspace-handler";
-import { debugLog } from "@/lib/debug-log";
+import { debugLog } from "@/utils/debug-log";
 
 const log = debugLog("app-explorer:demo");
 

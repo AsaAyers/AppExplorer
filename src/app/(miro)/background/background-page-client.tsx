@@ -3,7 +3,7 @@ import React from "react";
 
 import { BackgroundMiroHandler } from "@/app/(miro)/background/background-miro-handler";
 import { useClientSession } from "@/components/client-session";
-import { getMiroAdapter } from "@/lib/miro/adapter";
+import { getMiroAdapter } from "@/utils/miro/adapter";
 
 const miro = getMiroAdapter();
 

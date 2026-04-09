@@ -8,10 +8,10 @@ import appExplorerLogo from "@/assets/logo/app-explorer.svg";
 import { AppExplorerCard } from "@/components/app-explorer-card";
 import { CardData } from "@/extension/types";
 import { notEmpty } from "@/extension/utils/not-empty";
-import { debugLog } from "@/lib/debug-log";
-import { extractCardDataWithAdapter } from "@/lib/extract-card-data";
-import { useForegroundMiro } from "@/lib/foreground-miro-handler";
-import { getMiroAdapter } from "@/lib/miro/adapter";
+import { debugLog } from "@/utils/debug-log";
+import { extractCardDataWithAdapter } from "@/utils/extract-card-data";
+import { useForegroundMiro } from "@/utils/foreground-miro-handler";
+import { getMiroAdapter } from "@/utils/miro/adapter";
 
 const log = debugLog("app-explorer:cards-around-cursor");
 

@@ -7,8 +7,8 @@ import appcardStatusDisabled from "@/assets/appcard-status-disabled.svg";
 import appcardStatusDisconnected from "@/assets/appcard-status-disconnected.svg";
 import expandIcon from "@/assets/expand-icon.svg";
 import appExplorerLogo from "@/assets/logo/app-explorer.svg";
-import { getMiroAdapter } from "@/lib/miro/adapter";
-import { useIsInMiroIframe } from "@/lib/use-is-in-miro-frame";
+import { getMiroAdapter } from "@/utils/miro/adapter";
+import { useIsInMiroIframe } from "@/utils/use-is-in-miro-frame";
 import { CardData } from "@/EventTypes";
 import { createDebug } from "@/utils/create-debug";
 

@@ -3,8 +3,8 @@
 import React from "react";
 
 import Loading from "@/app/(miro)/loading";
-import { debugLog } from "@/lib/debug-log";
-import { useForegroundMiro } from "@/lib/foreground-miro-handler";
+import { debugLog } from "@/utils/debug-log";
+import { useForegroundMiro } from "@/utils/foreground-miro-handler";
 
 let singletonPromise: Promise<void> | null = null;
 

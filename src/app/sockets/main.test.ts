@@ -4,7 +4,7 @@ import { io, type Socket } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SocketServer } from "@/app/sockets/main";
-import { MIRO_COOKIE } from "@/lib/init-miro-api";
+import { MIRO_COOKIE } from "@/utils/init-miro-api";
 
 const { decryptMock } = vi.hoisted(() => ({
   decryptMock: vi.fn(),
