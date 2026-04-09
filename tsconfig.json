@@ -7,14 +7,18 @@
     "node_modules",
     "node_modules/path-scurry"
   ],
-  "include": ["src", "src/types.d.ts"],
+  "include": [
+    "src",
+    "src/types.d.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2022",
     "noEmit": true,
     "lib": ["ES2022", "DOM"],
     "sourceMap": true,
-    "rootDir": "src",
     "strict": true,
     "checkJs": true,
     "allowJs": true,
@@ -27,6 +31,15 @@
     "noUnusedParameters": true /* Report errors on unused parameters. */,
     "erasableSyntaxOnly": true,
     "skipLibCheck": true /* Skip type checking of declaration files. */,
-    "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */
+    "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
+    "incremental": true,
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   }
 }

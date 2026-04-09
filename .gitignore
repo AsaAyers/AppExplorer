@@ -22,3 +22,4 @@ app-explorer.cjs
 app-explorer.cjs.map
 screenshots/
 *.png
+.next/
