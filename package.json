@@ -31,10 +31,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "app-explorer.createCard",
-        "title": "AppExplorer: Create Card"
-      },
-      {
         "command": "app-explorer.navigate",
         "title": "AppExplorer: Navigate to Card"
       },
@@ -75,10 +71,6 @@
     ],
     "menus": {
       "commandPalette": [
-        {
-          "command": "app-explorer.createCard",
-          "when": "appExplorer.enabled"
-        },
         {
           "command": "app-explorer.navigate",
           "when": "appExplorer.enabled"

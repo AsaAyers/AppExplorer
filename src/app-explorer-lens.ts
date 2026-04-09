@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { invariant } from "./commands/create-card";
+import invariant from "tiny-invariant";
 import { HandlerContext } from "./extension";
 import { getRelativePath } from "./get-relative-path";
 import { createDebug } from "./utils/create-debug";

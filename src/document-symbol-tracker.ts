@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
-import { SymbolAnchor } from "./commands/create-card";
-import { CardData } from "./EventTypes";
+import { SymbolAnchor, CardData } from "./EventTypes";
 import { getGitHubUrl } from "./get-github-url";
 import { getRelativePath } from "./get-relative-path";
 import { LocationFinder } from "./location-finder";

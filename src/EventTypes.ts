@@ -70,3 +70,22 @@ export interface WorkspaceRegistrationResponse {
   error?: string;
   cardsByBoard: ReturnType<CardStorage["getCardsByBoard"]>;
 }
+
+import * as vscode from "vscode";
+
+export type SymbolAnchor = {
+  type: "symbol";
+  label: string;
+  range: vscode.Range;
+  target: vscode.SymbolInformation | vscode.DocumentSymbol;
+  uri: vscode.Uri;
+};
+
+export type GroupAnchor = {
+  type: "group";
+  label: string;
+  range: vscode.Range;
+  uri: vscode.Uri;
+};
+
+export type Anchor = SymbolAnchor | GroupAnchor;
