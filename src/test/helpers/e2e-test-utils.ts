@@ -48,26 +48,11 @@ export class E2ETestUtils {
   static #logCapture: { getCapturedLogs: () => string[]; dispose: () => void };
 
   /**
-   * Get the test port from environment variable
-   * This should be called to get the port for server communication
+   * Instead of trying to make a test port work, the tests shut down the running
+   * server.
    */
   static getTestPort(): number {
-    const envPort = process.env.APP_EXPLORER_PORT;
-    if (!envPort) {
-      throw new Error(
-        "APP_EXPLORER_PORT environment variable not set. Test configuration may be incorrect.",
-      );
-    }
-
-    const port = parseInt(envPort, 10);
-    if (isNaN(port)) {
-      throw new Error(
-        `Invalid APP_EXPLORER_PORT value: ${envPort}. Must be a valid port number.`,
-      );
-    }
-
-    debug(`[E2ETestUtils] Using test port from environment: ${port}`);
-    return port;
+    return 4092;
   }
 
   /**

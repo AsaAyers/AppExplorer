@@ -24,6 +24,7 @@ import { listenToAllEvents } from "../test/helpers/listen-to-all-events";
 import { bindHandlers } from "../utils/bindHandlers";
 import { createDebug } from "../utils/create-debug";
 import { SidebarServer } from "./sidebar-server";
+
 const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");
 
@@ -51,7 +52,7 @@ export class MiroServer {
   #port: number;
   #workspaceHost: string;
 
-  public static publicPath = path.join(__dirname, "../public");
+  public static publicPath = path.join(__dirname, "public");
   constructor(
     featureFlagManager: FeatureFlagManager,
     workspaceHost: string,
@@ -73,6 +74,11 @@ export class MiroServer {
       }),
     );
 
+    app.post("/reset", (_req, res) => {
+      debug("Resetting server state");
+      this.httpServer.close();
+      return res.status(200).json({ success: true });
+    });
     app.use(morgan("tiny"));
 
     // Add health check endpoint for server discovery
@@ -166,7 +172,7 @@ export class MiroServer {
       });
 
       // Start listening on the port
-      this.httpServer.listen(port, () => {
+      this.httpServer.listen(port, "127.0.0.1", () => {
         debug("Server started successfully", { port });
         resolve();
       });

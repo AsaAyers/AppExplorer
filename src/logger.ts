@@ -38,6 +38,25 @@ export class Logger {
     baseDebug.log = this.log;
   }
 
+  logMonitor: undefined | ((line: string) => void);
+
+  /**
+   * This is used for capturing test logs, so it only needs to keep track of 1 callback at a time.
+   */
+  monitor(callback: (line: string) => void): { dispose(): unknown } {
+    this.logMonitor = callback;
+    return {
+      dispose: () => {
+        this.logMonitor = undefined;
+      },
+    };
+  }
+
+  appendLine(line: string) {
+    this.outputChannel.appendLine(line);
+    this.logMonitor?.(line);
+  }
+
   log = (message: unknown, ...args: unknown[]) => {
     const formatedMessage = formatWithOptions(
       { colors: false, compact: true, maxArrayLength: 10, sorted: true },

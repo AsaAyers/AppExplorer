@@ -38,7 +38,7 @@ async function main() {
       sourcemap: !production,
       sourcesContent: false,
       platform: "node",
-      outfile: "dist/extension.js",
+      outfile: "app-explorer.cjs",
       external: ["vscode"],
       logLevel: "silent",
       plugins: [rawPlugin, esbuildProblemMatcherPlugin],

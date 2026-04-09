@@ -19,6 +19,7 @@ export class ServerLauncher {
   private featureFlagManager: FeatureFlagManager;
   subscriptions: { dispose: () => void }[] = [];
   #workspaceId: string;
+  server: MiroServer | undefined;
 
   constructor(
     featureFlagManager: FeatureFlagManager,
@@ -161,6 +162,7 @@ export class ServerLauncher {
       });
 
       this.subscriptions.push(server);
+      this.server = server;
       return {
         mode: "server",
         server,

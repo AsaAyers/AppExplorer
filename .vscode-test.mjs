@@ -1,16 +1,17 @@
 import { defineConfig } from "@vscode/test-cli";
+import env from "@next/env";
 
-// Avoid port 9042
-const APP_EXPLORER_PORT =
-  process.env.PORT ?? 9043 + Math.floor(Math.random() * (9099 - 9043));
+const projectDir = process.cwd();
+env.loadEnvConfig(projectDir);
 const DEBUG = "app-explorer:*";
 
 export default defineConfig({
-  files: "out/test/**/*.test.js",
+  files: ".tests-out/**/*.test.cjs",
   workspaceFolder: "./sample-workspace",
   env: {
-    APP_EXPLORER_PORT,
     DEBUG,
+    MIRO_TEST_EMAIL: process.env.MIRO_TEST_EMAIL,
+    MIRO_TEST_PASSWORD: process.env.MIRO_TEST_PASSWORD,
   },
   coverage: {
     enabled: true,

@@ -16,3 +16,9 @@ compiled-tests/
 *.log
 *.mp4
 test_screenshots/
+.env
+.tests-out/
+app-explorer.cjs
+app-explorer.cjs.map
+screenshots/
+*.png
