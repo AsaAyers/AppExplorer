@@ -3,7 +3,6 @@ import path from "node:path";
 import * as vscode from "vscode";
 import { AppExplorerLens } from "./app-explorer-lens";
 import { MemoryAdapter } from "./card-storage";
-import { makeDebugMockClientHandler } from "./commands/debug-mock-client";
 import { makeNavigationHandler } from "./commands/navigate";
 import { registerUpdateCommand } from "./commands/update-extension";
 import { EditorDecorator } from "./editor-decorator";
@@ -42,11 +41,6 @@ export async function activate(
   debug(CHECKPOINT.start("activate"));
   setUpdateCommandContext(context);
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", true);
-  vscode.commands.executeCommand(
-    "setContext",
-    "mockMiroClient.connected",
-    false,
-  );
 
   let workspaceId = context.workspaceState.get<string | undefined>(
     "workspaceId",
@@ -167,10 +161,6 @@ export async function activate(
       "app-explorer.navigate",
       makeNavigationHandler(handlerContext),
     ),
-    vscode.commands.registerCommand(
-      "app-explorer.launchMockMiroClient",
-      makeDebugMockClientHandler(handlerContext, context),
-    ),
   );
 
   registerUpdateCommand(context);
@@ -246,11 +236,6 @@ export function deactivate() {
   vscode.commands.executeCommand(
     "setContext",
     "app-explorer.enableUpdate",
-    false,
-  );
-  vscode.commands.executeCommand(
-    "setContext",
-    "mockMiroClient.connected",
     false,
   );
 }
