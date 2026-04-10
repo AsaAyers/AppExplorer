@@ -9,7 +9,7 @@
   ],
   "include": [
     "src",
-    "src/types.d.ts",
+    "src/global-modules.d.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],

@@ -4,7 +4,6 @@ import React from "react";
 import invariant from "tiny-invariant";
 import z from "zod";
 
-import { getRedirectUrl } from "@/app/(miro)/auth/getRedirectUrl";
 import { AppEventHandler } from "@/extension/app-event-handler";
 import { EventCardsAroundCursor, zNewCard } from "@/extension/app-events";
 import { CardData } from "@/extension/types";
@@ -12,6 +11,7 @@ import { delay } from "@/extension/utils/delay";
 import { AppExplorerChannel, useBoardId } from "@/utils/broadcast-channel";
 import { debugLog } from "@/utils/debug-log";
 import { CreateConnectorInput, getMiroAdapter } from "@/utils/miro/adapter";
+import { getRedirectUrl } from "@/app/get-redirect-url";
 
 const log = debugLog("handler:foreground");
 
