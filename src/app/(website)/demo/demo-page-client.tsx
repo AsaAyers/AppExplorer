@@ -11,7 +11,7 @@ import { DemoBoardStorageProvider } from "@/app/(website)/demo/demo-storage";
 import { FileTabs } from "@/app/(website)/demo/file-tabs";
 import { ScreenTooSmall } from "@/app/(website)/demo/screen-too-small";
 import { TaskContextProvider } from "@/app/(website)/demo/tasks";
-import appExplorerLogo from "@/../public/app-explorer.svg";
+import appExplorerLogo from "@/assets/app-explorer.svg";
 import { createDebug } from "@/utils/create-debug";
 
 const log = createDebug("app-explorer:demo:layout");

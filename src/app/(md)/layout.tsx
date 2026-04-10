@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import "@/app/(md)/markdown.css";
-import appExplorerLogo from "@/assets/logo/app-explorer.svg";
+import appExplorerLogo from "@/assets/app-explorer.svg";
 
 // import "https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css";
 

@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import screenshot from "@/app/(website)/demo/screenshot.png";
+import screenshot from "@/assets/screenshot.png";
 
 export function ScreenTooSmall() {
   return (

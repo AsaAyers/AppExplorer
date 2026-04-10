@@ -4,7 +4,7 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import Image from "next/image";
 import React from "react";
 
-import appExplorerLogo from "@/assets/logo/app-explorer.svg";
+import appExplorerLogo from "@/assets/app-explorer.svg";
 import { AppExplorerCard } from "@/components/app-explorer-card";
 import { CardData } from "@/extension/types";
 import { notEmpty } from "@/extension/utils/not-empty";

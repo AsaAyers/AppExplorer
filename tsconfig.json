@@ -14,10 +14,10 @@
     ".next/dev/types/**/*.ts"
   ],
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "esnext",
     "target": "ES2022",
     "noEmit": true,
-    "lib": ["ES2023", "DOM"],
+    "lib": ["esnext", "DOM"],
     "sourceMap": true,
     "strict": true,
     "checkJs": true,
@@ -33,7 +33,7 @@
     "skipLibCheck": true /* Skip type checking of declaration files. */,
     "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
     "incremental": true,
-    "moduleResolution": "node10",
+    "moduleResolution": "bundler",
     "isolatedModules": true,
     "jsx": "react-jsx",
     "paths": {

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import * as vscode from "vscode";
 import { SymbolAnchor, CardData } from "./EventTypes";
 import { getGitHubUrl } from "./get-github-url";
@@ -138,7 +139,11 @@ export class DocumentSymbolTracker
           targetRange: anchor.range,
         };
         const path = getRelativePath(def.targetUri)!;
+
         return {
+          id: sha256(anchor.label),
+          x: 0,
+          y: 0,
           type: "symbol",
           boardId,
           title: anchor.label,
@@ -179,4 +184,8 @@ export function getDocumentSymbolTracker(
     singleton = new DocumentSymbolTracker(locationFinder);
   }
   return singleton;
+}
+
+function sha256(input: string): string {
+  return crypto.createHash("sha256").update(input).digest("hex");
 }

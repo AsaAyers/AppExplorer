@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-import appExplorerLogo from "@/assets/logo/app-explorer.svg";
+import appExplorerLogo from "@/assets/app-explorer.svg";
 import { routeMetrics } from "@/utils/metrics";
 
 export const metadata: Metadata = {

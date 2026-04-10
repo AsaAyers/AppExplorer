@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
-import appExplorerLogo from "@/assets/logo/app-explorer.svg";
+import appExplorerLogo from "@/assets/app-explorer.svg";
 
 export const metadata: Metadata = {
   title: {

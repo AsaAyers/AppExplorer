@@ -138,7 +138,6 @@
   "devDependencies": {
     "@mirohq/miro-api": "^2.2.4",
     "@next/env": "^16.2.2",
-    "@prisma/adapter-pg": "^7.7.0",
     "@types/compression": "^1.7.3",
     "@types/debug": "^4.1.12",
     "@types/express": "^4.17.17",

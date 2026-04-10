@@ -90,6 +90,9 @@ export class OnboardingElement extends AppElement {
             <app-card
               .miroDraggable=${false}
               .cardData=${{
+                id: "example-card",
+                x: 0,
+                y: 0,
                 title: "{title} - Example Card",
                 boardId: "",
                 type: "symbol",

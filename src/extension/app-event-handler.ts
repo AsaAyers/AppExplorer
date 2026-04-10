@@ -78,15 +78,12 @@ export abstract class AppEventHandler<
   protected socket?: NamedSocket<Target>;
   protected log: ReturnType<typeof debugLog>;
 
-  constructor(
-    target: Target,
-    transport: Transport,
-  ) {
+  constructor(target: Target, transport: Transport) {
     this.target = target;
     this.log = debugLog(`handler:${target}:${transport}`);
   }
 
-  onHandlerCalled(str: string, event: any) {
+  onHandlerCalled(_str: string, event: any) {
     this.log("onHandlerCalled", event.type);
   }
   makeHandlers(

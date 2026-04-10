@@ -38,8 +38,5 @@ jobs:
       - name: Next.js Types
         run: npx next typegen
 
-      - name: Prisma Types
-        run: yarn run prisma:generate
-
       - name: Install JavaScript dependencies
         run: yarn --frozen-lockfile

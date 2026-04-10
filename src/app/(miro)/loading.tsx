@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import appExplorerLogo from "@/assets/logo/app-explorer.svg";
+import appExplorerLogo from "@/assets/app-explorer.svg";
 import { AppExplorerCard } from "@/components/app-explorer-card";
 import { CardData } from "@/extension/types";
 
