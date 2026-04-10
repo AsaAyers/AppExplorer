@@ -2,10 +2,11 @@ import classNames from "classnames";
 import { css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
-import { CardData } from "../EventTypes";
-import { createDebug } from "../utils/create-debug";
-import { AppElement } from "./app-element";
-import { mirotoneStyles } from "./mirotone";
+
+import { CardData } from "@/EventTypes";
+import { AppElement } from "@/lit/app-element";
+import { mirotoneStyles } from "@/lit/mirotone";
+import { createDebug } from "@/utils/create-debug";
 
 const debug = createDebug("app-explorer:lit:app-card");
 
@@ -65,7 +66,6 @@ export class AppCardElement extends AppElement {
   @state()
   private faviconIndex = 0;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected willUpdate(changed: any) {
     if (changed.has("cardData")) {
       this.faviconIndex = 0;

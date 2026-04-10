@@ -1,0 +1,32 @@
+# fly.toml app configuration file generated for app-explorer on 2026-02-08T17:13:43Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'app-explorer'
+primary_region = 'lax'
+
+[build]
+  [build.args]
+    ASSET_PREFIX = 'https://assets.appexplorer.dev'
+
+[env]
+  ASSET_PREFIX = 'https://assets.appexplorer.dev'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
+
+[metrics]
+  port = 3001
+  path = "/api/metrics"

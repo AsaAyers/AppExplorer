@@ -5,13 +5,12 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "watch:lint",
+      "script": "lint",
       "group": "build",
       "problemMatcher": "$eslint-stylish",
       // "isBackground": true,
-      "label": "npm: watch:lint",
+      "label": "npm: lint",
       "presentation": {
-        "group": "watch",
         "reveal": "never"
       }
     },

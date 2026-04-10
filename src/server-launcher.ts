@@ -1,4 +1,3 @@
-import { FeatureFlagManager } from "./feature-flag-manager";
 import { PortConfig } from "./port-config";
 import { ServerDiscovery } from "./server-discovery";
 import { MiroServer } from "./server/server";
@@ -16,18 +15,12 @@ export interface ServerLaunchResult {
 
 export class ServerLauncher {
   private serverDiscovery: ServerDiscovery;
-  private featureFlagManager: FeatureFlagManager;
   subscriptions: { dispose: () => void }[] = [];
   #workspaceId: string;
   server: MiroServer | undefined;
 
-  constructor(
-    featureFlagManager: FeatureFlagManager,
-    workspaceId: string,
-    serverDiscovery?: ServerDiscovery,
-  ) {
+  constructor(workspaceId: string, serverDiscovery?: ServerDiscovery) {
     this.#workspaceId = workspaceId;
-    this.featureFlagManager = featureFlagManager;
     // If no ServerDiscovery provided, create one with configured port
     this.serverDiscovery =
       serverDiscovery ||
@@ -148,11 +141,7 @@ export class ServerLauncher {
       // Create and start server instance with proper error handling
       // Use the same port as ServerDiscovery for consistency
       const serverPort = PortConfig.getServerPort();
-      const server = await MiroServer.create(
-        this.featureFlagManager,
-        workspaceId,
-        serverPort,
-      );
+      const server = await MiroServer.create(workspaceId, serverPort);
 
       const duration = Date.now() - startTime;
       debug("Server launched successfully", {

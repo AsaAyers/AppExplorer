@@ -6,7 +6,6 @@ import { MemoryAdapter } from "./card-storage";
 import { makeNavigationHandler } from "./commands/navigate";
 import { registerUpdateCommand } from "./commands/update-extension";
 import { EditorDecorator } from "./editor-decorator";
-import { FeatureFlagManager } from "./feature-flag-manager";
 import { LocationFinder } from "./location-finder";
 import { logger as baseLogger, logger } from "./logger";
 import { PortConfig } from "./port-config";
@@ -50,7 +49,6 @@ export async function activate(
 
   // Initialize server discovery and launcher with configured port
   const serverPort = PortConfig.getServerPort();
-  const featureFlagManager = new FeatureFlagManager(context);
   baseLogger.initialize();
 
   const locationFinder = new LocationFinder();
@@ -70,7 +68,6 @@ export async function activate(
   });
 
   const serverLauncher = new ServerLauncher(
-    featureFlagManager,
     workspaceId,
     new ServerDiscovery({ port: serverPort }),
   );
@@ -83,7 +80,6 @@ export async function activate(
   });
 
   debug("AppExplorer extension activating");
-  debug("Migration flags:", featureFlagManager.getFlags());
 
   context.subscriptions.push(new StatusBarManager(cardStorage));
 
