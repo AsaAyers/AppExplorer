@@ -14,3 +14,7 @@ declare module "*.svg" {
   const src: StaticImageData;
   export default src;
 }
+
+declare global {
+  var metricsRegistry: MetricsRegistry | undefined;
+}

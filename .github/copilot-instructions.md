@@ -7,13 +7,11 @@ AppExplorer is a VSCode extension designed to integrate Miro boards with VSCode,
 ### Key Components
 
 1. **VSCode Extension**:
-
    - Entry point: `src/extension.ts`.
    - Registers commands like `app-explorer.createCard`, `app-explorer.attachCard`, and `app-explorer.navigate`.
    - Manages VSCode's behavior and talks to the Local Webserver over websockets.
 
 2. **Local Webserver**:
-
    - Implemented in `src/server.ts`.
    - Hosts a webserver on `http://localhost:9042/`.
    - Uses `socket.io` for real-time communication.
@@ -24,7 +22,6 @@ AppExplorer is a VSCode extension designed to integrate Miro boards with VSCode,
    - The endpoint `http://localhost:9042/storage` provides a raw JSON view of `cardsByBoard`, a `Record<Card['boardId'], CardData[]>`. This can be useful for debugging, such as verifying connected boards and cards when issues arise.
 
 3. **Miro Integration**:
-
    - Core logic in `src/miro.ts`.
    - Handles Miro board operations such as creating/updating cards and zooming into cards.
    - Relies on the Miro Web SDK.
@@ -90,7 +87,6 @@ There is a `setup-xvfb.sh` script for setting up a virtual framebuffer. This is 
   - Example Workspace Event: `navigateToCode` - Sent when navigating from a Miro card to the corresponding code.
   - Example Miro Event: `navigateToCard` - Sent when navigating from code to the corresponding Miro card.
 - **Commands**: All user-facing actions are registered as VSCode commands in `src/extension.ts`.
-
   - Commands are created in their own files.
   - Example Command Structure:
 

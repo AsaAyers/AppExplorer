@@ -25,3 +25,5 @@ screenshots/
 .next/
 code.deb
 *.tsbuildinfo
+public/lit.css
+public/lit.css.map

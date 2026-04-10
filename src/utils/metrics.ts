@@ -176,3 +176,5 @@ export const metricsRegistry = {
     return getMetricsState().register.contentType;
   },
 };
+
+export type MetricsRegistry = typeof metricsRegistry;

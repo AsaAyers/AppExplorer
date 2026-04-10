@@ -107,24 +107,20 @@ class FeatureFlagManager {
 **Steps**:
 
 1. **Feature Flag Setup**:
-
    - Implement simple `FeatureFlagManager` class with VSCode configuration integration
    - Add `enableServerDiscovery` and `enableWorkspaceWebsockets` flags
    - Create development configuration template in `settings.json`
 
 2. **Protocol & Infrastructure**:
-
    - Create `WorkspaceSocket` protocol types in `EventTypes.ts`
    - Add basic server capability broadcasting
 
 3. **Server Discovery** (gated by `enableServerDiscovery` flag):
-
    - Use `fetch()` to check if server exists on `http://localhost:9042/`
    - Implement server launch decision logic
    - Add race condition handling for simultaneous server launches
 
 4. **Websocket Infrastructure** (gated by `enableWorkspaceWebsockets` flag):
-
    - Add workspace websocket server to `MiroServer` (separate from Miro websockets)
    - Create server-side memory-backed `CardStorage` alongside existing VSCode storage
    - Add workspace websocket client connection logic to extension
@@ -163,18 +159,15 @@ class FeatureFlagManager {
 **Steps**:
 
 1. **Feature Flag Integration**:
-
    - Enable `enableDualStorage` and `enableServerFailover` flags
 
 2. **Data Synchronization** (gated by `enableDualStorage` flag):
-
    - Implement board/card sync events over workspace websocket
    - When Miro connects to server, sync board info to workspace
    - When workspace updates cards, sync to server
    - Implement workspace board filtering on server side
 
 3. **Server Health & Failover** (gated by `enableServerFailover` flag):
-
    - Add basic server health monitoring for workspace clients
    - Implement server failover detection and new server launch
 
@@ -213,17 +206,14 @@ class FeatureFlagManager {
 **Steps**:
 
 1. **Feature Flag Integration**:
-
    - Enable `enableQueryProxying` flag
 
 2. **Query Proxying Infrastructure** (gated by `enableQueryProxying` flag):
-
    - Add query proxy methods to workspace websocket protocol
    - Modify `MiroServer.query()` to route through workspace websocket when flag enabled
    - Implement query timeout and error handling for proxied queries
 
 3. **Hybrid Query Support**:
-
    - Add fallback to direct socket access when flag disabled or proxy fails
    - Update all command handlers to work with both direct and proxied queries
    - Implement query performance monitoring for rollback triggers
@@ -251,18 +241,15 @@ class FeatureFlagManager {
 **Steps**:
 
 1. **Feature Flag Integration**:
-
    - Enable `enableServerEventRouting` flag
    - Add event routing decision logic based on flag state
 
 2. **Server-Side Event Handling** (gated by `enableServerEventRouting` flag):
-
    - Move Miro event handlers (`navigateTo`, `updateCard`) to server when flag enabled
    - Implement workspace routing logic (which workspace gets which events)
    - Add workspace registration for board interests
 
 3. **Client-Side Event Updates**:
-
    - Update extension event handlers to receive events via workspace websocket when flag enabled
    - Maintain direct event handling as fallback when flag disabled
    - Handle `navigateTo` broadcasting to all workspaces when board unknown
@@ -288,18 +275,15 @@ class FeatureFlagManager {
 **Steps**:
 
 1. **Feature Flag Integration**:
-
    - Enable `enableWebsocketStatusBar` flag
    - Add status bar data source decision logic based on flag state
 
 2. **Websocket Status Updates** (gated by `enableWebsocketStatusBar` flag):
-
    - Add connection status events to workspace websocket protocol
    - Modify server to broadcast connection count changes when flag enabled
    - Update `StatusBarManager` to listen for websocket events when flag enabled
 
 3. **Hybrid Status Bar Support**:
-
    - Maintain direct `CardStorage` access as fallback when flag disabled
    - Add fallback display during websocket disconnections
    - Implement workspace-specific board filtering for status display
@@ -327,19 +311,16 @@ class FeatureFlagManager {
 **Steps**:
 
 1. **Pre-Cleanup Validation**:
-
    - Verify all feature flags are enabled and stable
    - Confirm all functionality works through websocket paths
    - Run comprehensive integration tests with all flags enabled
 
 2. **Legacy Code Removal**:
-
    - Remove `connectBoard()`, `getBoardSocket()`, `getConnectedBoards()` from workspace CardStorage
    - Remove Miro socket storage from workspace CardStorage
    - Update CardStorage to be pure data storage (no socket management)
 
 3. **Feature Flag Cleanup**:
-
    - Remove all migration-related feature flags from codebase
    - Remove fallback code paths from previous phases
    - Update configuration templates to remove migration flags

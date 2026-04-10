@@ -1,133 +1,131 @@
-
 import code from "@/app/(website)/demo/demo-text-files/emit.ts.txt";
 import type { DemoFile } from "@demo/index";
 
-const demoFile: DemoFile = ({
-    path: "emit.ts",
-    code: code,
-    symbols: [
-  {
-    "start": 32,
-    "end": 80,
-    "symbolEnd": 40,
-    "symbolStart": 37,
-    "card": {
-      "id": "ex1",
-      "x": 0,
-      "y": 0,
-      "type": "symbol",
-      "boardId": "demo-board",
-      "title": "Evt",
-      "description": "",
-      "path": "emit.ts",
-      "symbol": "Evt",
-      "codeLink": null,
-      "status": "connected"
+const demoFile: DemoFile = {
+  path: "emit.ts",
+  code: code,
+  symbols: [
+    {
+      start: 32,
+      end: 80,
+      symbolEnd: 40,
+      symbolStart: 37,
+      card: {
+        id: "ex1",
+        x: 0,
+        y: 0,
+        type: "symbol",
+        boardId: "demo-board",
+        title: "Evt",
+        description: "",
+        path: "emit.ts",
+        symbol: "Evt",
+        codeLink: null,
+        status: "connected",
+      },
+      title: "Evt",
     },
-    "title": "Evt"
-  },
-  {
-    "start": 88,
-    "end": 106,
-    "symbolEnd": 91,
-    "symbolStart": 88,
-    "card": {
-      "id": "ex2",
-      "x": 0,
-      "y": 0,
-      "type": "symbol",
-      "boardId": "demo-board",
-      "title": "OUT",
-      "description": "",
-      "path": "emit.ts",
-      "symbol": "OUT",
-      "codeLink": null,
-      "status": "connected"
+    {
+      start: 88,
+      end: 106,
+      symbolEnd: 91,
+      symbolStart: 88,
+      card: {
+        id: "ex2",
+        x: 0,
+        y: 0,
+        type: "symbol",
+        boardId: "demo-board",
+        title: "OUT",
+        description: "",
+        path: "emit.ts",
+        symbol: "OUT",
+        codeLink: null,
+        status: "connected",
+      },
+      title: "OUT",
     },
-    "title": "OUT"
-  },
-  {
-    "start": 109,
-    "end": 271,
-    "symbolEnd": 129,
-    "symbolStart": 125,
-    "card": {
-      "id": "ex3",
-      "x": 0,
-      "y": 0,
-      "type": "symbol",
-      "boardId": "demo-board",
-      "title": "emit",
-      "description": "",
-      "path": "emit.ts",
-      "symbol": "emit",
-      "codeLink": null,
-      "status": "connected"
+    {
+      start: 109,
+      end: 271,
+      symbolEnd: 129,
+      symbolStart: 125,
+      card: {
+        id: "ex3",
+        x: 0,
+        y: 0,
+        type: "symbol",
+        boardId: "demo-board",
+        title: "emit",
+        description: "",
+        path: "emit.ts",
+        symbol: "emit",
+        codeLink: null,
+        status: "connected",
+      },
+      title: "emit",
     },
-    "title": "emit"
-  },
-  {
-    "start": 176,
-    "end": 201,
-    "symbolEnd": 179,
-    "symbolStart": 176,
-    "card": {
-      "id": "ex4",
-      "x": 0,
-      "y": 0,
-      "type": "symbol",
-      "boardId": "demo-board",
-      "title": "emit/evt",
-      "description": "",
-      "path": "emit.ts",
-      "symbol": "emit/evt",
-      "codeLink": null,
-      "status": "connected"
+    {
+      start: 176,
+      end: 201,
+      symbolEnd: 179,
+      symbolStart: 176,
+      card: {
+        id: "ex4",
+        x: 0,
+        y: 0,
+        type: "symbol",
+        boardId: "demo-board",
+        title: "emit/evt",
+        description: "",
+        path: "emit.ts",
+        symbol: "emit/evt",
+        codeLink: null,
+        status: "connected",
+      },
+      title: "emit/evt",
     },
-    "title": "emit/evt"
-  },
-  {
-    "start": 195,
-    "end": 199,
-    "symbolEnd": 199,
-    "symbolStart": 195,
-    "card": {
-      "id": "ex5",
-      "x": 0,
-      "y": 0,
-      "type": "symbol",
-      "boardId": "demo-board",
-      "title": "emit/evt/data",
-      "description": "",
-      "path": "emit.ts",
-      "symbol": "emit/evt/data",
-      "codeLink": null,
-      "status": "connected"
+    {
+      start: 195,
+      end: 199,
+      symbolEnd: 199,
+      symbolStart: 195,
+      card: {
+        id: "ex5",
+        x: 0,
+        y: 0,
+        type: "symbol",
+        boardId: "demo-board",
+        title: "emit/evt/data",
+        description: "",
+        path: "emit.ts",
+        symbol: "emit/evt/data",
+        codeLink: null,
+        status: "connected",
+      },
+      title: "emit/evt/data",
     },
-    "title": "emit/evt/data"
-  },
-  {
-    "start": 189,
-    "end": 193,
-    "symbolEnd": 193,
-    "symbolStart": 189,
-    "card": {
-      "id": "ex6",
-      "x": 0,
-      "y": 0,
-      "type": "symbol",
-      "boardId": "demo-board",
-      "title": "emit/evt/name",
-      "description": "",
-      "path": "emit.ts",
-      "symbol": "emit/evt/name",
-      "codeLink": null,
-      "status": "connected"
+    {
+      start: 189,
+      end: 193,
+      symbolEnd: 193,
+      symbolStart: 189,
+      card: {
+        id: "ex6",
+        x: 0,
+        y: 0,
+        type: "symbol",
+        boardId: "demo-board",
+        title: "emit/evt/name",
+        description: "",
+        path: "emit.ts",
+        symbol: "emit/evt/name",
+        codeLink: null,
+        status: "connected",
+      },
+      title: "emit/evt/name",
     },
-    "title": "emit/evt/name"
-  }
-],
-});
+  ],
+};
 
 export default demoFile;
-            

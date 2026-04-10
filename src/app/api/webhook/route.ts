@@ -16,10 +16,7 @@ export const POST = async (request: NextRequest) => {
   /* Validate the webhook */
   const signature = request.headers.get("X-Hub-Signature-256");
   if (!signature) {
-    return NextResponse.json(
-      { message: "Missing signature" },
-      { status: 401 },
-    );
+    return NextResponse.json({ message: "Missing signature" }, { status: 401 });
   }
   const generatedSignature = `sha256=${crypto
     .createHmac("sha256", process.env.GITHUB_WEBHOOK_SECRET)

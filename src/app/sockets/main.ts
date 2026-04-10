@@ -15,10 +15,6 @@ import { eventMetrics, sessionMetrics } from "@/utils/metrics";
 const log = debugLog("sockets:main");
 const SESSION_NAMESPACE_REGEX = /^\/session\/[a-f0-9]{32}$/i;
 
-declare global {
-  var socketHandler: (server: httpServer) => SocketServer;
-}
-
 const readSessionFromSocket = async (socket: Socket) => {
   const cookie = socket.request.headers.cookie;
   invariant(cookie, "Expected socket to have a cookie");
@@ -126,3 +122,8 @@ export class SocketServer {
 export function socketHandler(httpServer: httpServer) {
   return new SocketServer(httpServer);
 }
+
+declare global {
+  var socketHandler: undefined | ((server: httpServer) => SocketServer);
+}
+globalThis.socketHandler = socketHandler;

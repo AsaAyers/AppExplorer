@@ -8,6 +8,7 @@
     "node_modules/path-scurry"
   ],
   "include": [
+    "server.ts",
     "src",
     "src/global-modules.d.ts",
     ".next/types/**/*.ts",
