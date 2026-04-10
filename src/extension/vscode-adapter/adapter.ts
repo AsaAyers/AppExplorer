@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { LocationFinder } from "@/extension/location-finder";
+import { LocationFinder } from "@/location-finder";
 import type { Public, SymbolEvents } from "@/extension/types";
 import type { EventEmitter } from "@/extension/utils/event-emitter";
 import { FakeUri } from "@/extension/vscode-adapter/FakeUri";
@@ -22,7 +22,7 @@ type DocumentSymbolTrackerFactory = (
 
 let documentSymbolTrackerFactory: DocumentSymbolTrackerFactory | null = null;
 
-export function configureVSCodeAdapter(options: {
+function configureVSCodeAdapter(options: {
   documentSymbolTrackerFactory?: DocumentSymbolTrackerFactory;
 }) {
   if (options.documentSymbolTrackerFactory) {
@@ -210,7 +210,7 @@ export function getVSCodeAdapter(): VSCodeAdapter {
   return singleton;
 }
 
-export function resetVSCodeAdapterSingleton() {
+function resetVSCodeAdapterSingleton() {
   singleton = null;
 }
 

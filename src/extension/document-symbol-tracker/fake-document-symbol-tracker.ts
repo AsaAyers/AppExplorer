@@ -10,17 +10,6 @@ import { debugLog } from "@/utils/debug-log";
 
 const log = debugLog("symbol-tracker:fake");
 
-export type SymbolsChangedEvent = {
-  type: "symbolsChanged";
-  uri: { fsPath: string; toString(): string };
-  version: number;
-  symbols: CardData[];
-};
-
-export type FakeSymbolTrackerEvent =
-  | SymbolsChangedEvent
-  | { type: "symbolRequest" };
-
 export class FakeDocumentSymbolTracker extends EventEmitter<SymbolEvents> {
   private activePath = defaultDemoWorkspaceFile.path;
   private cursorOffset = 0;

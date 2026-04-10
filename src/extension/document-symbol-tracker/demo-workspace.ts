@@ -1,12 +1,9 @@
 import {
   demoTextFiles,
-  type DemoFile,
 } from "@/app/(website)/demo/demo-text-files";
 import type { CardData } from "@/extension/types";
 
 export const DEMO_WORKSPACE_ROOT = "/demo-workspace";
-
-export type DemoWorkspaceFile = DemoFile;
 
 export const demoWorkspaceFiles = demoTextFiles;
 

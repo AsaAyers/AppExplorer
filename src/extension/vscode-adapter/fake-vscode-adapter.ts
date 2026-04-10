@@ -6,7 +6,7 @@ import {
   toDemoWorkspaceRelativePath,
 } from "@/extension/document-symbol-tracker/demo-workspace";
 import { FakeDocumentSymbolTracker } from "@/extension/document-symbol-tracker/fake-document-symbol-tracker";
-import { LocationFinder } from "@/extension/location-finder";
+import { LocationFinder } from "@/location-finder";
 import { Public } from "@/extension/types";
 import {
   type AppExplorerCommand,
@@ -24,10 +24,7 @@ import * as vscode from "vscode";
 class Range {
   public readonly start: vscode.Position;
   public readonly end: vscode.Position;
-  constructor(
-    start: vscode.Position,
-    end: vscode.Position,
-  ) {
+  constructor(start: vscode.Position, end: vscode.Position) {
     this.start = start;
     this.end = end;
   }
@@ -58,10 +55,7 @@ class Range {
 class Position {
   public readonly line: number;
   public readonly character: number;
-  constructor(
-    line: number,
-    character: number,
-  ) {
+  constructor(line: number, character: number) {
     this.line = line;
     this.character = character;
   }
@@ -70,10 +64,7 @@ class Position {
 class Selection {
   public readonly anchor: Position;
   public readonly active: Position;
-  constructor(
-    anchor: Position,
-    active: Position,
-  ) {
+  constructor(anchor: Position, active: Position) {
     this.anchor = anchor;
     this.active = active;
   }
@@ -87,7 +78,7 @@ class Selection {
   }
 }
 
-export type FakeTextDocument = vscode.TextDocument & {
+type FakeTextDocument = vscode.TextDocument & {
   __demoFile: DemoFile;
 };
 
@@ -487,20 +478,6 @@ export class FakeVSCodeAdapter implements Public<VSCodeAdapter> {
 
     return document;
   }
-}
-
-let singleton: FakeVSCodeAdapter | null = null;
-
-export function getFakeVSCodeAdapter() {
-  if (!singleton) {
-    singleton = new FakeVSCodeAdapter();
-  }
-
-  return singleton;
-}
-
-export function resetFakeVSCodeAdapter() {
-  singleton = null;
 }
 
 class OutputChannel implements vscode.OutputChannel {

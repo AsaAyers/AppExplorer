@@ -37,20 +37,6 @@ interface SymbolRequest {
   type: "symbolRequest";
 }
 export type SymbolEvents = SymbolPathChangeEvent | SymbolRequest;
-export type CardData = {
-  id: string;
-  boardId: string;
-  type: "symbol";
-  title: string;
-  path: string;
-  symbol: string;
-  miroLink?: string;
-  codeLink: string | null;
-  status: AppCard["status"];
-  description?: string;
-  x: number;
-  y: number;
-};
 
 export interface WorkspaceRegistrationRequest {
   workspaceId: string;
@@ -127,11 +113,6 @@ export type RoutedEvents<
   ? AppEventRoutes[Source][Target]
   : never;
 
-export interface WorkspaceInfo {
-  id: string; // Unique workspace identifier
-  workspaceName?: string;
-  rootPath?: string;
-}
 export interface WorkspaceRegistrationResponse {
   success: boolean;
   workspaceId: string;
@@ -140,10 +121,6 @@ export interface WorkspaceRegistrationResponse {
 }
 export type AppEventUnion = z.infer<typeof zAllEvents>;
 
-export type AppEventTypes = AppEventUnion["type"];
-export type AppEventMap = {
-  [Key in AppEventTypes]: Extract<AppEventUnion, { type: Key }>;
-};
 export type Public<T> = {
   [K in keyof T]: T[K];
 };

@@ -207,21 +207,17 @@ export abstract class AppEventHandler<
   }
 }
 
-export type TypeFromHandler<T extends string> = T extends `on${infer Event}`
-  ? `on${Uncapitalize<Event>}`
-  : never;
-
-export function captialize<T extends string>(type: T) {
+function captialize<T extends string>(type: T) {
   return (type[0].toUpperCase() + type.substring(1)) as Capitalize<T>;
 }
 
-export function typedEntries<T extends object>(
+function typedEntries<T extends object>(
   obj: T,
 ): { [K in keyof T]: [K, T[K]] }[keyof T][] {
   return Object.entries(obj) as any;
 }
 
-export function wrapFunctions<
+function wrapFunctions<
   T extends Record<string, (...args: any[]) => any>,
 >(obj: T, fn: <K extends keyof T>(key: K, ...args: any[]) => void): T {
   const result = {} as T;

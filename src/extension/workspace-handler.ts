@@ -7,7 +7,7 @@ import {
 import { AppEventHandler, NamedSocket } from "@/extension/app-event-handler";
 import { makeNavigationHandler } from "@/extension/commands/navigate";
 import { goToCardCode } from "@/extension/go-to-card-code";
-import { LocationFinder } from "@/extension/location-finder";
+import { LocationFinder } from "@/location-finder";
 import { SymbolEvents, CardData } from "@/extension/types";
 import { EventEmitter } from "@/extension/utils/event-emitter";
 import { hexToKey } from "@/extension/utils/hex-to-key";
@@ -31,18 +31,16 @@ const defaultSocketOptions: Partial<ManagerOptions & SocketOptions> = {
   reconnectionAttempts: 5,
 };
 
-export type WorkspaceSocketFactory = (
+type WorkspaceSocketFactory = (
   sessionId: string,
   options?: Partial<ManagerOptions & SocketOptions>,
 ) => NamedSocket<"workspace">;
 
-export type ResolveRelativePath = (uri: UriType) => string | undefined;
+type ResolveRelativePath = (uri: UriType) => string | undefined;
 
-export type ResolveGitHubUrl = (
-  locationLink: LocationLink,
-) => Promise<string | null>;
+type ResolveGitHubUrl = (locationLink: LocationLink) => Promise<string | null>;
 
-export type WorkspaceSessionSocketOptions = {
+type WorkspaceSessionSocketOptions = {
   host?: string;
   socketFactory?: WorkspaceSocketFactory;
   socketOptions?: Partial<ManagerOptions & SocketOptions>;

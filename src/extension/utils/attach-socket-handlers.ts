@@ -4,7 +4,7 @@ import type { Socket } from "socket.io-client";
 import { Disposable } from "@/extension/vscode-adapter/adapter";
 import { debugLog } from "@/utils/debug-log";
 
-export interface EventsMap {
+interface EventsMap {
   [event: string]: any;
 }
 
