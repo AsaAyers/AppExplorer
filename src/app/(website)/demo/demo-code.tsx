@@ -43,7 +43,7 @@ export function DemoCodeImpl({
       sessionId,
       sessionHexKey,
       true,
-      new WorkspaceCardStorage(new MemoryAdapter()),
+      new WorkspaceCardStorage("demo-board-id", new MemoryAdapter()),
       { findCardDestination: async () => null },
       {
         host: socketHost,
@@ -86,7 +86,7 @@ export function DemoCodeImpl({
           if (node.nodeType === Node.TEXT_NODE) {
             charCount += node.textContent?.length ?? 0;
           } else if (node.nodeType === Node.ELEMENT_NODE) {
-            for (const child of node.childNodes) {
+            for (const child of Array.from(node.childNodes)) {
               const result = walkToNode(child, target, targetOffset);
               if (result !== -1) return result;
             }
@@ -161,7 +161,7 @@ export function DemoCodeImpl({
   }, [path, symbols, cardsAroundCursor, workspace]);
 
   React.useEffect(() => {
-    if (selectionPosition.start) {
+    if (selectionPosition.start != null) {
       dispatch({ type: "selectionStart", value: selectionPosition.start });
     }
   }, [dispatch, selectionPosition.start]);
