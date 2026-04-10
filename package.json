@@ -17,11 +17,12 @@
   "type": "module",
   "main": "app-explorer.cjs",
   "scripts": {
+    "build": "npm-run-all -p build:next build:extension",
     "build:extension": "node esbuild.cjs",
     "build:next": "next build",
     "build:tests": "node build-tests.cjs",
     "dev": "DEBUG='*app-explorer:*' PORT=3000 node server.ts",
-    "docker": "docker build -t app-explorer:latest . && docker run --rm -p 3000:9045 app-explorer:latest",
+    "docker": "docker build -t app-explorer:latest . && docker run -it --rm -p 3000:3000 app-explorer:latest",
     "font-icon": "npx svgtofont --sources public/logo/ --output ./font --fontName app-explorer",
     "format": "prettier --write .",
     "format:check": "prettier --check 'src/**/*.{ts,js,json,css,html}'",
