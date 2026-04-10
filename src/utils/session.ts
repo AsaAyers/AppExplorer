@@ -1,19 +1,18 @@
 import "server-only";
 
-import { addDays, addHours } from "date-fns";
-import * as jose from "jose";
+import { addDays } from "date-fns";
 import { type ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { cookies } from "next/headers";
 import { forbidden } from "next/navigation";
 
 import { identity } from "@/extension/utils/identity";
-import { getPrivateKey } from "@/extension/utils/keys";
+
 import { encrypt, decrypt } from "@/utils/crypto";
 import { debugLog } from "@/utils/debug-log";
 import type { EncryptableMiroState, MIRO_COOKIE } from "@/utils/init-miro-api";
 import { isPaid } from "@/utils/is-paid";
 
-const log = debugLog("app-explorer:session");
+const debug = debugLog("app-explorer:session");
 
 export const SESSION_DAYS = 7;
 
@@ -59,20 +58,6 @@ export async function createSession(userId: string) {
     ...sessionSettings,
     expires: expiresAt,
   });
-}
-
-export async function createWebsocketKey() {
-  const ecPrivateKey = await getPrivateKey();
-  const expiresAt = addHours(new Date(), 2);
-  const { userId } = await readSession();
-
-  return new jose.SignJWT({
-    user: userId,
-  })
-    .setProtectedHeader({ alg: "ES256" })
-    .setIssuedAt()
-    .setExpirationTime(expiresAt)
-    .sign(ecPrivateKey);
 }
 
 export async function readSession() {

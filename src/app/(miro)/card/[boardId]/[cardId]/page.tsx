@@ -68,6 +68,7 @@ export default function CardPage(
       url.searchParams.set("path", cardData?.path);
       return String(url);
     }
+    return null;
   }, [cardData]);
 
   if (!cardData) {

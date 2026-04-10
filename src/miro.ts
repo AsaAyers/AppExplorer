@@ -539,6 +539,9 @@ export async function extractCardData(card: Item): Promise<CardData | null> {
     }
 
     return {
+      id: card.id,
+      x: card.x,
+      y: card.y,
       type: "symbol",
       boardId,
       title: decode(card.title),

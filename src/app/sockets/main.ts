@@ -41,13 +41,12 @@ export class SocketServer {
         ?.userId;
 
       if (!userId) {
-        next(new Error("Unauthorized"));
+        return next(new Error("Unauthorized"));
       }
       const isSession = SESSION_NAMESPACE_REGEX.test(socket.nsp.name);
 
       if (!isSession) {
-        next(new Error("Invalid workspace name"));
-        return;
+        return next(new Error("Invalid workspace name"));
       }
 
       next();

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LocationFinder } from "@/extension/location-finder";
 import type { Public, SymbolEvents } from "@/extension/types";
 import type { EventEmitter } from "@/extension/utils/event-emitter";
@@ -6,7 +7,7 @@ import { FakeVSCodeAdapter } from "@/extension/vscode-adapter/fake-vscode-adapte
 import * as vscode from "vscode";
 
 export type UriType = vscode.Uri;
-export const Uri = vscode.Uri ?? (FakeUri as any as vscode.Uri);
+export const Uri = vscode.Uri ?? (FakeUri as unknown as vscode.Uri);
 
 export type AppExplorerCommand =
   | "app-explorer.updateExtension"
