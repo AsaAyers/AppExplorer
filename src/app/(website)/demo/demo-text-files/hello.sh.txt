@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# No symbols in this file
-echo "Hello $1"
