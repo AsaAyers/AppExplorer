@@ -10,7 +10,7 @@ const { decryptMock } = vi.hoisted(() => ({
   decryptMock: vi.fn(),
 }));
 
-vi.mock("@/lib/crypto", () => ({
+vi.mock("@/utils/crypto", () => ({
   decrypt: decryptMock,
 }));
 
@@ -159,7 +159,7 @@ describe("SocketServer", () => {
     expect(sender.connected).toBe(true);
   });
 
-  it("throws through invariant path for unexpected event names", async () => {
+  it("disconnects socket for unexpected event names", async () => {
     const sender = connectClient(
       "/session/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "workspace",
@@ -171,17 +171,12 @@ describe("SocketServer", () => {
     sender.connect();
     await connected;
 
-    const uncaught = await waitForEvent<Error>((done) => {
-      const listener = (error: Error) => {
-        process.off("uncaughtException", listener);
-        done(error);
-      };
-      process.on("uncaughtException", listener);
-      sender.emit("unexpectedEvent", { value: true });
+    const disconnectPromise = waitForEvent<string>((done) => {
+      sender.once("disconnect", (reason) => done(reason));
     });
+    sender.emit("unexpectedEvent", { value: true });
 
-    expect(uncaught.message).toContain(
-      "Recieved unexpected event: unexpectedEvent",
-    );
+    const reason = await disconnectPromise;
+    expect(reason).toBe("io server disconnect");
   });
 });

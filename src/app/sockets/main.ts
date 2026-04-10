@@ -75,10 +75,11 @@ export class SocketServer {
 
       socket.onAny((eventName) => {
         log("onAny", eventName);
-        invariant(
-          eventName === "encryptedEvent",
-          `Recieved unexpected event: ${eventName}`,
-        );
+        if (eventName !== "encryptedEvent") {
+          log(`Disconnecting socket for unexpected event: ${eventName}`);
+          socket.disconnect(true);
+          return;
+        }
       });
 
       /**
