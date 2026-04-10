@@ -6,7 +6,7 @@ import React from "react";
 
 import appExplorerLogo from "@/assets/app-explorer.svg";
 import { AppExplorerCard } from "@/components/app-explorer-card";
-import { CardData } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 import { notEmpty } from "@/extension/utils/not-empty";
 import { debugLog } from "@/utils/debug-log";
 import { extractCardDataWithAdapter } from "@/utils/extract-card-data";

@@ -3,12 +3,13 @@ import {
   getDemoWorkspaceCardsAroundCursor,
   toDemoWorkspaceFsPath,
 } from "@/extension/document-symbol-tracker/demo-workspace";
-import { SymbolEvents, type CardData } from "@/extension/types";
+import { type CardData } from "@/EventTypes";
 import { EventEmitter } from "@/extension/utils/event-emitter";
 import { Uri } from "@/extension/vscode-adapter/adapter";
 import { debugLog } from "@/utils/debug-log";
+import { SymbolEvents } from "../types";
 
-const log = debugLog("symbol-tracker:fake");
+const debug = debugLog("symbol-tracker:fake");
 
 export class FakeDocumentSymbolTracker extends EventEmitter<SymbolEvents> {
   private activePath = defaultDemoWorkspaceFile.path;

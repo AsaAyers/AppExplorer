@@ -1,4 +1,3 @@
-import type { AppCard } from "@mirohq/websdk-types/stable/features/widgets/appCard";
 import { z } from "zod";
 
 import {
@@ -14,6 +13,7 @@ import {
   DocumentSymbol,
   UriType,
 } from "@/extension/vscode-adapter/adapter";
+import { CardData } from "@/EventTypes";
 
 export type SymbolAnchor = {
   type: "symbol";

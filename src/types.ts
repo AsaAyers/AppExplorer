@@ -1,4 +1,4 @@
-import type { CardData } from "@/extension/types";
+import { CardData } from "./EventTypes";
 
 export type CurrentBoardInfo = {
   boardId: string;

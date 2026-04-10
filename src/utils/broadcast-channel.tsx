@@ -2,11 +2,12 @@
 import React from "react";
 import invariant from "tiny-invariant";
 
-import { AppEventUnion, CardData } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 import { Disposable } from "@/extension/vscode-adapter/adapter";
 import { debugLog } from "@/utils/debug-log";
 import { useForegroundMiro } from "@/utils/foreground-miro-handler";
 import { getMiroAdapter } from "@/utils/miro/adapter";
+import { AppEventUnion } from "@/extension/types";
 
 export const log = debugLog(`channel`);
 

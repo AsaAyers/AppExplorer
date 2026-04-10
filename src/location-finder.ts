@@ -46,7 +46,7 @@ export class LocationFinder {
   }
 
   async findCardDestination(
-    card: CardData,
+    card: Pick<CardData, "symbol" | "path">,
   ): Promise<SymbolAnchor | vscode.Uri | null> {
     if (card.path) {
       const path = card.path[0] === "/" ? card.path.slice(1) : card.path;

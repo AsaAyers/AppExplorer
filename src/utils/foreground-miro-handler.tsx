@@ -6,7 +6,7 @@ import z from "zod";
 
 import { AppEventHandler } from "@/extension/app-event-handler";
 import { EventCardsAroundCursor, zNewCard } from "@/extension/app-events";
-import { CardData } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 import { delay } from "@/extension/utils/delay";
 import { AppExplorerChannel, useBoardId } from "@/utils/broadcast-channel";
 import { debugLog } from "@/utils/debug-log";

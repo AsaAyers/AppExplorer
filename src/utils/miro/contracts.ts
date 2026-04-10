@@ -1,7 +1,7 @@
 import type { Item } from "@mirohq/websdk-types";
 
 import { zCardSelected } from "@/extension/app-events";
-import type { CardData } from "@/extension/types";
+import type { CardData } from "@/EventTypes";
 import { extractCardDataWithAdapter } from "@/utils/extract-card-data";
 import type { MiroAdapter } from "@/utils/miro/adapter";
 

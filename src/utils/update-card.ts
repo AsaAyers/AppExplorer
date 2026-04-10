@@ -1,7 +1,7 @@
 import { AppCard, CardField } from "@mirohq/websdk-types";
 import invariant from "tiny-invariant";
 
-import { CardData } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 import { MetaData } from "@/types";
 export async function updateCard(
   card: AppCard,

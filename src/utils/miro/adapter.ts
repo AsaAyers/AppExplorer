@@ -1,8 +1,7 @@
-/* eslint-disable no-restricted-globals */
 import type { AppCard, Connector, Item, Text } from "@mirohq/websdk-types";
 import type { Collection } from "@mirohq/websdk-types/stable/api/storage";
 
-import { CardData } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 import { notEmpty } from "@/extension/utils/not-empty";
 import { distance } from "@/utils/distance";
 import { extractCardData } from "@/utils/extract-card-data";

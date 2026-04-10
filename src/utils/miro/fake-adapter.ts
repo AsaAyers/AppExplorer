@@ -1,6 +1,6 @@
 import type { AppCard, Connector, Item, Text } from "@mirohq/websdk-types";
 
-import { CardData } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 import { notEmpty } from "@/extension/utils/not-empty";
 import { debugLog } from "@/utils/debug-log";
 import { extractCardData } from "@/utils/extract-card-data";
@@ -443,10 +443,7 @@ export class FakeAppCard implements FakeCardData {
   fields?: [];
   metadata?: Map<string, unknown>;
   private miroAdapter: FakeMiroAdapter;
-  constructor(
-    miroAdapter: FakeMiroAdapter,
-    data: FakeCardData,
-  ) {
+  constructor(miroAdapter: FakeMiroAdapter, data: FakeCardData) {
     this.miroAdapter = miroAdapter;
     this.id = data.id;
     this.type = data.type;
@@ -514,10 +511,7 @@ export class FakeText implements FakeTextData {
   x: number;
   y: number;
   private miroAdapter: FakeMiroAdapter;
-  constructor(
-    miroAdapter: FakeMiroAdapter,
-    data: FakeTextData,
-  ) {
+  constructor(miroAdapter: FakeMiroAdapter, data: FakeTextData) {
     this.miroAdapter = miroAdapter;
     this.id = data.id;
     this.type = data.type;

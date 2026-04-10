@@ -1,7 +1,5 @@
-import {
-  demoTextFiles,
-} from "@/app/(website)/demo/demo-text-files";
-import type { CardData } from "@/extension/types";
+import { demoTextFiles } from "@/app/(website)/demo/demo-text-files";
+import type { CardData } from "@/EventTypes";
 
 export const DEMO_WORKSPACE_ROOT = "/demo-workspace";
 

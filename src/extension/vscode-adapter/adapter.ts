@@ -22,16 +22,8 @@ type DocumentSymbolTrackerFactory = (
 
 let documentSymbolTrackerFactory: DocumentSymbolTrackerFactory | null = null;
 
-function configureVSCodeAdapter(options: {
-  documentSymbolTrackerFactory?: DocumentSymbolTrackerFactory;
-}) {
-  if (options.documentSymbolTrackerFactory) {
-    documentSymbolTrackerFactory = options.documentSymbolTrackerFactory;
-  }
-}
-
 export class VSCodeAdapter {
-  public locationFinder = new LocationFinder(this);
+  public locationFinder = new LocationFinder();
   symbolTracker?: DocumentSymbolTracker;
   getDocumentSymbolTracker() {
     if (!documentSymbolTrackerFactory) {
@@ -208,10 +200,6 @@ export function getVSCodeAdapter(): VSCodeAdapter {
   }
 
   return singleton;
-}
-
-function resetVSCodeAdapterSingleton() {
-  singleton = null;
 }
 
 export type LocationLink = vscode.LocationLink;

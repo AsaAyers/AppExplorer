@@ -1,7 +1,7 @@
 "use client";
 import type { Item } from "@mirohq/websdk-types/stable/api/client";
 
-import { CardData } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 import { decode } from "@/utils/decode";
 import { isAppCard } from "@/utils/is-app-card";
 import { getMiroAdapter, MiroAdapter } from "@/utils/miro/adapter";

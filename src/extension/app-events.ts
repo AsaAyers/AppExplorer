@@ -3,10 +3,10 @@ import { z } from "zod";
 import { BoardInfo } from "@/card-storage";
 import {
   WorkspaceRegistrationResponse,
-  CardData,
   EventsTo,
   EventsFrom,
 } from "@/extension/types";
+import { CardData } from "@/EventTypes";
 
 export const zCardData = z.custom<CardData>();
 export const zBoardInfo = z.custom<BoardInfo>();
