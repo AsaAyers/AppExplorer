@@ -9,9 +9,8 @@ import { AppExplorerCard } from "@/components/app-explorer-card";
 import { CardData } from "@/EventTypes";
 import { notEmpty } from "@/extension/utils/not-empty";
 import { debugLog } from "@/utils/debug-log";
-import { extractCardDataWithAdapter } from "@/utils/extract-card-data";
+import { extractCardData } from "@/utils/extract-card-data";
 import { useForegroundMiro } from "@/utils/foreground-miro-handler";
-import { getMiroAdapter } from "@/utils/miro/adapter";
 
 const log = debugLog("app-explorer:cards-around-cursor");
 
@@ -25,18 +24,13 @@ export function CardsAroundCursor({
 
   const [selectedCards, setSelectedCards] = React.useState([] as CardData[]);
   const [connectSelectedCards, setConnectCards] = React.useState(true);
-  const miroAdapter = React.useMemo(() => getMiroAdapter(), []);
 
   React.useEffect(() => {
     async function selectionUpdate(event: { items: Item[] }) {
       try {
         const selectedItems = event.items;
         const data = (
-          await Promise.all(
-            selectedItems.map((item) =>
-              extractCardDataWithAdapter(item, miroAdapter),
-            ),
-          )
+          await Promise.all(selectedItems.map((item) => extractCardData(item)))
         ).filter(notEmpty);
 
         setSelectedCards(data);
@@ -55,7 +49,7 @@ export function CardsAroundCursor({
       target: HTMLElement;
     }) => {
       const cardData = JSON.parse(target.dataset.card!) as CardData;
-      cardData.boardId = await miroAdapter.getBoardId();
+      cardData.boardId = (await miro.board.getInfo()).id;
       const attachSelected = target.dataset.attachSelected === "true";
       foreground.newCard({
         x,
@@ -67,24 +61,24 @@ export function CardsAroundCursor({
 
     let cancelled = false;
     async function run() {
-      await miroAdapter.onSelectionUpdate(selectionUpdate);
+      await miro.board.ui.on("selection:update", selectionUpdate);
       if (cancelled) {
-        await miroAdapter.offSelectionUpdate(selectionUpdate);
+        await miro.board.ui.off("selection:update", selectionUpdate);
         return;
       }
 
-      await miroAdapter.onDrop(onDrop);
+      await miro.board.ui.on("drop", onDrop);
       if (cancelled) {
-        await miroAdapter.offDrop(onDrop);
+        await miro.board.ui.off("drop", onDrop);
       }
     }
     run();
     return () => {
       cancelled = true;
-      miroAdapter.offSelectionUpdate(selectionUpdate);
-      miroAdapter.offDrop(onDrop);
+      miro.board.ui.off("selection:update", selectionUpdate);
+      miro.board.ui.off("drop", onDrop);
     };
-  }, [foreground, miroAdapter]);
+  }, [foreground]);
 
   const hasCards = (channelData.cardsAroundCursor?.length ?? 0) > 0;
 

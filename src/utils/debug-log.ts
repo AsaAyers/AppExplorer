@@ -2,15 +2,7 @@ import baseDebug from "debug";
 
 export function debugLog(suffix: string) {
   const envPrefix = process.env.NODE_ENV === "production" ? "" : "dev:";
-
   const debug = baseDebug(`${envPrefix}app-explorer:${suffix}`);
-
-  // @ts-expect-error Maybe this changed between versions? Maybe I added a custom property?
-  debug.error = (...args: unknown[]) => {
-    console.error(...args);
-    debug.apply(null, ["error", ...args]);
-  };
-
   return debug;
 }
 

@@ -1,10 +1,13 @@
 import { Socket as ServerSocket } from "socket.io";
 import type { Socket } from "socket.io-client";
 
-import { Disposable } from "@/extension/vscode-adapter/adapter";
+interface Disposable {
+  dispose(): void;
+}
 import { debugLog } from "@/utils/debug-log";
 
 interface EventsMap {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [event: string]: any;
 }
 

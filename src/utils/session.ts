@@ -79,9 +79,7 @@ export async function readSession() {
 
     const data = session ? await decrypt(session) : null;
     return { session, data, userId };
-  } catch (e) {
-    console.error("Error reading session", e);
-
+  } catch (_e) {
     return { session: null, data: null };
   }
 }

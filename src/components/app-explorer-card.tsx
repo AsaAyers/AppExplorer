@@ -7,7 +7,6 @@ import appcardStatusDisabled from "@/assets/appcard-status-disabled.svg";
 import appcardStatusDisconnected from "@/assets/appcard-status-disconnected.svg";
 import expandIcon from "@/assets/expand-icon.svg";
 import appExplorerLogo from "@/assets/app-explorer.svg";
-import { getMiroAdapter } from "@/utils/miro/adapter";
 import { useIsInMiroIframe } from "@/utils/use-is-in-miro-frame";
 import { CardData } from "@/EventTypes";
 import { createDebug } from "@/utils/create-debug";
@@ -40,7 +39,6 @@ export function AppExplorerCard({
     return null;
   }, [cardData.codeLink]);
   const inFrame = useIsInMiroIframe();
-  const miroAdapter = React.useMemo(() => getMiroAdapter(), []);
 
   const [dragging, setDragging] = React.useState(false);
   const dragImageRef = React.useRef<HTMLElement | null>(null);
@@ -129,8 +127,8 @@ export function AppExplorerCard({
           <button
             disabled={!cardData.miroLink}
             onClick={async () => {
-              const boardId = await miroAdapter.getBoardId();
-              await miroAdapter.openModal({
+              const boardId = (await miro.board.getInfo()).id;
+              await miro.board.ui.openModal({
                 url: `/card/${boardId}/${cardData.id}`,
                 data: cardData,
                 width: 400,

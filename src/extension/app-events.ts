@@ -189,9 +189,6 @@ export type SocketEvent<E extends BaseEvent> = E extends {
   ? (e: E, callback: (result: Result) => void) => void
   : (e: E) => void;
 
-export type UnwrapSocketEvent<T extends SocketEvent<any>> =
-  T extends SocketEvent<infer E> ? E : never;
-
 /**
  * I'm using types to guide and verify development. This type specifies every
  * event that can be sent to and from another socket. "workspace" is each

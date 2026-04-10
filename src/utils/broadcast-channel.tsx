@@ -3,11 +3,13 @@ import React from "react";
 import invariant from "tiny-invariant";
 
 import { CardData } from "@/EventTypes";
-import { Disposable } from "@/extension/vscode-adapter/adapter";
 import { debugLog } from "@/utils/debug-log";
 import { useForegroundMiro } from "@/utils/foreground-miro-handler";
-import { getMiroAdapter } from "@/utils/miro/adapter";
 import { AppEventUnion } from "@/extension/types";
+
+interface Disposable {
+  dispose(): void;
+}
 
 export const log = debugLog(`channel`);
 
@@ -121,8 +123,7 @@ export function useChannelData() {
   return { socketStatus: !!sessionId, cardsAroundCursor, sessionId, path };
 }
 
-const miro = getMiroAdapter();
-const boardIdPromise = miro.getBoardId();
+const boardIdPromise = miro.board.getInfo().then((info) => info.id);
 export function useBoardId() {
   return React.use(boardIdPromise);
 }

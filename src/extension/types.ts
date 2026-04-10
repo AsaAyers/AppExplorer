@@ -7,12 +7,12 @@ import {
   zAllEvents,
 } from "@/extension/app-events";
 import { CardStorage } from "@/card-storage";
-import {
-  Range,
-  SymbolInformation,
-  DocumentSymbol,
-  UriType,
-} from "@/extension/vscode-adapter/adapter";
+import type * as vscode from "vscode";
+
+type Range = vscode.Range;
+type SymbolInformation = vscode.SymbolInformation;
+type DocumentSymbol = vscode.DocumentSymbol;
+type UriType = vscode.Uri;
 import { CardData } from "@/EventTypes";
 
 export type SymbolAnchor = {

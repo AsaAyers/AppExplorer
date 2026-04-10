@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { addMinutes } from "date-fns";
 import { Socket } from "socket.io-client";
 import invariant from "tiny-invariant";
@@ -16,7 +17,9 @@ import {
   MergeUnionOfObjects,
 } from "@/extension/types";
 import { attachSocketHandlers } from "@/extension/utils/attach-socket-handlers";
-import { Disposable } from "@/extension/vscode-adapter/adapter";
+interface Disposable {
+  dispose(): void;
+}
 import { AppExplorerChannel } from "@/utils/broadcast-channel";
 import { decrypt, encrypt } from "@/utils/crypto";
 import { debugLog } from "@/utils/debug-log";
@@ -217,9 +220,10 @@ function typedEntries<T extends object>(
   return Object.entries(obj) as any;
 }
 
-function wrapFunctions<
-  T extends Record<string, (...args: any[]) => any>,
->(obj: T, fn: <K extends keyof T>(key: K, ...args: any[]) => void): T {
+function wrapFunctions<T extends Record<string, (...args: any[]) => any>>(
+  obj: T,
+  fn: <K extends keyof T>(key: K, ...args: any[]) => void,
+): T {
   const result = {} as T;
 
   for (const [key, value] of typedEntries(obj)) {

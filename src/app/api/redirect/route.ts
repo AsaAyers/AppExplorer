@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
   for (let i = 0; i < 5; i++) {
     userId = await getUserId();
     log("getUserId", userId);
-    if (userId) break;
+    if (userId) {
+      break;
+    }
     await delay(10);
   }
 

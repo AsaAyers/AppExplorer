@@ -8,10 +8,6 @@ import "@/app/(website)/demo/demo-code.css";
 import { useDemoFile } from "@/app/(website)/demo/demo-cards-around-cursor";
 import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
 import { useDemoSession } from "@/app/(website)/demo/useDemoSession";
-import { MemoryAdapter } from "@/card-storage";
-import { getVSCodeAdapter } from "@/extension/vscode-adapter/adapter";
-import { WorkspaceCardStorage } from "@/workspace-card-storage";
-import { WorkspaceHandler } from "@/extension/workspace-handler";
 import { debugLog } from "@/utils/debug-log";
 
 const log = debugLog("app-explorer:demo");
@@ -27,33 +23,10 @@ export function DemoCodeImpl({
   path,
 }: ReturnType<typeof useDemoFile>) {
   const [{ sessionId, sessionHexKey }] = useDemoSession();
+  void sessionId;
+  void sessionHexKey;
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [{ selected }, dispatch] = useDemoBoardStorage();
-
-  const vscodeAdapter = getVSCodeAdapter();
-  const socketHost = React.useMemo(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-    return window.location.origin;
-  }, []);
-
-  const workspace = React.useMemo(() => {
-    return new WorkspaceHandler(
-      sessionId,
-      sessionHexKey,
-      true,
-      new WorkspaceCardStorage("demo-board-id", new MemoryAdapter()),
-      { findCardDestination: async () => null },
-      {
-        host: socketHost,
-        socketOptions: {
-          autoConnect: false,
-        },
-        vscodeAdapter,
-      },
-    );
-  }, [sessionHexKey, sessionId, socketHost, vscodeAdapter]);
 
   // Helper to get character offset from mouse position using Range API
   const getOffsetFromPoint = React.useCallback(
@@ -154,11 +127,6 @@ export function DemoCodeImpl({
       cardsAroundCursor: cards.length > 0 ? cards : null,
     };
   }, [selectionStart, symbols]);
-
-  React.useEffect(() => {
-    log("useEffect cardsAroundCursor");
-    workspace.emitCardsAroundCursor(path, cardsAroundCursor);
-  }, [path, symbols, cardsAroundCursor, workspace]);
 
   React.useEffect(() => {
     if (selectionPosition.start != null) {

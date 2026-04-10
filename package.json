@@ -23,10 +23,12 @@
     "build:tests": "node build-tests.cjs",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.cjs --watch",
+    "watch:tsc": "tsc --noEmit --watch",
     "pretest": "npm-run-all -p build:tests vscode:prepublish",
     "type-check": "tsc --noEmit",
     "format": "prettier --write 'src/**/*.{ts,js,json,css,html}'",
     "format:check": "prettier --check 'src/**/*.{ts,js,json,css,html}'",
+    "watch:lint": "eslint src --watch",
     "lint": "eslint src",
     "prepare": "husky",
     "test": "vscode-test --coverage"

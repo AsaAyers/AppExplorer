@@ -10,14 +10,19 @@ import { CardData } from "@/EventTypes";
 import { delay } from "@/extension/utils/delay";
 import { AppExplorerChannel, useBoardId } from "@/utils/broadcast-channel";
 import { debugLog } from "@/utils/debug-log";
-import { CreateConnectorInput, getMiroAdapter } from "@/utils/miro/adapter";
+type CreateConnectorInput = {
+  start: { item: string };
+  end: { item: string };
+  shape: "curved";
+  style: { startStrokeCap: "none"; endStrokeCap: "arrow" };
+};
 import { getRedirectUrl } from "@/app/get-redirect-url";
 
 const log = debugLog("handler:foreground");
 
 export class ForegroundMiroHandler extends AppEventHandler<"miro", "channel"> {
   openUpgradeModal() {
-    return this.miroAdapter.openModal({
+    return miro.board.ui.openModal({
       url: "/upgrade",
       fullscreen: true,
     });
@@ -25,7 +30,6 @@ export class ForegroundMiroHandler extends AppEventHandler<"miro", "channel"> {
   useDemoState(): { selected?: CreateConnectorInput & { id: string } } {
     return {};
   }
-  miroAdapter = getMiroAdapter();
   setConnectSelectedCards(value: boolean) {
     this.snapshot.connectSelectedCards = value;
     this.notify();
@@ -42,8 +46,8 @@ export class ForegroundMiroHandler extends AppEventHandler<"miro", "channel"> {
 
   openAuthModal = async () => {
     const [modalData, panelData, { authUrl, path }] = await Promise.all([
-      this.miroAdapter.getModalData().catch(() => null),
-      this.miroAdapter.getPanelData().catch(() => null),
+      miro.board.ui.getModalData().catch(() => null),
+      miro.board.ui.getPanelData().catch(() => null),
       getRedirectUrl(),
     ]);
 
