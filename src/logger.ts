@@ -1,10 +1,8 @@
 import { formatWithOptions } from "node:util";
 
 import baseDebug from "debug";
-import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { LogPipe } from "./log-pipe";
 import { createDebug } from "./utils/create-debug";
 
 baseDebug.inspectOpts ??= {};
@@ -27,7 +25,6 @@ export class Logger {
   private static instance?: Logger;
   logWrite: ((line: string) => Promise<void>) | undefined;
   logUri: vscode.Uri | undefined;
-  logPipe: LogPipe | undefined;
 
   private constructor() {
     this.outputChannel = vscode.window.createOutputChannel(
@@ -103,29 +100,11 @@ export class Logger {
       : undefined;
   }
 
-  storeLogs = async (logUri: vscode.Uri): Promise<LogPipe | undefined> => {
-    try {
-      this.logUri = logUri;
-      const [logPath, logFile] = this.getLogFile() ?? [];
-      invariant(logPath, "Log path must be set");
-      invariant(logFile, "Log file must be set");
-
-      this.logPipe = new LogPipe(logPath, logFile);
-      this.logWrite = await this.logPipe.getWriter();
-    } catch (err) {
-      this.outputChannel.appendLine(
-        `[logger] Failed to initialize log file: ${(err as any)?.message ?? err}`,
-      );
-    }
-    return undefined;
-  };
-
   /**
    * Dispose of the output channel
    */
   dispose(): void {
     this.outputChannel.dispose();
-    this.logPipe?.dispose();
   }
 }
 

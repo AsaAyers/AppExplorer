@@ -2,6 +2,8 @@ import { addMinutes } from "date-fns";
 import * as jose from "jose";
 import { SignJWT, jwtVerify } from "jose";
 
+import { toHex } from "./to-hex";
+
 import { debugLog } from "@/utils/debug-log";
 import { getSessionKey } from "@/utils/keys";
 import { EncryptablePayload, SessionPayload } from "@/utils/session";
@@ -66,4 +68,14 @@ export async function verify<T extends EncryptablePayload = SessionPayload>(
   } catch {
     return null;
   }
+}
+/**
+ * Hash the input using the WebCryptoAPI's SubtleCrypto interface with SHA-256 algorithm and return the hash as a hex string.
+ */
+export async function sha256(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+  return toHex(new Uint8Array(hashBuffer));
 }

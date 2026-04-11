@@ -35,13 +35,22 @@ app.prepare().then(() => {
   });
 
   httpServer.once("error", (err) => {
-    // eslint-disable-next-line no-console
     console.error(err);
     process.exit(1);
   });
   httpServer.listen(port, () => {
+    const addressInfo = httpServer.address();
+    let serverUrl: string = "(unknown)";
+    if (typeof addressInfo === "string") {
+      serverUrl = `http://${addressInfo}`;
+    } else if (addressInfo && typeof addressInfo.port === "number") {
+      serverUrl = `http://${hostName}:${addressInfo.port}`;
+    } else {
+      console.error("Failed to determine server URL");
+    }
+
     // eslint-disable-next-line no-console
-    console.log(`> Ready on https://${hostName}`);
+    console.log(`> Ready on ${serverUrl}`);
   });
 });
 
@@ -64,7 +73,7 @@ const metricsServer = createServer(async (req, res) => {
 
 metricsServer.listen(metricsPort, () => {
   // eslint-disable-next-line no-console
-  console.log(`> Ready on http://localhost:${metricsPort}`);
+  console.log(`> Metrics Ready on http://localhost:${metricsPort}`);
 });
 
 export {};

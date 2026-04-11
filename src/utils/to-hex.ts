@@ -8,22 +8,3 @@ export function randomHex(bits: number) {
   crypto.getRandomValues(bytes);
   return toHex(bytes);
 }
-
-/**
- * Usage: tsx to-hex.ts <bits>
- * Example: tsx to-hex.ts 256
- *
- */
-function main() {
-  const bits = parseInt(process.argv[2], 10);
-  if (isNaN(bits) || bits % 8 !== 0) {
-    console.error("Please provide a valid number of bits (multiple of 8)");
-    process.exit(1);
-  }
-  // eslint-disable-next-line no-console
-  console.log(randomHex(bits));
-}
-
-if (import.meta.url === process.argv[1]) {
-  main();
-}

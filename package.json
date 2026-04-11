@@ -22,7 +22,7 @@
     "build:next": "next build",
     "build:extension": "node esbuild.cjs",
     "postbuild": "./patch-standalone.sh",
-    "start": "NODE_ENV=production node server.ts",
+    "start": "NODE_ENV=production node .next/standalone/server.js",
     "format": "prettier --write .",
     "pretypecheck": "npx next typegen",
     "watch:tsc": "tsc --watch",

@@ -37,7 +37,6 @@ export async function activate(
   context: vscode.ExtensionContext,
 ): Promise<ExtensionApi> {
   globalThis.extensionContext = context;
-  logger.storeLogs(context.logUri);
   setUpdateCommandContext(context);
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", true);
 
