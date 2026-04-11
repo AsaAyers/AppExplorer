@@ -1,11 +1,10 @@
 export async function GET() {
-  const database = false;
   const now = new Date().toISOString();
 
   return Response.json(
-    { now, database },
+    { now },
     {
-      status: database ? 200 : 500,
+      status: 200,
     },
   );
 }

@@ -55,6 +55,7 @@ app.prepare().then(() => {
 
 const metricsPort = Number(port + 1);
 
+const metricsRegistry = globalThis.metricsRegistry;
 const metricsServer = createServer(async (req, res) => {
   if (req.url !== "/api/metrics" || !metricsRegistry) {
     res.statusCode = 404;

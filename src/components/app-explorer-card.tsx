@@ -146,7 +146,11 @@ export function AppExplorerCard({
           </button>
 
           {cardData.codeLink && codeLogo ? (
-            <a href={cardData.codeLink} target="_blank">
+            <a
+              href={cardData.codeLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element*/}
               <img src={codeLogo} alt="" width="20" height="20" />
               <span className="sr-only"> Open code </span>
