@@ -197,6 +197,7 @@
     "@flydotio/dockerfile": "^0.7.10",
     "@lit/context": "^1.1.6",
     "@lit/task": "^1.0.3",
+    "@octokit/webhooks-types": "^7.6.1",
     "@tailwindcss/postcss": "^4",
     "@types/compression": "^1.8.1",
     "@types/debug": "^4.1.12",

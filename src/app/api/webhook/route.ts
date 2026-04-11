@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 
+import { WorkflowRunEvent } from "@octokit/webhooks-types";
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (request: NextRequest) => {
@@ -11,7 +12,8 @@ export const POST = async (request: NextRequest) => {
       },
     );
   }
-  const payload = await request.json();
+  /* Use the raw body for signature verification */
+  const bodyText = await request.text();
 
   /* Validate the webhook */
   const signature = request.headers.get("X-Hub-Signature-256");
@@ -20,7 +22,7 @@ export const POST = async (request: NextRequest) => {
   }
   const generatedSignature = `sha256=${crypto
     .createHmac("sha256", process.env.GITHUB_WEBHOOK_SECRET)
-    .update(JSON.stringify(payload))
+    .update(bodyText)
     .digest("hex")}`;
   const sigBuffer = Buffer.from(signature);
   const genBuffer = Buffer.from(generatedSignature);
@@ -37,6 +39,7 @@ export const POST = async (request: NextRequest) => {
   const tags: string[] = [];
   let message;
   const click = "https://appexplorer.dev";
+  const payload = JSON.parse(bodyText) as WorkflowRunEvent;
   switch (payload?.action) {
     case "requested":
       // message = "Requested a new deploy";
@@ -44,7 +47,10 @@ export const POST = async (request: NextRequest) => {
     case "in_progress":
       break;
     case "completed":
-      message = "Deploy conclusion: " + payload?.workflow_run?.conclusion;
+      message = `${payload.workflow.name}:${payload.workflow_run.head_branch} Deploy conclusion: ${
+        payload?.workflow_run?.conclusion
+      }`;
+
       tags.push("tada");
       break;
   }

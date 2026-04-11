@@ -55,7 +55,7 @@ export default async function initMiroAPI() {
             MIRO_COOKIE,
             await encrypt({
               ...state,
-              exp: +expires,
+              exp: Math.floor(expires.getTime() / 1000),
             }),
             {
               ...sessionSettings,
