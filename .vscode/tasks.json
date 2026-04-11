@@ -4,14 +4,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "watch",
-      "dependsOn": ["npm: watch:tsc", "npm: watch:esbuild"],
+      "type": "npm",
+      "script": "lint",
+      "group": "build",
+      "problemMatcher": "$eslint-stylish",
+      // "isBackground": true,
+      "label": "npm: lint",
       "presentation": {
         "reveal": "never"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": true
       }
     },
     {
@@ -37,22 +37,6 @@
         "group": "watch",
         "reveal": "never"
       }
-    },
-    {
-      "type": "npm",
-      "script": "watch-tests",
-      "problemMatcher": "$tsc-watch",
-      "isBackground": true,
-      "presentation": {
-        "reveal": "never",
-        "group": "watchers"
-      },
-      "group": "build"
-    },
-    {
-      "label": "tasks: watch-tests",
-      "dependsOn": ["npm: watch", "npm: watch-tests"],
-      "problemMatcher": []
     }
   ]
 }

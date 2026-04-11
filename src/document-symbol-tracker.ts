@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
+
 import { SymbolAnchor, CardData } from "./EventTypes";
 import { getGitHubUrl } from "./get-github-url";
 import { getRelativePath } from "./get-relative-path";
 import { LocationFinder } from "./location-finder";
 import { createDebug } from "./utils/create-debug";
+import { sha256 } from "./utils/crypto";
 const debug = createDebug("app-explorer:document-symbol-tracker");
 
 /**
@@ -138,7 +140,11 @@ export class DocumentSymbolTracker
           targetRange: anchor.range,
         };
         const path = getRelativePath(def.targetUri)!;
+
         return {
+          id: await sha256(anchor.label),
+          x: 0,
+          y: 0,
           type: "symbol",
           boardId,
           title: anchor.label,

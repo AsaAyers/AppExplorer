@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+
 import { SymbolAnchor, CardData } from "./EventTypes";
 import { createDebug } from "./utils/create-debug";
 const debug = createDebug("app-explorer:location-finder");
@@ -46,7 +47,7 @@ export class LocationFinder {
   }
 
   async findCardDestination(
-    card: CardData,
+    card: Pick<CardData, "symbol" | "path">,
   ): Promise<SymbolAnchor | vscode.Uri | null> {
     if (card.path) {
       const path = card.path[0] === "/" ? card.path.slice(1) : card.path;

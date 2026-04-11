@@ -1,13 +1,15 @@
-import * as childProcess from "child_process";
-import * as fs from "fs";
-import * as path from "path";
+import * as childProcess from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
 import * as vscode from "vscode";
+
 import { createDebug } from "../utils/create-debug";
 let outputChannel: vscode.OutputChannel;
 const debug = createDebug("app-explorer:update-extension");
 
 export function registerUpdateCommand(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
+  const disposable = vscode.commands.registerCommand(
     "app-explorer.updateExtension",
     async () => {
       outputChannel ??= vscode.window.createOutputChannel("AppExplorer Update");
@@ -87,7 +89,6 @@ export function registerUpdateCommand(context: vscode.ExtensionContext) {
               });
           });
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         outputChannel.appendLine(`Extension update failed: ${error.message}`);
         vscode.window.showErrorMessage(
@@ -102,7 +103,7 @@ export function registerUpdateCommand(context: vscode.ExtensionContext) {
 
 function findVsceExecutable(rootPath: string): string | undefined {
   // Check if vsce is in the PATH
-  let binary = process.platform === "win32" ? "vsce.cmd" : "vsce";
+  const binary = process.platform === "win32" ? "vsce.cmd" : "vsce";
   debug("vsce binary", binary, process.platform);
   try {
     const version = childProcess.spawnSync(binary, ["--version"], {

@@ -1,18 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
+
 import * as vscode from "vscode";
+
 import { AppExplorerLens } from "./app-explorer-lens";
 import { MemoryAdapter } from "./card-storage";
 import { makeNavigationHandler } from "./commands/navigate";
 import { registerUpdateCommand } from "./commands/update-extension";
 import { EditorDecorator } from "./editor-decorator";
-import { FeatureFlagManager } from "./feature-flag-manager";
 import { LocationFinder } from "./location-finder";
 import { logger as baseLogger, logger } from "./logger";
 import { PortConfig } from "./port-config";
+import { MiroServer } from "./server/server";
 import { ServerDiscovery } from "./server-discovery";
 import { ServerLauncher } from "./server-launcher";
-import { MiroServer } from "./server/server";
 import { StatusBarManager } from "./status-bar-manager";
 import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
 import { createDebug } from "./utils/create-debug";
@@ -36,7 +37,6 @@ export async function activate(
   context: vscode.ExtensionContext,
 ): Promise<ExtensionApi> {
   globalThis.extensionContext = context;
-  logger.storeLogs(context.logUri);
   setUpdateCommandContext(context);
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", true);
 
@@ -50,7 +50,6 @@ export async function activate(
 
   // Initialize server discovery and launcher with configured port
   const serverPort = PortConfig.getServerPort();
-  const featureFlagManager = new FeatureFlagManager(context);
   baseLogger.initialize();
 
   const locationFinder = new LocationFinder();
@@ -70,7 +69,6 @@ export async function activate(
   });
 
   const serverLauncher = new ServerLauncher(
-    featureFlagManager,
     workspaceId,
     new ServerDiscovery({ port: serverPort }),
   );
@@ -83,7 +81,6 @@ export async function activate(
   });
 
   debug("AppExplorer extension activating");
-  debug("Migration flags:", featureFlagManager.getFlags());
 
   context.subscriptions.push(new StatusBarManager(cardStorage));
 

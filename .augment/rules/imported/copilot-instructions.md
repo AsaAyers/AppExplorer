@@ -11,20 +11,17 @@ AppExplorer is a VSCode extension designed to assist developers in creating arch
 ### Key Components
 
 1. **VSCode Extension**:
-
    - Located in `src/extension.ts`.
    - Registers commands like `app-explorer.createCard`, `app-explorer.attachCard`, and `app-explorer.navigate`.
    - Manages interactions between VSCode and the Miro server.
 
 2. **Miro Integration**:
-
    - Core logic in `src/miro.ts`.
    - Handles Miro board interactions, such as creating and updating cards, tagging, and zooming into cards.
    - Uses the Miro Web SDK for board operations.
 
 3. **Local Webserver**:
-
-   - Implemented in `src/server.ts`.
+   - Implemented in `src/server.js`.
    - Hosts a webserver on `http://localhost:9042/` to act as a Miro extension.
    - Uses `socket.io` for real-time communication between Miro and VSCode.
 
@@ -92,7 +89,7 @@ AppExplorer is a VSCode extension designed to assist developers in creating arch
 
 - `src/extension.ts`: Main entry point for the VSCode extension.
 - `src/miro.ts`: Handles Miro board interactions.
-- `src/server.ts`: Implements the local webserver.
+- `src/server.js`: Implements the local webserver.
 - `public/`: Contains static assets for the Miro extension.
 - `test/`: Contains test cases for the extension.
 

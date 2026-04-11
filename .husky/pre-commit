@@ -1,4 +1,6 @@
-npm test
-prettier $(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g') --write --ignore-unknown
-npm run lint -- --max-warnings=0
-git update-index --again
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run format
+npm run lint
+npm run typecheck

@@ -10,6 +10,7 @@ import type {
 } from "@mirohq/websdk-types";
 import { type Socket, io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
+
 import { type AppExplorerTag, type CardData } from "./EventTypes";
 import { isAppCard } from "./miro/isAppCard";
 import { updateCard } from "./miro/updateCard";
@@ -539,6 +540,9 @@ export async function extractCardData(card: Item): Promise<CardData | null> {
     }
 
     return {
+      id: card.id,
+      x: card.x,
+      y: card.y,
       type: "symbol",
       boardId,
       title: decode(card.title),

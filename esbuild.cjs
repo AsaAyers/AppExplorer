@@ -1,9 +1,25 @@
 /* eslint-disable no-console */
 const esbuild = require("esbuild");
 const rawPlugin = require("esbuild-raw-plugin").raw({});
+const path = require("node:path");
+const { readdirSync } = require("node:fs");
 
+const { rimraf, rimrafSync, native, nativeSync } = require("rimraf");
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
+
+function findTestFiles(dir) {
+  const results = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...findTestFiles(full));
+    } else if (entry.name.endsWith(".test.ts")) {
+      results.push(full);
+    }
+  }
+  return results;
+}
 
 /**
  * @type {import('esbuild').Plugin}
@@ -29,49 +45,63 @@ const esbuildProblemMatcherPlugin = {
 
 async function main() {
   const context = [];
+
+  const baseConfig = {
+    bundle: true,
+    minify: production,
+    sourcemap: !production,
+    loader: { ".txt": "text", ".pub": "text" },
+    logLevel: "silent",
+    sourcesContent: false,
+    plugins: [rawPlugin, esbuildProblemMatcherPlugin],
+  };
+
+  const root = path.resolve(__dirname);
+  const testDir = path.join(root, "src", "test");
+  const testsOut = path.join(root, ".tests-out");
+
   context.push(
     await esbuild.context({
+      ...baseConfig,
       entryPoints: ["src/extension.ts"],
-      bundle: true,
       format: "cjs",
-      minify: production,
-      sourcemap: !production,
-      sourcesContent: false,
       platform: "node",
       outfile: "app-explorer.cjs",
-      external: ["vscode"],
-      logLevel: "silent",
-      plugins: [rawPlugin, esbuildProblemMatcherPlugin],
+      packages: "external",
     }),
   );
   context.push(
     await esbuild.context({
+      ...baseConfig,
       entryPoints: ["src/miro.ts"],
-      bundle: true,
       format: "esm",
-      minify: production,
-      sourcemap: !production,
-      sourcesContent: false,
       platform: "browser",
       outfile: "public/miro.js",
-      external: [],
-      logLevel: "silent",
-      plugins: [rawPlugin, esbuildProblemMatcherPlugin],
     }),
   );
   context.push(
     await esbuild.context({
+      ...baseConfig,
       entryPoints: ["src/lit.ts"],
-      bundle: true,
       format: "esm",
-      minify: production,
-      sourcemap: !production,
-      sourcesContent: false,
       platform: "browser",
       outfile: "public/lit.js",
-      external: [],
-      logLevel: "silent",
-      plugins: [rawPlugin, esbuildProblemMatcherPlugin],
+    }),
+  );
+
+  const entryPoints = findTestFiles(testDir);
+  context.push(
+    await esbuild.context({
+      ...baseConfig,
+      entryPoints,
+      format: "cjs",
+      platform: "node",
+      minify: false,
+      sourcemap: true,
+      outExtension: { ".js": ".cjs" },
+      outdir: testsOut,
+      outbase: testDir,
+      packages: "external",
     }),
   );
   if (watch) {

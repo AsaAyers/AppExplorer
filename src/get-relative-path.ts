@@ -1,5 +1,6 @@
+import * as path from "node:path";
+
 import * as vscode from "vscode";
-import * as path from "path";
 
 export function getRelativePath(uri: vscode.Uri): string | undefined {
   const workspaceFolders = vscode.workspace.workspaceFolders;

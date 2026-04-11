@@ -1,7 +1,9 @@
 import "@webcomponents/webcomponentsjs";
 import { css, html } from "lit";
 import { customElement } from "lit/decorators.js";
+
 import { createDebug } from "../utils/create-debug";
+
 import "./app-card";
 import { AppElement } from "./app-element";
 import "./cards-around-cursor";
@@ -15,7 +17,7 @@ document.head.insertAdjacentHTML(
   `<style>${rawMirotoneStyles}</style>`,
 );
 
-const debug = createDebug("app-explorer:miro:sidebar");
+const log = createDebug("app-explorer:miro:sidebar");
 
 @customElement("app-explorer-sidebar")
 export class SidebarElement extends AppElement {

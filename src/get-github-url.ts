@@ -1,5 +1,7 @@
+import * as path from "node:path";
+
 import * as vscode from "vscode";
-import * as path from "path";
+
 import { getRelativePath } from "./get-relative-path";
 import { GitUtils, DefaultGitUtils } from "./git-utils";
 

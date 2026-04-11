@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+
 import { CardData } from "./EventTypes";
 import { HandlerContext } from "./extension";
 import { getRelativePath } from "./get-relative-path";

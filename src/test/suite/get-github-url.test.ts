@@ -1,7 +1,10 @@
-import * as assert from "assert";
+import * as assert from "node:assert";
+
 import * as vscode from "vscode";
+
 import { getGitHubUrl } from "../../get-github-url";
 import { GitUtils } from "../../git-utils";
+
 import { uriForFile } from "./test-utils";
 
 class MockGitUtils implements GitUtils {

@@ -1,9 +1,11 @@
 import { css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
+
 import { CardData } from "../EventTypes";
 import { isAppCard } from "../miro/isAppCard";
 import { updateCard } from "../miro/updateCard";
 import { createDebug } from "../utils/create-debug";
+
 import { AppElement } from "./app-element";
 import { CardsAroundCursorController } from "./cards-around-cursor-controller";
 import { mirotoneStyles } from "./mirotone";
@@ -64,7 +66,7 @@ export class CardsAroundCursorElement extends AppElement {
     target: HTMLElement;
   }) => {
     const cardData = JSON.parse(target.dataset.card!) as CardData;
-    cardData.boardId = (await miro?.board.getInfo()).id;
+    cardData.boardId = (await miro?.board.getInfo())?.id;
 
     const card = await updateCard(
       await miro.board.createAppCard({
@@ -77,7 +79,7 @@ export class CardsAroundCursorElement extends AppElement {
     );
 
     if (target.dataset.attachSelected === "true") {
-      let selection = (await miro.board.getSelection()).filter(isAppCard);
+      const selection = (await miro.board.getSelection()).filter(isAppCard);
 
       if (selection.length > 0) {
         await selection.reduce(async (promise, item) => {

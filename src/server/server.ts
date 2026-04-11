@@ -1,14 +1,15 @@
+import { createServer } from "node:http";
+import * as path from "node:path";
+
 import { TagColor } from "@mirohq/websdk-types/stable/features/widgets/tag";
 import compression from "compression";
 import express from "express";
-import { createServer } from "http";
 import morgan from "morgan";
-import * as path from "path";
 import { Namespace, Server, Socket as ServerSocket } from "socket.io";
 import { Socket as ClientSocket } from "socket.io-client";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
-import { BoardInfo, CardStorage, MemoryAdapter } from "../card-storage";
+
 import {
   AppExplorerTag,
   CardData,
@@ -16,13 +17,14 @@ import {
   WorkspaceRegistrationRequest,
   WorkspaceRegistrationResponse,
 } from "../EventTypes";
-import { FeatureFlagManager } from "../feature-flag-manager";
+import { BoardInfo, CardStorage, MemoryAdapter } from "../card-storage";
 import { logger } from "../logger";
 import { PortConfig } from "../port-config";
 import { EventsFrom, EventsTo, RoutedEvents } from "../socket-events";
 import { listenToAllEvents } from "../test/helpers/listen-to-all-events";
 import { bindHandlers } from "../utils/bindHandlers";
 import { createDebug } from "../utils/create-debug";
+
 import { SidebarServer } from "./sidebar-server";
 
 const debug = createDebug("app-explorer:server");
@@ -48,17 +50,14 @@ export class MiroServer {
   private connectedWorkspaces = new Map<string, WorkspaceInfo>();
 
   private cardStorage = new CardStorage(new MemoryAdapter());
-  #featureFlagManager: FeatureFlagManager;
   #port: number;
   #workspaceHost: string;
 
   public static publicPath = path.join(__dirname, "public");
   constructor(
-    featureFlagManager: FeatureFlagManager,
     workspaceHost: string,
     port: number = PortConfig.getServerPort(),
   ) {
-    this.#featureFlagManager = featureFlagManager;
     this.#port = port;
     this.#workspaceHost = workspaceHost;
     listenToAllEvents(this.cardStorage, (eventName, ...args) => {
@@ -134,14 +133,10 @@ export class MiroServer {
   /**
    * Create and start a MiroServer instance with proper error handling
    */
-  static async create(
-    featureFlagManager: FeatureFlagManager,
-    workspaceId: string,
-    port?: number,
-  ): Promise<MiroServer> {
+  static async create(workspaceId: string, port?: number): Promise<MiroServer> {
     // Use provided port, or fall back to configured port
     const serverPort = port ?? PortConfig.getServerPort();
-    const server = new MiroServer(featureFlagManager, workspaceId, serverPort);
+    const server = new MiroServer(workspaceId, serverPort);
     await server.startServer();
     return server;
   }

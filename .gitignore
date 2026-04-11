@@ -6,7 +6,6 @@ node_modules
 font/*
 !font/app-explorer.woff
 dist-code
-.husky/
 public/miro.js
 public/miro.js.map
 public/lit.js
@@ -23,3 +22,7 @@ app-explorer.cjs.map
 screenshots/
 *.png
 .next/
+code.deb
+*.tsbuildinfo
+public/lit.css
+public/lit.css.map

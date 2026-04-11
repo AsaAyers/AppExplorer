@@ -1,16 +1,19 @@
-import assert from "assert";
-import * as vscode from "vscode";
+import assert from "node:assert";
+
 import { suite } from "mocha";
 import { Browser, BrowserContext, Page } from "playwright";
+import invariant from "tiny-invariant";
+import * as vscode from "vscode";
+
+import { createDebug } from "../utils/create-debug";
+
+import { launchBrowser, createBrowserPage } from "./helpers/browser";
 import {
   activateAppExplorer,
   uriForFile,
   videoDelay,
   waitFor,
 } from "./helpers/test-utils";
-import invariant from "tiny-invariant";
-import { createDebug } from "../utils/create-debug";
-import { launchBrowser, createBrowserPage } from "./helpers/browser";
 
 const log = createDebug("app-explorer:create-card-test");
 

@@ -2,7 +2,7 @@ import { Socket } from "socket.io-client";
 
 export type EventMapType = {
   // This does need to use any, it doesn't work with unknown
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   [K: string]: (...args: any[]) => any;
 };
 
