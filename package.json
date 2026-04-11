@@ -1,7 +1,7 @@
 {
-  "name": "app-explorer",
-  "version": "0.9.0",
   "publisher": "asa-ayers",
+  "name": "app-explorer",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -17,7 +17,7 @@
   ],
   "main": "app-explorer.cjs",
   "scripts": {
-    "dev": "DEBUG='*app-explorer:*' PORT=3000 node server.ts",
+    "dev": "DEBUG='*app-explorer:*' PORT=3000 node server.js",
     "build": "npm-run-all --parallel build:next build:extension",
     "build:next": "next build",
     "build:extension": "node esbuild.cjs",

@@ -21,7 +21,7 @@ AppExplorer is a VSCode extension designed to assist developers in creating arch
    - Uses the Miro Web SDK for board operations.
 
 3. **Local Webserver**:
-   - Implemented in `src/server.ts`.
+   - Implemented in `src/server.js`.
    - Hosts a webserver on `http://localhost:9042/` to act as a Miro extension.
    - Uses `socket.io` for real-time communication between Miro and VSCode.
 
@@ -89,7 +89,7 @@ AppExplorer is a VSCode extension designed to assist developers in creating arch
 
 - `src/extension.ts`: Main entry point for the VSCode extension.
 - `src/miro.ts`: Handles Miro board interactions.
-- `src/server.ts`: Implements the local webserver.
+- `src/server.js`: Implements the local webserver.
 - `public/`: Contains static assets for the Miro extension.
 - `test/`: Contains test cases for the extension.
 

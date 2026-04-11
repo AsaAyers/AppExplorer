@@ -12,7 +12,7 @@ AppExplorer is a VSCode extension designed to integrate Miro boards with VSCode,
    - Manages VSCode's behavior and talks to the Local Webserver over websockets.
 
 2. **Local Webserver**:
-   - Implemented in `src/server.ts`.
+   - Implemented in `src/server.js`.
    - Hosts a webserver on `http://localhost:9042/`.
    - Uses `socket.io` for real-time communication.
    - It is launched inside the first workspace to open. Even the hosting workspace communicates over websockets.
@@ -134,7 +134,7 @@ There is a `setup-xvfb.sh` script for setting up a virtual framebuffer. This is 
 
 - `src/extension.ts`: Main entry point for the VSCode extension.
 - `src/miro.ts`: Handles Miro board interactions.
-- `src/server.ts`: Implements the local webserver.
+- `src/server.js`: Implements the local webserver.
 - `public/`: Contains static assets for the Miro extension.
 - `test/`: Contains test cases for the extension.
 

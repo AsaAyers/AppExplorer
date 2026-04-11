@@ -2,8 +2,7 @@ const { createServer } = await import("node:http");
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT ?? 3000);
 
-declare let hostname: string;
-const hostName = typeof hostname === "string" ? hostname : "AppExplorer.dev";
+const hostName = process.env.HOSTNAME || "AppExplorer.dev";
 
 const next = await import("next");
 const app = next.default({
@@ -40,7 +39,7 @@ app.prepare().then(() => {
   });
   httpServer.listen(port, () => {
     const addressInfo = httpServer.address();
-    let serverUrl: string = "(unknown)";
+    let serverUrl = "(unknown)";
     if (typeof addressInfo === "string") {
       serverUrl = `http://${addressInfo}`;
     } else if (addressInfo && typeof addressInfo.port === "number") {
