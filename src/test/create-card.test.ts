@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import fs from "node:fs";
 
 import { suite } from "mocha";
 import { Browser, BrowserContext, Page } from "playwright";
@@ -17,10 +18,10 @@ import {
 
 const log = createDebug("app-explorer:create-card-test");
 
-const MIRO_TEST_EMAIL = process.env.MIRO_TEST_EMAIL ?? "";
-const MIRO_TEST_PASSWORD = process.env.MIRO_TEST_PASSWORD ?? "";
+const storageState = "playwright/.auth/user.json";
+const storageStateExists = fs.existsSync(storageState);
 
-const suiteFn = MIRO_TEST_EMAIL && MIRO_TEST_PASSWORD ? suite : suite.skip;
+const suiteFn = storageStateExists ? suite : suite.skip;
 
 suiteFn("Create Card", function () {
   let browser: Browser | undefined;
@@ -74,7 +75,7 @@ suiteFn("Create Card", function () {
     const position = doc.positionAt(funcApplyIndex);
     helpersFile.selection = new vscode.Selection(position, position);
 
-    await videoDelay("openHelpersFile");
+    await videoDelay("openHelpersFile", 2);
     const sidebar = getSidebar(page);
 
     const appCardSelector = "app-card";
@@ -142,7 +143,7 @@ suiteFn("Create Card", function () {
       },
     );
 
-    await videoDelay("helpers reopened");
+    await videoDelay("helpers reopened", 2);
     log("assertions passed");
   });
 });
@@ -151,15 +152,6 @@ const testFrameUrl =
   "https://miro.com/app/board/uXjVJpT6jCA=/?moveToWidget=3458764666841514287&cot=14";
 
 async function openTestBoard(page: Page) {
-  await page.goto("https://miro.com/login", {
-    waitUntil: "domcontentloaded",
-  });
-
-  await page.getByLabel("Email").fill(process.env.MIRO_TEST_EMAIL ?? "");
-  await page.getByLabel("Password").fill(process.env.MIRO_TEST_PASSWORD ?? "");
-  await page.getByRole("button", { name: "Continue with email" }).click();
-
-  await page.getByText("Boards in this team").waitFor({ state: "visible" });
   await page.goto(testFrameUrl, {
     waitUntil: "domcontentloaded",
   });

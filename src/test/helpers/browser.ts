@@ -15,9 +15,13 @@ export type BrowserPage = {
   page: Page;
 };
 
-export async function launchBrowser() {
-  const HEADLESS = process.env.HEADLESS || "true";
-  return chromium.launch({ headless: HEADLESS === "true" });
+const envHeadless = (process.env.HEADLESS || "true") === "true";
+export async function launchBrowser({
+  headless = envHeadless,
+}: {
+  headless?: boolean;
+} = {}) {
+  return chromium.launch({ headless });
 }
 
 let blockSessionLink = false;
@@ -35,7 +39,9 @@ declare global {
 export async function createBrowserPage(
   browser: Browser,
 ): Promise<BrowserPage> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({
+    storageState: "playwright/.auth/user.json",
+  });
   // Enable access to local resources
   await context.grantPermissions([
     "camera",
