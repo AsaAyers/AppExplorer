@@ -45,19 +45,23 @@ suiteFn("Create Card", function () {
     ({ context, page } = await createBrowserPage(browser));
   });
 
-  teardown(async function () {
-    // Check Mocha to see if the current test has failed
-    if (this.currentTest?.state === "failed") {
-      invariant(page, "Page should be defined in teardown");
-      await page.screenshot({ path: `failure-${this.currentTest.title}.png` });
+  suiteTeardown(async function () {
+    const videoPath = await page?.video()?.path();
+    await videoDelay("teardown delay", 2);
+
+    await context?.close();
+    if (videoPath) {
+      // Rename video to paywright/videos/{testName}.webm
+      const newVideoPath = `videos/CreateCard.webm`;
+      await fs.promises.rename(videoPath, newVideoPath);
+      log(`Saved video to ${newVideoPath}`);
     }
   });
 
-  test("Login on test board", async function () {
+  test("On test board", async function () {
     this.timeout(120000);
     invariant(page, "Page should be defined after setup");
     await openTestBoard(page);
-    await videoDelay("openTestBoard");
 
     const URI = uriForFile("src/utils/helpers.ts");
     const doc = await vscode.workspace.openTextDocument(URI);
@@ -74,14 +78,14 @@ suiteFn("Create Card", function () {
     );
     const position = doc.positionAt(funcApplyIndex);
     helpersFile.selection = new vscode.Selection(position, position);
-
     await videoDelay("openHelpersFile", 2);
-    const sidebar = getSidebar(page);
 
+    const sidebar = getSidebar(page);
     const appCardSelector = "app-card";
     await waitFor(async () => {
       assert.equal(await sidebar.locator(appCardSelector).count(), 3);
     });
+    await videoDelay("3 cards");
 
     const cardTitleSelector = ".app-card--title";
     await sidebar
@@ -94,7 +98,7 @@ suiteFn("Create Card", function () {
       has: sidebar.locator(cardTitleSelector).getByText(/callback$/),
     });
 
-    await videoDelay("sidebar");
+    await videoDelay("sidebar ready");
 
     // Drag the card onto the board
     const cardBoundingBox = await card.boundingBox();
@@ -109,8 +113,8 @@ suiteFn("Create Card", function () {
     await card.dragTo(canvas, {
       steps: 50,
       targetPosition: {
-        x: pageWidthInPixels / 2,
-        y: pageHeightInPixels / 2,
+        x: pageWidthInPixels * 0.75,
+        y: pageHeightInPixels * 0.5,
       },
     });
     await videoDelay("newCard");
@@ -149,7 +153,7 @@ suiteFn("Create Card", function () {
 });
 
 const testFrameUrl =
-  "https://miro.com/app/board/uXjVJpT6jCA=/?moveToWidget=3458764666841514287&cot=14";
+  "https://miro.com/app/board/uXjVGjhWRk8=/?moveToWidget=3458764667378076158&cot=14";
 
 async function openTestBoard(page: Page) {
   await page.goto(testFrameUrl, {
@@ -213,10 +217,9 @@ async function cleanFrame() {
       return true;
     } else if (item.parentId === null) {
       const intersects =
-        item.x < frame.x + frame.width &&
-        item.x + item.width > frame.x &&
-        item.y < frame.y + frame.height &&
-        item.y + item.height > frame.y;
+        Math.abs(item.x - frame.x) < frame.width / 2 &&
+        Math.abs(item.y - frame.y) < frame.height / 2;
+
       return intersects;
     }
     return false;

@@ -8,6 +8,7 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
+import { isHeadless, isRecording } from "./isRecording";
 import { screenshot, waitFor } from "./test-utils";
 
 export type BrowserPage = {
@@ -15,9 +16,8 @@ export type BrowserPage = {
   page: Page;
 };
 
-const envHeadless = (process.env.HEADLESS || "true") === "true";
 export async function launchBrowser({
-  headless = envHeadless,
+  headless = isHeadless,
 }: {
   headless?: boolean;
 } = {}) {
@@ -41,6 +41,14 @@ export async function createBrowserPage(
 ): Promise<BrowserPage> {
   const context = await browser.newContext({
     storageState: "playwright/.auth/user.json",
+    viewport: { width: 1440, height: 900 },
+    recordVideo:
+      isRecording && isHeadless
+        ? {
+            dir: "playwright/videos",
+            showActions: {},
+          }
+        : undefined,
   });
   // Enable access to local resources
   await context.grantPermissions([

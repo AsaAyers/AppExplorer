@@ -16,6 +16,7 @@ export async function setup() {
     log("Using existing authentication state from", storageState);
     const context = await browser.newContext({
       storageState,
+      viewport: { width: 1920, height: 1080 },
     });
     const page = await context.newPage();
 
@@ -45,7 +46,7 @@ export async function setup() {
   await context.storageState({ path: "playwright/.auth/user.json" });
 
   log("close browser");
-  browser.close();
+  await context.close();
 }
 
 setup().catch((error) => {

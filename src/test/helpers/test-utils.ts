@@ -6,6 +6,8 @@ import * as vscode from "vscode";
 
 import { ExtensionApi } from "../../extension";
 
+import { isRecording } from "./isRecording";
+
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -72,7 +74,7 @@ export async function screenshot(
 }
 
 export async function videoDelay(_label: string, multiplier = 1) {
-  if (process.env.XVFB_FFMPEG_PID) {
+  if (isRecording) {
     const ms = 100 * multiplier;
     await delay(ms);
   }

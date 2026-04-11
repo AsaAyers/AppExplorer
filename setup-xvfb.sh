@@ -4,6 +4,12 @@ export ELECTRON_ENABLE_LOGGING=1
 export ELECTRON_DISABLE_GPU=1
 XVFB_VIDEO_RESOLUTION="1920x1024"
 
+# export HEADLESS=0
+
+if [ "$HEADLESS" -eq 0 ]; then
+	XVFB_VIDEO_RESOLUTION="3440x1440"
+fi
+
 # Internal variable to store ffmpeg PID
 export XVFB_FFMPEG_PID=""
 
@@ -36,16 +42,32 @@ stopVideo() {
 
 Xvfb $DISPLAY -screen 0 "${XVFB_VIDEO_RESOLUTION}x24" > /dev/null 2>&1 &
 
+if [ "$HEADLESS" -eq 0 ]; then
+	if which -s dwm; then
+		sleep 1
+		dwm >/tmp/dwm.log 2>&1 &
+	fi
+fi
+
+
+if which -s x11vnc; then
+	x11vnc -display :99 -localhost -forever -nopw -shared -viewonly >/tmp/x11nvc.log 2>&1 &
+fi
 
 recordTests() {
-  rm tests.mp4
-  recordVideo "tests.mp4"
+  mkdir -p vidoes
+  rm videos/vscode.mp4
+  recordVideo "videos/vscode.mp4"
   npm test
   stopVideo
 }
 
 extractScreenshots() {
-  mkdir test_screenshots
-  rm test_screenshots/*.png
-  ffmpeg -i tests.mp4 -vf "select='gt(scene,0.003)',showinfo" -vsync vfr test_screenshots/%03d.png
+  mkdir test_screenshots || true
+  rm test_screenshots/*.png || true
+  ffmpeg -i videos/vscode.mp4 -vf "select='gt(scene,0.003)',showinfo" -vsync vfr test_screenshots/%03d.png
+}
+
+viewLive() {
+	gvncviewer localhost >/tmp/gvncviewer.log 2>&1 &
 }
