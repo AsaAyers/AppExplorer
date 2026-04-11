@@ -71,13 +71,11 @@ export async function screenshot(
   });
 }
 
-export async function videoDelay(label: string, multiplier = 1) {
-  const ms = 500 * multiplier;
-  await delay(ms);
-
-  await screenshot(
-    `${globalThis.testName}/${label}_${globalThis.screenshotIndex++}`,
-  );
+export async function videoDelay(_label: string, multiplier = 1) {
+  if (process.env.XVFB_FFMPEG_PID) {
+    const ms = 100 * multiplier;
+    await delay(ms);
+  }
 }
 
 export async function activateAppExplorer() {

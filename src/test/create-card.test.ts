@@ -56,6 +56,7 @@ suiteFn("Create Card", function () {
     this.timeout(120000);
     invariant(page, "Page should be defined after setup");
     await openTestBoard(page);
+    await videoDelay("openTestBoard");
 
     const URI = uriForFile("src/utils/helpers.ts");
     const doc = await vscode.workspace.openTextDocument(URI);
@@ -73,6 +74,7 @@ suiteFn("Create Card", function () {
     const position = doc.positionAt(funcApplyIndex);
     helpersFile.selection = new vscode.Selection(position, position);
 
+    await videoDelay("openHelpersFile");
     const sidebar = getSidebar(page);
 
     const appCardSelector = "app-card";
@@ -91,6 +93,8 @@ suiteFn("Create Card", function () {
       has: sidebar.locator(cardTitleSelector).getByText(/callback$/),
     });
 
+    await videoDelay("sidebar");
+
     // Drag the card onto the board
     const cardBoundingBox = await card.boundingBox();
     invariant(cardBoundingBox, "Card bounding box should be available");
@@ -100,7 +104,7 @@ suiteFn("Create Card", function () {
 
     const canvas = page.locator("#main-canvas");
 
-    log("make card");
+    await videoDelay("beforeDrag");
     await card.dragTo(canvas, {
       steps: 50,
       targetPosition: {
@@ -137,6 +141,8 @@ suiteFn("Create Card", function () {
         timeout: 10000,
       },
     );
+
+    await videoDelay("helpers reopened");
     log("assertions passed");
   });
 });
@@ -160,6 +166,7 @@ async function openTestBoard(page: Page) {
 
   await page.getByRole("button", { name: "Close sidebar" }).click();
 
+  await videoDelay("before open");
   await page
     .locator("#CREATION_BAR_ROOT")
     .getByRole("button", { name: "AppExplorer" })
@@ -172,6 +179,8 @@ async function openTestBoard(page: Page) {
     .waitFor({ state: "visible" });
   await page.evaluate(zoomToTestFrame);
   await page.evaluate(cleanFrame);
+
+  await videoDelay("Test Board ready");
 }
 async function zoomToTestFrame() {
   const testFrame = (await miro.board.get({ type: "frame" })).find(

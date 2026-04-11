@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable no-console */
 const esbuild = require("esbuild");
 const rawPlugin = require("esbuild-raw-plugin").raw({});
 const path = require("node:path");
 const { readdirSync } = require("node:fs");
 
-const { rimraf, rimrafSync, native, nativeSync } = require("rimraf");
+const { rimraf } = require("rimraf");
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
 
@@ -50,7 +51,7 @@ async function main() {
     bundle: true,
     minify: production,
     sourcemap: !production,
-    loader: { ".txt": "text", ".pub": "text" },
+    loader: { ".txt": "text", ".pub": "text", ".css": "text" },
     logLevel: "silent",
     sourcesContent: false,
     plugins: [rawPlugin, esbuildProblemMatcherPlugin],
@@ -67,7 +68,7 @@ async function main() {
       format: "cjs",
       platform: "node",
       outfile: "app-explorer.cjs",
-      packages: "external",
+      external: ["vscode"],
     }),
   );
   context.push(
@@ -90,6 +91,7 @@ async function main() {
   );
 
   const entryPoints = findTestFiles(testDir);
+  await rimraf(testsOut);
   context.push(
     await esbuild.context({
       ...baseConfig,

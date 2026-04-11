@@ -2,12 +2,12 @@ import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 
-import { debugLog } from "@/utils/debug-log";
+import { createDebug } from "@/utils/create-debug";
 import { delay } from "@/utils/delay";
 import initMiroAPI from "@/utils/init-miro-api";
 import { readSession } from "@/utils/session";
 
-const log = debugLog("app-explorer:redirect");
+const log = createDebug("app-explorer:redirect");
 
 // handle redirect with code and exchange it for the access token
 export async function GET(request: NextRequest) {

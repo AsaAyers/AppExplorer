@@ -4,11 +4,11 @@ import { SignJWT, jwtVerify } from "jose";
 
 import { toHex } from "./to-hex";
 
-import { debugLog } from "@/utils/debug-log";
+import { createDebug } from "@/utils/create-debug";
 import { getSessionKey } from "@/utils/keys";
 import { EncryptablePayload, SessionPayload } from "@/utils/session";
 
-const log = debugLog("crypto");
+const log = createDebug("app-explorer:crypto");
 
 export async function encrypt<T extends jose.JWTPayload = SessionPayload>(
   payload: T,

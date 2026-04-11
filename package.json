@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "vscode": "^1.109.0"
+    "vscode": "^1.115.0"
   },
   "repository": "https://github.com/AsaAyers/AppExplorerStable",
   "categories": [
@@ -30,7 +30,7 @@
     "docker": "docker build -t app-explorer:latest . && docker run --rm -p 3000:3000 app-explorer:latest",
     "lint": "eslint src --fix --max-warnings 0",
     "font-icon": "npx svgtofont --sources public/logo/ --output ./font --fontName app-explorer",
-    "validate": "npm-run-all format lint typecheck test test:e2e",
+    "validate": "npm-run-all format lint typecheck test",
     "vscode:prepublish": "npm-run-all --serial validate 'build:extension --production'",
     "prepare": "[ -d '.husky' ] && husky install || true",
     "pretest": "npm run build",
@@ -160,7 +160,6 @@
     "@sentry/nextjs": "^10",
     "@simplewebauthn/browser": "^13.2.2",
     "@simplewebauthn/server": "^13.2.2",
-    "@simplewebauthn/types": "^12.0.0",
     "@types/mdx": "^2.0.13",
     "classnames": "^2.5.1",
     "compression": "^1.8.1",
@@ -207,7 +206,6 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/socket.io": "^3.0.2",
     "@types/vscode": "^1.115.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",

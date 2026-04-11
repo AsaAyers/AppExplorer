@@ -6,12 +6,12 @@ import { Server, Socket } from "socket.io";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
+import { createDebug } from "@/utils/create-debug";
 import { decrypt } from "@/utils/crypto";
-import { debugLog } from "@/utils/debug-log";
 import { EncryptableMiroState, MIRO_COOKIE } from "@/utils/init-miro-api";
 import { sessionMetrics } from "@/utils/metrics";
 
-const log = debugLog("sockets:main");
+const log = createDebug("app-explorer:sockets:main");
 const SESSION_NAMESPACE_REGEX = /^\/session\/[a-f0-9]{32}$/i;
 
 const readSessionFromSocket = async (socket: Socket) => {

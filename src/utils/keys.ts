@@ -3,12 +3,11 @@ import invariant from "tiny-invariant";
 // A256CBC-HS512 requires a 512-bit (64-byte) key
 const REQUIRED_KEY_BYTES = 64;
 
-const secretKey = process.env.SESSION_SECRET;
-invariant(typeof secretKey === "string", "Missing SESSION_SECRET");
-
 let key = null as null | Uint8Array<ArrayBuffer>;
 export const getSessionKey = () => {
   if (!key) {
+    const secretKey = process.env.SESSION_SECRET;
+    invariant(typeof secretKey === "string", "Missing SESSION_SECRET");
     invariant(
       /^[0-9a-fA-F]+$/.test(secretKey),
       "SESSION_SECRET must be a hex string",

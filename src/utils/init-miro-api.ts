@@ -4,14 +4,14 @@ import { State } from "@mirohq/miro-api/dist/storage";
 import { addDays } from "date-fns";
 import { cookies } from "next/headers";
 
+import { createDebug } from "@/utils/create-debug";
 import { decrypt, encrypt } from "@/utils/crypto";
-import { debugLog } from "@/utils/debug-log";
 import {
   EncryptablePayload,
   SESSION_DAYS,
   sessionSettings,
 } from "@/utils/session";
-const log = debugLog("app-explorer:init-miro-api");
+const log = createDebug("app-explorer:init-miro-api");
 
 export const MIRO_COOKIE = "miro_tokens";
 

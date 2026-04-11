@@ -5,13 +5,13 @@ import { type ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { cookies } from "next/headers";
 import { forbidden } from "next/navigation";
 
+import { createDebug } from "@/utils/create-debug";
 import { encrypt, decrypt } from "@/utils/crypto";
-import { debugLog } from "@/utils/debug-log";
 import { identity } from "@/utils/identity";
 import type { EncryptableMiroState, MIRO_COOKIE } from "@/utils/init-miro-api";
 import { isPaid } from "@/utils/is-paid";
 
-const log = debugLog("app-explorer:session");
+const log = createDebug("app-explorer:session");
 
 export const SESSION_DAYS = 7;
 
