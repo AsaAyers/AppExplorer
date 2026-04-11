@@ -1,10 +1,11 @@
 import { Socket, io as socketIO } from "socket.io-client";
 import * as vscode from "vscode";
-import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
+
 import { CardData, WorkspaceRegistrationRequest } from "./EventTypes";
+import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
+import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
 import { EventsFrom, EventsTo, RoutedEvents } from "./socket-events";
-import { HandlerContext, selectRangeInEditor } from "./extension";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -75,7 +76,7 @@ export class WorkspaceCardStorage
         this.debug("Socket disconnected");
       }
     });
-    // @ts-expect-error
+    // @ts-expect-error Reconnect event is missing from types
     this.socket.on("reconnect", (arg: unknown) => {
       this.debug("on reconnect", { arg });
     });

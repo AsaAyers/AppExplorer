@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+
 import type { HandlerContext } from "../extension";
 import { getGitHubUrl } from "../get-github-url";
 import { createDebug } from "../utils/create-debug";

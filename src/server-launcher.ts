@@ -1,6 +1,6 @@
 import { PortConfig } from "./port-config";
-import { ServerDiscovery } from "./server-discovery";
 import { MiroServer } from "./server/server";
+import { ServerDiscovery } from "./server-discovery";
 import { delay, waitForValue } from "./test/suite/test-utils";
 import { createDebug } from "./utils/create-debug";
 const debug = createDebug("app-explorer:server-launcher");

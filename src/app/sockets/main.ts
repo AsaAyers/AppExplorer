@@ -6,11 +6,10 @@ import { Server, Socket } from "socket.io";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { SocketEvent, zEncryptedEvent } from "@/extension/app-events";
 import { decrypt } from "@/utils/crypto";
 import { debugLog } from "@/utils/debug-log";
 import { EncryptableMiroState, MIRO_COOKIE } from "@/utils/init-miro-api";
-import { eventMetrics, sessionMetrics } from "@/utils/metrics";
+import { sessionMetrics } from "@/utils/metrics";
 
 const log = debugLog("sockets:main");
 const SESSION_NAMESPACE_REGEX = /^\/session\/[a-f0-9]{32}$/i;
@@ -77,44 +76,7 @@ export class SocketServer {
         }
       });
 
-      /**
-       * The server only passes encrypted messages back and forth
-       *
-       * @AppExplorer
-       */
-      const handler: SocketEvent<z.infer<typeof zEncryptedEvent>> = async (
-        data,
-        done,
-      ) => {
-        eventMetrics.onEncryptedEventReceived();
-        const result = zEncryptedEvent.safeParse(data);
-        if (result.success) {
-          const event = result.data;
-          let responses: unknown[] = [];
-          try {
-            responses = await this.io
-              .of(namespace)
-              .to(event.dest)
-              .emitWithAck(event.type, event);
-            eventMetrics.onEncryptedEventForwarded();
-          } catch (error) {
-            log("encryptedEvent relay failed", {
-              eventType: event.type,
-              dest: event.dest,
-              error,
-            });
-          }
-
-          if (typeof done === "function") {
-            done((responses[0] as string | null | undefined) ?? null);
-          }
-        } else {
-          eventMetrics.onEncryptedEventRejected();
-          log("Rejected event", result.error);
-        }
-      };
-
-      socket.on("encryptedEvent", handler);
+      socket.on("encryptedEvent", () => {});
     });
   }
 }

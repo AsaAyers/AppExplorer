@@ -1,6 +1,9 @@
-import * as assert from "assert";
+import * as assert from "node:assert";
+
 import * as vscode from "vscode";
+
 import { LocationFinder } from "../../location-finder";
+
 import { uriForFile, waitFor } from "./test-utils";
 
 suite("LocationFinder", () => {

@@ -2,9 +2,9 @@
 import type { Item } from "@mirohq/websdk-types/stable/api/client";
 
 import { CardData } from "@/EventTypes";
+import { MetaData } from "@/types";
 import { decode } from "@/utils/decode";
 import { isAppCard } from "@/utils/is-app-card";
-import { MetaData } from "@/types";
 
 export async function extractCardData(card: Item): Promise<CardData | null> {
   if (!isAppCard(card)) {

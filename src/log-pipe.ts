@@ -1,9 +1,11 @@
-import { spawn } from "child_process";
-import * as crypto from "crypto";
-import * as fs from "fs";
-import * as net from "net";
-import * as path from "path";
-import * as readline from "readline";
+/* eslint-disable no-empty */
+import { spawn } from "node:child_process";
+import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as net from "node:net";
+import * as path from "node:path";
+import * as readline from "node:readline";
+
 import invariant from "tiny-invariant";
 type ReaderDisposer = {
   dispose: () => void;
@@ -236,7 +238,6 @@ export class LogPipe {
     rl.on("line", onLine);
 
     const onError = (err: unknown) => {
-      // eslint-disable-next-line no-console
       console.error("Unix pipe reader error:", err);
     };
     rl.on("error", onError);

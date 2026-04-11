@@ -1,7 +1,9 @@
 import { ReactiveController, ReactiveControllerHost } from "lit";
 import invariant from "tiny-invariant";
+
 import { ServerStatus } from "../EventTypes";
 import { createDebug } from "../utils/create-debug";
+
 import { SidebarSocket } from "./socket-context";
 const debug = createDebug("app-explorer:socket-subscription-controller");
 

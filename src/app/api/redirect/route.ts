@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 
-import { delay } from "@/extension/utils/delay";
 import { debugLog } from "@/utils/debug-log";
+import { delay } from "@/utils/delay";
 import initMiroAPI from "@/utils/init-miro-api";
 import { readSession } from "@/utils/session";
 

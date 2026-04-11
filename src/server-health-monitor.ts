@@ -1,4 +1,3 @@
-import { FeatureFlagManager } from "./feature-flag-manager";
 import { ServerDiscovery } from "./server-discovery";
 import { ServerLauncher } from "./server-launcher";
 import { createDebug } from "./utils/create-debug";
@@ -30,7 +29,6 @@ export type HealthEventHandler = (event: HealthEvent) => void | Promise<void>;
 
 export class ServerHealthMonitor {
   private serverDiscovery: ServerDiscovery;
-  private featureFlagManager: FeatureFlagManager;
   private serverLauncher: ServerLauncher;
   private cardStorage: WorkspaceCardStorage;
   private options: HealthMonitorOptions;
@@ -44,13 +42,11 @@ export class ServerHealthMonitor {
 
   constructor(
     serverDiscovery: ServerDiscovery,
-    featureFlagManager: FeatureFlagManager,
     serverLauncher: ServerLauncher,
     cardStorage: WorkspaceCardStorage,
     options: Partial<HealthMonitorOptions> = {},
   ) {
     this.serverDiscovery = serverDiscovery;
-    this.featureFlagManager = featureFlagManager;
     this.serverLauncher = serverLauncher;
     this.cardStorage = cardStorage;
     this.options = { ...DEFAULT_HEALTH_MONITOR_OPTIONS, ...options };
@@ -177,18 +173,10 @@ export class ServerHealthMonitor {
    * Attempt server failover
    */
   private async attemptFailover(): Promise<void> {
-    if (this.featureFlagManager.isEnabled("debugMode")) {
-      debug("AppExplorer: Attempting server failover...");
-    }
-
     try {
       const result = await this.serverLauncher.handleServerFailover();
 
       if (result.mode === "server" && result.server) {
-        if (this.featureFlagManager.isEnabled("debugMode")) {
-          debug("AppExplorer: Successfully launched replacement server");
-        }
-
         // Reset health status since we now have a new server
         this.consecutiveFailures = 0;
         this.consecutiveSuccesses = 0;
@@ -197,12 +185,6 @@ export class ServerHealthMonitor {
           "Replacement server launched successfully",
         );
       } else if (result.mode === "client") {
-        if (this.featureFlagManager.isEnabled("debugMode")) {
-          debug(
-            "AppExplorer: Another workspace launched replacement server, connecting as client",
-          );
-        }
-
         // Another workspace handled the failover
         this.consecutiveFailures = 0;
         this.consecutiveSuccesses = 0;
@@ -224,12 +206,6 @@ export class ServerHealthMonitor {
   ): Promise<void> {
     if (this.currentStatus !== status) {
       this.currentStatus = status;
-
-      if (this.featureFlagManager.isEnabled("debugMode")) {
-        debug(
-          `AppExplorer: Server health status changed to ${status}: ${details}`,
-        );
-      }
 
       this.emitEvent({
         type: "health_change",

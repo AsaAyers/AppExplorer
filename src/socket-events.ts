@@ -1,6 +1,5 @@
 import { TagColor } from "@mirohq/websdk-types";
-import { BoardInfo } from "./card-storage";
-import { SymbolPathChangeEvent } from "./document-symbol-tracker";
+
 import {
   AppExplorerTag,
   CardData,
@@ -8,6 +7,8 @@ import {
   WorkspaceRegistrationRequest,
   WorkspaceRegistrationResponse,
 } from "./EventTypes";
+import { BoardInfo } from "./card-storage";
+import { SymbolPathChangeEvent } from "./document-symbol-tracker";
 import { PrettyPrint } from "./utils/pretty-print";
 
 // Roles participating in the socket mesh (exported for consumers that need to

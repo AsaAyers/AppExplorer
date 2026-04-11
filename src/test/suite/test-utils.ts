@@ -1,5 +1,7 @@
-import * as assert from "assert";
-import * as path from "path";
+import * as assert from "node:assert";
+import * as path from "node:path";
+
+import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 export const delay = (ms: number) =>
@@ -63,7 +65,8 @@ export function uriForFile(filePath: string) {
     1,
     "Expected exactly 1 workspace folder",
   );
-  const workspaceUri = workspaceFolders?.[0].uri!;
+  const workspaceUri = workspaceFolders?.[0].uri;
+  invariant(workspaceUri, "Workspace URI not found");
   const exampleUri = vscode.Uri.file(path.join(workspaceUri.fsPath, filePath));
   return exampleUri;
 }

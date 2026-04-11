@@ -1,8 +1,9 @@
 import * as assert from "node:assert";
 
-import * as vscode from "vscode";
 import { Page } from "playwright";
 import invariant from "tiny-invariant";
+import * as vscode from "vscode";
+
 import { ExtensionApi } from "../../extension";
 
 export const delay = (ms: number) =>

@@ -1,6 +1,7 @@
 import type { AppCard } from "@mirohq/websdk-types/stable/features/widgets/appCard";
 import type { CardField } from "@mirohq/websdk-types/stable/features/widgets/card";
 import invariant from "tiny-invariant";
+
 import type { CardData } from "../EventTypes";
 import { MetaData } from "../miro";
 

@@ -47,14 +47,14 @@ const eslintConfig = defineConfig([
       // "no-relative-import-paths": noRelativeImportPaths,
     },
     rules: {
-      "no-relative-import-paths/no-relative-import-paths": [
-        "error",
-        {
-          allowSameFolder: false,
-          rootDir: "src",
-          prefix: "@",
-        },
-      ],
+      // "no-relative-import-paths/no-relative-import-paths": [
+      //   "error",
+      //   {
+      //     allowSameFolder: false,
+      //     rootDir: "src",
+      //     prefix: "@",
+      //   },
+      // ],
       "no-console": ["error", { allow: ["error"] }],
       "no-unused-vars": ["off"],
 

@@ -7,7 +7,6 @@ interface Disposable {
 import { debugLog } from "@/utils/debug-log";
 
 interface EventsMap {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [event: string]: any;
 }
 

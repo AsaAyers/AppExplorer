@@ -3,13 +3,13 @@ import classNames from "classnames";
 import Image from "next/image";
 import React from "react";
 
+import { CardData } from "@/EventTypes";
+import appExplorerLogo from "@/assets/app-explorer.svg";
 import appcardStatusDisabled from "@/assets/appcard-status-disabled.svg";
 import appcardStatusDisconnected from "@/assets/appcard-status-disconnected.svg";
 import expandIcon from "@/assets/expand-icon.svg";
-import appExplorerLogo from "@/assets/app-explorer.svg";
-import { useIsInMiroIframe } from "@/utils/use-is-in-miro-frame";
-import { CardData } from "@/EventTypes";
 import { createDebug } from "@/utils/create-debug";
+import { useIsInMiroIframe } from "@/utils/use-is-in-miro-frame";
 
 const log = createDebug("app-explorer:app-card");
 export const iconMap = {

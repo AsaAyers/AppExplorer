@@ -1,13 +1,15 @@
+import { formatWithOptions } from "node:util";
+
 import baseDebug from "debug";
 import invariant from "tiny-invariant";
-import { formatWithOptions } from "util";
 import * as vscode from "vscode";
+
 import { LogPipe } from "./log-pipe";
 import { createDebug } from "./utils/create-debug";
 
 baseDebug.inspectOpts ??= {};
 baseDebug.inspectOpts.hideDate = true;
-const debug = createDebug("app-explorer:logger");
+const log = createDebug("app-explorer:logger");
 
 createDebug.enable("app-explorer:*");
 
@@ -112,7 +114,6 @@ export class Logger {
       this.logWrite = await this.logPipe.getWriter();
     } catch (err) {
       this.outputChannel.appendLine(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         `[logger] Failed to initialize log file: ${(err as any)?.message ?? err}`,
       );
     }
@@ -132,7 +133,7 @@ export class Logger {
 export const logger = Logger.getInstance();
 
 const cleanMap = new WeakMap<object, boolean>();
-function cleanCardEvents<T extends unknown>(eventFragment: T): T {
+function cleanCardEvents<T>(eventFragment: T): T {
   if (Array.isArray(eventFragment)) {
     return eventFragment.map(cleanCardEvents) as T;
   }

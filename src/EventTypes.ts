@@ -1,4 +1,6 @@
 import type { AppCard, TagColor } from "@mirohq/websdk-types";
+import * as vscode from "vscode";
+
 import { BoardInfo, CardStorage } from "./card-storage";
 import { WorkspaceServerSocket } from "./server/server";
 
@@ -73,8 +75,6 @@ export interface WorkspaceRegistrationResponse {
   error?: string;
   cardsByBoard: ReturnType<CardStorage["getCardsByBoard"]>;
 }
-
-import * as vscode from "vscode";
 
 export type SymbolAnchor = {
   type: "symbol";

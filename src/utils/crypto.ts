@@ -2,8 +2,8 @@ import { addMinutes } from "date-fns";
 import * as jose from "jose";
 import { SignJWT, jwtVerify } from "jose";
 
-import { getSessionKey } from "@/extension/utils/keys";
 import { debugLog } from "@/utils/debug-log";
+import { getSessionKey } from "@/utils/keys";
 import { EncryptablePayload, SessionPayload } from "@/utils/session";
 
 const log = debugLog("crypto");

@@ -6,8 +6,8 @@ import {
   type BrowserContext,
   type Page,
 } from "playwright";
-
 import * as vscode from "vscode";
+
 import { screenshot, waitFor } from "./test-utils";
 
 export type BrowserPage = {

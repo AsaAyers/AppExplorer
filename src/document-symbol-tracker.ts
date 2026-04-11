@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
+
 import * as vscode from "vscode";
+
 import { SymbolAnchor, CardData } from "./EventTypes";
 import { getGitHubUrl } from "./get-github-url";
 import { getRelativePath } from "./get-relative-path";

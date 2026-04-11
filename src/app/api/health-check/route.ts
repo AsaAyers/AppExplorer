@@ -1,5 +1,5 @@
 export async function GET() {
-  let database = false;
+  const database = false;
   const now = new Date().toISOString();
 
   return Response.json(

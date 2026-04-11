@@ -1,8 +1,10 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
+
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
-import { SymbolPathChangeEvent } from "./document-symbol-tracker";
+
 import { CardData } from "./EventTypes";
+import { SymbolPathChangeEvent } from "./document-symbol-tracker";
 import { MiroServerSocket } from "./server/server";
 import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
 import { createDebug } from "./utils/create-debug";

@@ -8,7 +8,7 @@ import { AppElement } from "@/lit/app-element";
 import { mirotoneStyles } from "@/lit/mirotone";
 import { createDebug } from "@/utils/create-debug";
 
-const debug = createDebug("app-explorer:lit:app-card");
+const log = createDebug("app-explorer:lit:app-card");
 
 @customElement("app-card")
 export class AppCardElement extends AppElement {
