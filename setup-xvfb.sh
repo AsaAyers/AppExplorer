@@ -51,7 +51,8 @@ fi
 
 
 if which -s x11vnc; then
-	x11vnc -display :99 -localhost -forever -nopw -shared -viewonly >/tmp/x11nvc.log 2>&1 &
+# -viewonly 
+	x11vnc -display :99 -localhost -forever -nopw -shared >/tmp/x11nvc.log 2>&1 &
 fi
 
 recordTests() {

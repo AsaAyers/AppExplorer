@@ -8,6 +8,7 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
+import { colorText } from "./colors";
 import { isHeadless, isRecording } from "./isRecording";
 import { screenshot, waitFor } from "./test-utils";
 
@@ -49,6 +50,49 @@ export async function createBrowserPage(
             showActions: {},
           }
         : undefined,
+  });
+
+  await context.exposeFunction("__captureLogs", (...args: unknown[]) => {
+    try {
+      const cleanMessages = args
+        .filter(
+          (part) => typeof part !== "string" || part.indexOf("color:") !== 0,
+        )
+        .map((part) =>
+          typeof part === "string" ? part.replaceAll("%c", "") : part,
+        );
+
+      // eslint-disable-next-line no-console
+      console.log(
+        colorText("browserLog", "[Browser Log]"),
+
+        ...cleanMessages,
+      );
+    } catch {
+      // eslint-disable-next-line no-console
+      console.log(
+        colorText("browserLog", "[Browser Log]"),
+        ...args.map((part) => ({
+          typeof: typeof part,
+          part: JSON.stringify(part),
+        })),
+      );
+    }
+    return true;
+  });
+
+  context.on("weberror", (error) => {
+    // eslint-disable-next-line no-console
+    console.log(
+      colorText('error',
+
+
+        "[Browser Log] WebError:",
+      ),
+
+      error.error(),
+
+    );
   });
   // Enable access to local resources
   await context.grantPermissions([

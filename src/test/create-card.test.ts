@@ -234,6 +234,7 @@ async function openTestBoard(page: Page) {
     .getByText("Explore your code here")
     .waitFor({ state: "visible" });
   await page.evaluate(zoomToTestFrame);
+  await videoDelay("cleanFrame");
   await page.evaluate(cleanFrame);
 
   await videoDelay("Test Board ready");
@@ -265,6 +266,7 @@ async function cleanFrame() {
     (f) => f.title === "Automated Test Frame",
   );
   if (!frame) {
+    window.__captureLogs?.("Error: Missing Automated Test Frame");
     throw new Error("Missing Automated Test Frame");
   }
 
@@ -274,12 +276,20 @@ async function cleanFrame() {
   });
   const frameItems = items.filter((item) => {
     if (item.parentId === frame.id) {
+      window.__captureLogs?.(
+        `cleanFrame: Found item ${item.title} with parentId ${item.parentId} matching frame id ${frame.id}`,
+      );
       return true;
     } else if (item.parentId === null) {
       const intersects =
         Math.abs(item.x - frame.x) < frame.width / 2 &&
         Math.abs(item.y - frame.y) < frame.height / 2;
 
+      if (intersects) {
+        window.__captureLogs?.(
+          `cleanFrame: Found item ${item.title} intersecting with frame: item (${item.x}, ${item.y}), frame (${frame.x}, ${frame.y}, ${frame.width}, ${frame.height})`,
+        );
+      }
       return intersects;
     }
     return false;

@@ -8,8 +8,8 @@
     "out": true, // set this to false to include "out" folder in search results
     "dist": true // set this to false to include "dist" folder in search results
   },
-  // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-  "typescript.tsc.autoDetect": "off",
+
+  "js/ts.tsc.autoDetect": "off",
 
   // I'm not actually registering appExplorer.updateExtension, because its only used for a
   // command that rebuilds this extension. It would not work in any other

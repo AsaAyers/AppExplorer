@@ -5,6 +5,7 @@ import type {
   BoardNode,
   Item,
   ItemsCreateEvent,
+  ItemsDeleteEvent,
   Rect,
   Tag,
 } from "@mirohq/websdk-types";
@@ -458,24 +459,21 @@ export async function attachToSocket() {
     await editCardModal(event.appCard);
   });
 
-  miro.board.ui.on("items:delete", async function (event) {
+  async function itemDelete(event: ItemsDeleteEvent) {
     try {
-      await event.items.reduce(
-        async (promise: Promise<null>, item: AppCard) => {
-          await promise;
-          const data = await extractCardData(item);
-          if (data?.miroLink) {
-            socket.emit("card", { url: data.miroLink, card: null });
-            miro.board.notifications.showInfo("Deleting card in VSCode");
-          }
-          return null;
-        },
-        Promise.resolve(null),
-      );
+      for (const item of event.items) {
+        if (isAppCard(item)) {
+          const miroLink = `https://miro.com/app/board/${boardId}/?moveToWidget=${item.id}`;
+          socket.emit("card", { url: miroLink, card: null });
+          await miro.board.notifications.showInfo("Deleting card in VSCode");
+        }
+      }
     } catch (error) {
-      debug("AppExplorer: Error deleting items", error);
+      debug("AppExplorer: Error in items:delete", error);
     }
-  });
+  }
+
+  miro.board.ui.on("items:delete", itemDelete);
 
   miro.board.ui.on("items:create", async (event: ItemsCreateEvent) => {
     const card = event.items.find(isAppCard);

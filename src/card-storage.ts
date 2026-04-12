@@ -26,7 +26,7 @@ export class VSCodeAdapter implements StorageAdapter {
 
   reset() {
     this.#context.workspaceState.keys().forEach((key) => {
-      if (key.startsWith("board-")) {
+      if (key.indexOf("board-") === 0) {
         this.delete(key);
       }
     });

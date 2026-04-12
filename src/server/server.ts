@@ -578,12 +578,16 @@ export class MiroServer {
           this.workspaceNamespace.emit("selectedCards", data);
         },
         card: async ({ url, card }) => {
+          debug("Received card update", { url, card });
           // Route card update to workspaces assigned to the board
-          if (card?.boardId) {
-            this.workspaceNamespace.emit("card", {
-              url,
-              card,
-            });
+          this.workspaceNamespace.emit("card", {
+            url,
+            card,
+          });
+          if (card) {
+            this.cardStorage.setCard(card.boardId, card);
+          } else {
+            this.cardStorage.deleteCardByLink(url);
           }
         },
       };

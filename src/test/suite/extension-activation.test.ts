@@ -32,8 +32,8 @@ suite("Extension Activation Tests", () => {
 
     // Test if commands are registered
     const commands = await vscode.commands.getCommands();
-    const appExplorerCommands = commands.filter((cmd) =>
-      cmd.startsWith("app-explorer."),
+    const appExplorerCommands = commands.filter(
+      (cmd) => cmd.indexOf("app-explorer.") === 0,
     );
     debug("AppExplorer commands found:", appExplorerCommands.length);
     debug("Commands:", appExplorerCommands);

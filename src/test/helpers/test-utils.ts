@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 
 import { ExtensionApi } from "../../extension";
 
+import { colorText } from "./colors";
 import { isRecording } from "./isRecording";
 
 import { createDebug } from "@/utils/create-debug";
@@ -103,7 +104,7 @@ export async function activateAppExplorer() {
   baseDebug.log(`Activated extension with DEBUG=${debugValue}`);
   extension.exports.__watchOutput(debugValue, (line) =>
     // eslint-disable-next-line no-console
-    console.log("[Extension Log]", line),
+    console.log(colorText("extensionLog", "[Extension Log]"), line),
   );
 
   return extension.exports;
