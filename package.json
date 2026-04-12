@@ -34,7 +34,7 @@
     "vscode:prepublish": "npm-run-all --serial validate 'build:extension --production'",
     "prepare": "[ -d '.husky' ] && husky install || true",
     "pretest": "npm run build",
-    "test": "vscode-test --coverage"
+    "test": "vscode-test --coverage --inline-diffs --full-trace -j 1"
   },
   "contributes": {
     "commands": [
@@ -120,7 +120,7 @@
         "description": "AppExplorer Icon",
         "default": {
           "fontPath": "font/app-explorer.woff",
-          "fontCharacter": "\\ea01"
+          "fontCharacter": "\\ea02"
         }
       }
     },

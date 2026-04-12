@@ -23,7 +23,7 @@ export class AppExplorerLens implements vscode.CodeLensProvider {
       await this.#handlerContext.locationFinder.findSymbolsInDocument(
         document.uri,
       );
-    return cards.flatMap((card): vscode.CodeLens[] => {
+    const lenses = cards.flatMap((card): vscode.CodeLens[] => {
       if (card?.type === "symbol") {
         const symbol = symbols.find((symbol) => symbol.label === card.symbol);
 
@@ -54,5 +54,7 @@ export class AppExplorerLens implements vscode.CodeLensProvider {
       }
       return [];
     });
+    debug(`Provided ${lenses.length} code lenses for ${document.uri}`);
+    return lenses;
   }
 }

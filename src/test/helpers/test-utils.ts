@@ -1,5 +1,6 @@
 import * as assert from "node:assert";
 
+import baseDebug from "debug";
 import { Page } from "playwright";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
@@ -7,6 +8,10 @@ import * as vscode from "vscode";
 import { ExtensionApi } from "../../extension";
 
 import { isRecording } from "./isRecording";
+
+import { createDebug } from "@/utils/create-debug";
+
+const debug = createDebug("app-explorer:test-utils");
 
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -73,10 +78,13 @@ export async function screenshot(
   });
 }
 
-export async function videoDelay(_label: string, multiplier = 1) {
+export async function videoDelay(label: string, multiplier = 1) {
   if (isRecording) {
+    debug(`Video delay: ${label} (multiplier: ${multiplier})`);
     const ms = 100 * multiplier;
     await delay(ms);
+  } else {
+    debug(`No delay: ${label}`);
   }
 }
 
@@ -91,6 +99,8 @@ export async function activateAppExplorer() {
   }
   const debugValue = process.env.DEBUG || "";
 
+  baseDebug.enable(debugValue);
+  baseDebug.log(`Activated extension with DEBUG=${debugValue}`);
   extension.exports.__watchOutput(debugValue, (line) =>
     // eslint-disable-next-line no-console
     console.log("[Extension Log]", line),

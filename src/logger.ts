@@ -23,7 +23,6 @@ export interface PrefixedLogger {
 export class Logger {
   private outputChannel: vscode.OutputChannel;
   private static instance?: Logger;
-  logWrite: ((line: string) => Promise<void>) | undefined;
   logUri: vscode.Uri | undefined;
 
   private constructor() {
@@ -63,7 +62,7 @@ export class Logger {
       ...args.map(cleanCardEvents),
     );
     this.outputChannel.appendLine(formatedMessage);
-    this.logWrite?.(formatedMessage + "\n");
+    this.logMonitor?.(formatedMessage);
   };
 
   /**
@@ -91,13 +90,6 @@ export class Logger {
         "[logger] Debug mode enabled - AppExplorer output channel shown",
       );
     }
-  }
-
-  getLogFile(DEBUG: string = "app-explorer:*"): [string, string] | undefined {
-    createDebug.enable(DEBUG);
-    return this.logUri
-      ? ([this.logUri.fsPath, `AppExplorer.pipe`] as const)
-      : undefined;
   }
 
   /**

@@ -21,7 +21,7 @@ export async function launchBrowser({
 }: {
   headless?: boolean;
 } = {}) {
-  return chromium.launch({ headless });
+  return chromium.launch({ headless, slowMo: headless ? 0 : 50 });
 }
 
 let blockSessionLink = false;

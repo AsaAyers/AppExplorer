@@ -63,23 +63,20 @@ export class StatusBarManager {
 
   renderStatusBar() {
     const connectedBoards = this.#cardStorage.getConnectedBoards();
-    if (connectedBoards.length === 0) {
-      this.statusBar.text = "$(app-explorer) (No Miro connections)";
-    } else {
+    if (connectedBoards.length >= 0) {
+      // this.statusBar.text = "$(app-explorer) (No Miro connections)";
+      // } else {
       const boardIds = this.#cardStorage.listBoardIds();
       const allCards = this.#cardStorage.listAllCards();
       const totalCards = allCards.length;
-      if (connectedBoards.length > 0) {
-        const disconnected = allCards.filter(
-          (card) => card.status === "disconnected",
-        ).length;
 
-        this.statusBar.text = `$(app-explorer) (${totalCards} $(preview) ${boardIds.length} $(window)${
-          disconnected > 0 ? `, ${disconnected} $(debug-disconnect)` : ""
-        })`;
-      } else {
-        this.statusBar.text = `$(app-explorer)  (${connectedBoards.length} Miro connections)`;
-      }
+      const disconnected = allCards.filter(
+        (card) => card.status === "disconnected",
+      ).length;
+
+      this.statusBar.text = `$(app-explorer) (${totalCards} $(preview) ${boardIds.length} $(window)${
+        disconnected > 0 ? `, ${disconnected} $(debug-disconnect)` : ""
+      })`;
     }
 
     debug(this.statusBar.text);

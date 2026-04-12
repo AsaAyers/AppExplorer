@@ -183,7 +183,7 @@ export class CardStorage
     this.#sockets.set(boardId, socket);
     this.connectedBoardSet.add(boardId);
     const board = this.getBoard(boardId);
-    invariant(board, `Board not found: ${boardId}`);
+    invariant(board, `connectBoard: Board not found: ${boardId}`);
     this.debug("Board connected:", { boardId });
     this.emitConnectedBoards();
 
@@ -221,7 +221,7 @@ export class CardStorage
         miroLink: card.miroLink!,
       });
     } else {
-      throw new Error(`Board not found: ${boardId}`);
+      throw new Error(`setCard: Board not found: ${boardId}`);
     }
   }
 
@@ -254,7 +254,7 @@ export class CardStorage
   setBoardCards(boardId: string, cards: CardData[]) {
     let board = this.#storage.get<BoardInfo>(`board-${boardId}`);
     this.debug("setBoardCards", { boardId, cards, board: !!board });
-    invariant(board, `Board not found: ${boardId}`);
+    invariant(board, `setBoardCards: Board not found: ${boardId}`);
     if (board) {
       board.cards = cards.reduce(
         (acc: Record<string, CardData>, c: CardData) => {

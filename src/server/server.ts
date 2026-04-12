@@ -298,7 +298,7 @@ export class MiroServer {
         try {
           const card = cardStorage.getCardByLink(data.miroLink);
           invariant(card, "Card not found in storage");
-          cardStorage.setCard(data.miroLink, {
+          cardStorage.setCard(card.boardId, {
             ...card,
             status: data.status,
             codeLink: data.codeLink,

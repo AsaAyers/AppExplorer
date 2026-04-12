@@ -18,9 +18,13 @@ import {
 
 const log = createDebug("app-explorer:create-card-test");
 
+createDebug.log("==================================================");
+
 const storageState = "playwright/.auth/user.json";
 const storageStateExists = fs.existsSync(storageState);
 
+const appCardSelector = "app-card";
+const cardTitleSelector = ".app-card--title";
 const suiteFn = storageStateExists ? suite : suite.skip;
 
 suiteFn("Create Card", function () {
@@ -30,7 +34,7 @@ suiteFn("Create Card", function () {
   void context;
 
   suiteSetup(async function () {
-    this.timeout(120000);
+    this.timeout(12000);
     await fetch("http://localhost:9042/reset", { method: "POST" }).catch(
       () => null,
     );
@@ -59,95 +63,151 @@ suiteFn("Create Card", function () {
   });
 
   test("On test board", async function () {
-    this.timeout(120000);
+    this.timeout(1200000);
     invariant(page, "Page should be defined after setup");
     await openTestBoard(page);
+    await videoDelay("test start", 5);
 
-    const URI = uriForFile("src/utils/helpers.ts");
-    const doc = await vscode.workspace.openTextDocument(URI);
-    const helpersFile = await vscode.window.showTextDocument(doc, {
-      preview: false,
-    });
-
-    // move the cursor to where "func.apply" appears in the file
-    const funcApplyIndex = doc.getText().indexOf("func.apply");
-    assert.notStrictEqual(
-      funcApplyIndex,
-      -1,
-      'Expected "func.apply" to exist in src/utils/helpers.ts',
+    // Step 1: Open UserProfile.ts and jump to where generateId is called in the constructor
+    const userProfileURI = uriForFile("src/components/UserProfile.ts");
+    const userProfileDoc =
+      await vscode.workspace.openTextDocument(userProfileURI);
+    const userProfileEditor = await vscode.window.showTextDocument(
+      userProfileDoc,
+      { preview: false },
     );
-    const position = doc.positionAt(funcApplyIndex);
-    helpersFile.selection = new vscode.Selection(position, position);
-    await videoDelay("openHelpersFile", 2);
 
+    const sessionIdIndex = userProfileDoc
+      .getText()
+      .indexOf("sessionId: generateId");
+    assert.notStrictEqual(
+      sessionIdIndex,
+      -1,
+      'Expected "sessionId: generateId" to exist in UserProfile.ts',
+    );
+    const sessionIdPosition = userProfileDoc.positionAt(sessionIdIndex);
+    userProfileEditor.selection = new vscode.Selection(
+      sessionIdPosition,
+      sessionIdPosition,
+    );
+    await videoDelay("openUserProfile", 2);
+
+    // Step 2: Wait for 3-deep card stack: UserProfile, UserProfile/constructor, UserProfile/constructor/sessionId
     const sidebar = getSidebar(page);
-    const appCardSelector = "app-card";
     await waitFor(async () => {
       assert.equal(await sidebar.locator(appCardSelector).count(), 3);
     });
     await videoDelay("3 cards");
 
-    const cardTitleSelector = ".app-card--title";
     await sidebar
       .locator(appCardSelector)
       .locator(cardTitleSelector)
-      .getByText(/callback$/)
+      .getByText(/sessionId$/)
       .waitFor({ state: "visible" });
 
-    const card = sidebar.locator(appCardSelector).filter({
-      has: sidebar.locator(cardTitleSelector).getByText(/callback$/),
-    });
-
-    await videoDelay("sidebar ready");
-
-    // Drag the card onto the board
-    const cardBoundingBox = await card.boundingBox();
-    invariant(cardBoundingBox, "Card bounding box should be available");
-
+    // Step 3: Arrange the 3 stack cards vertically on canvas, starting with UserProfile at the top
     const pageWidthInPixels = await page.evaluate(() => window.innerWidth);
     const pageHeightInPixels = await page.evaluate(() => window.innerHeight);
 
-    const canvas = page.locator("#main-canvas");
+    const centerX = pageWidthInPixels * 0.5;
+    const topY = pageHeightInPixels * 0.2;
+    const horizontalGap = pageWidthInPixels * 0.1;
+    const verticalGap = pageHeightInPixels * 0.12;
 
-    await videoDelay("beforeDrag");
-    await card.dragTo(canvas, {
-      steps: 50,
-      targetPosition: {
-        x: pageWidthInPixels * 0.75,
-        y: pageHeightInPixels * 0.5,
-      },
-    });
-    await videoDelay("newCard");
+    const userProfileXY = [centerX, topY] as const;
+    const sessionXY = [centerX, topY + verticalGap * 2] as const;
+    const generateIdXY = [
+      centerX + horizontalGap,
+      topY + verticalGap * 2,
+    ] as const;
+    const isValidEmailXY = [
+      centerX + horizontalGap,
+      topY + verticalGap * 3,
+    ] as const;
 
-    const modal = getModal(page);
-    // In VSCode, close the currently open file.
-    log("close active editor");
-    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+    await dragCardToBoard(page, /^UserProfile$/, userProfileXY);
+    await getModal(page).getByRole("button", { name: "Save" }).click();
+    selectMiroCardByTitle(page, /^UserProfile$/);
 
-    // modal.getByLabel("Title").fill("Debounce Callback");
-    await videoDelay("Jump to code");
-    log("jump to code");
-    await modal.getByRole("button", { name: "Jump To Code" }).click();
+    await dragCardToBoard(page, /sessionId$/, sessionXY);
+    await getModal(page).getByRole("button", { name: "Save" }).click();
 
-    await waitFor(
-      () => {
-        const activeEditor = vscode.window.activeTextEditor;
-        assert.ok(
-          activeEditor,
-          "There should be an active editor after clicking Jump To Code",
-        );
-        const activeFileName = activeEditor.document.fileName;
-        assert.ok(
-          activeFileName.endsWith("helpers.ts"),
-          `Active file should be helpers.ts, but got ${activeFileName}`,
-        );
-      },
-      {
-        timeout: 10000,
-      },
+    // Step 4: Go to definition on generateId, then drag the generateId card below and left of UserProfile
+    const generateIdCallIndex = userProfileDoc
+      .getText()
+      .indexOf("generateId(12)");
+    assert.notStrictEqual(
+      generateIdCallIndex,
+      -1,
+      'Expected "generateId(12)" in UserProfile.ts',
     );
+    userProfileEditor.selection = new vscode.Selection(
+      userProfileDoc.positionAt(generateIdCallIndex),
+      userProfileDoc.positionAt(generateIdCallIndex),
+    );
+    await videoDelay("Selected generateId");
+    await vscode.commands.executeCommand("editor.action.revealDefinition");
+    await videoDelay("goToDefinition generateId", 2);
 
-    await videoDelay("helpers reopened", 2);
+    selectMiroCardByTitle(page, /^UserProfile$/);
+    await dragCardToBoard(page, "generateId", generateIdXY);
+    await getModal(page).getByRole("button", { name: "Save" }).click();
+    // close editors in vscode
+    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await videoDelay("No editors open", 2);
+
+    // Step 5: Return to UserProfile, locate the CodeLens with app-explorer.navigate and trigger it
+    await vscode.window.showTextDocument(userProfileDoc, { preview: false });
+    await videoDelay("back to UserProfile", 2);
+
+    const navigateLens = await waitFor(
+      async () => {
+        const codeLenses = await vscode.commands.executeCommand<
+          vscode.CodeLens[]
+        >("vscode.executeCodeLensProvider", userProfileURI);
+        const lens = codeLenses?.find(
+          (l) =>
+            l.command?.command === "app-explorer.navigate" &&
+            l.command.title.includes("UserProfile"),
+        );
+        assert.ok(
+          lens,
+          "Expected a CodeLens with app-explorer.navigate on UserProfile",
+        );
+        return lens;
+      },
+      { timeout: 10000 },
+    );
+    invariant(navigateLens.command, "CodeLens command should be defined");
+    await vscode.commands.executeCommand(
+      navigateLens.command.command,
+      ...(navigateLens.command.arguments ?? []),
+    );
+    await videoDelay("triggered navigate CodeLens", 2);
+
+    // Step 6: Back in helpers.ts, navigate to isValidEmail and drag its card below UserProfile and right of generateId
+    const helpersURI = uriForFile("src/utils/helpers.ts");
+    const helpersDoc = await vscode.workspace.openTextDocument(helpersURI);
+    const helpersEditor = await vscode.window.showTextDocument(helpersDoc, {
+      preview: false,
+    });
+
+    const isValidEmailIndex = helpersDoc
+      .getText()
+      .indexOf("export function isValidEmail");
+    assert.notStrictEqual(
+      isValidEmailIndex,
+      -1,
+      'Expected "isValidEmail" in helpers.ts',
+    );
+    helpersEditor.selection = new vscode.Selection(
+      helpersDoc.positionAt(isValidEmailIndex),
+      helpersDoc.positionAt(isValidEmailIndex),
+    );
+    await videoDelay("navigated to isValidEmail", 2);
+
+    await dragCardToBoard(page, /isValidEmail$/, isValidEmailXY);
+
     log("assertions passed");
   });
 });
@@ -226,4 +286,61 @@ async function cleanFrame() {
   });
 
   await Promise.all(frameItems.map((item) => miro.board.remove(item)));
+}
+
+async function dragCardToBoard(
+  page: Page,
+  name: string | RegExp,
+  [x, y]: readonly [number, number],
+) {
+  // Wait for generateId card to appear in sidebar (helpers.ts is now active)
+  const card = await waitFor(
+    async () => {
+      const card = selectSidebarCardByTitle(page!, name);
+      await card.waitFor({ state: "visible" });
+
+      return card;
+    },
+    { timeout: 10000 },
+  );
+  await videoDelay(`${name} sidebar ready`);
+
+  await card.screenshot({
+    path: `screenshots/card_${name.toString().replace(/[^a-z0-9]+/gi, "_")}.png`,
+  });
+  const canvas = page.locator("#main-canvas");
+  await page.evaluate(zoomToTestFrame);
+  await card.dragTo(canvas, {
+    steps: 50,
+    timeout: 10000,
+    targetPosition: {
+      x,
+      y,
+    },
+  });
+  await videoDelay("dragged " + name);
+}
+
+async function selectMiroCardByTitle(page: Page, title: string | RegExp) {
+  await page.evaluate(async (title: string | RegExp) => {
+    const cards = await miro.board.get({ type: "app_card" });
+    const card = cards.find((c) =>
+      typeof title === "string"
+        ? c.title === title
+        : c.title.match(new RegExp(title)),
+    );
+    if (!card) {
+      throw new Error(`Card with title ${title} not found`);
+    }
+    await miro.board.select({
+      id: card.id,
+    });
+  }, title);
+  await videoDelay(`Selected card ${title}`);
+}
+function selectSidebarCardByTitle(page: Page, title: string | RegExp) {
+  const sidebar = getSidebar(page);
+  return sidebar.locator(appCardSelector).filter({
+    has: sidebar.locator(cardTitleSelector).getByText(title),
+  });
 }

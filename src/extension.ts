@@ -169,7 +169,6 @@ export async function activate(
 
       context.subscriptions.push(logger.monitor(callback));
       debug(`Watching output ${debugValue}`);
-      callback(`Watching output ${debugValue}`);
     },
   };
 }

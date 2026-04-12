@@ -55,7 +55,7 @@ if which -s x11vnc; then
 fi
 
 recordTests() {
-  mkdir -p vidoes
+  mkdir -p videos
   rm videos/vscode.mp4
   recordVideo "videos/vscode.mp4"
   npm test
@@ -63,11 +63,11 @@ recordTests() {
 }
 
 extractScreenshots() {
-  mkdir test_screenshots || true
-  rm test_screenshots/*.png || true
-  ffmpeg -i videos/vscode.mp4 -vf "select='gt(scene,0.003)',showinfo" -vsync vfr test_screenshots/%03d.png
+  mkdir screenshots || true
+  rm screenshots/frame_*.png || true
+  ffmpeg -i videos/vscode.mp4 -vf "select='gt(scene,0.003)',showinfo" -vsync vfr screenshots/frame_%03d.png >/dev/null 2>&1
 }
 
 viewLive() {
-	gvncviewer localhost >/tmp/gvncviewer.log 2>&1 &
+	gvncviewer localhost
 }

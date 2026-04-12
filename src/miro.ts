@@ -19,6 +19,7 @@ import { bindHandlers } from "./utils/bindHandlers";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/notEmpty";
 
+type MiroSocket = Socket<EventsTo<"miro">, EventsFrom<"miro">>;
 createDebug.enable("*");
 let debug = createDebug("app-explorer:miro");
 debug("Miro SDK version:", miro);
@@ -234,7 +235,7 @@ async function zoomIntoCards(cards: AppCard[]) {
 }
 
 export async function attachToSocket() {
-  const socket = socketIO() as Socket<EventsTo<"miro">, EventsFrom<"miro">>;
+  const socket = socketIO() as MiroSocket;
   debug = debug.extend(
     socket.id || Math.random().toString(36).substring(2, 15),
   );
@@ -464,7 +465,7 @@ export async function attachToSocket() {
           await promise;
           const data = await extractCardData(item);
           if (data?.miroLink) {
-            socket.emit("card", { url: data.miroLink, card: data });
+            socket.emit("card", { url: data.miroLink, card: null });
             miro.board.notifications.showInfo("Deleting card in VSCode");
           }
           return null;
@@ -479,6 +480,8 @@ export async function attachToSocket() {
   miro.board.ui.on("items:create", async (event: ItemsCreateEvent) => {
     const card = event.items.find(isAppCard);
     if (card) {
+      const cardData = await extractCardData(card);
+      socket.emit("card", { url: cardData?.miroLink || "", card: cardData });
       await editCardModal(card);
     }
   });

@@ -1,5 +1,5 @@
-import { defineConfig } from "@vscode/test-cli";
 import env from "@next/env";
+import { defineConfig } from "@vscode/test-cli";
 
 const projectDir = process.cwd();
 env.loadEnvConfig(projectDir);
@@ -10,6 +10,7 @@ export default defineConfig({
   workspaceFolder: "./sample-workspace",
   env: {
     DEBUG,
+    NODE_ENV: "test",
     MIRO_TEST_EMAIL: process.env.MIRO_TEST_EMAIL,
     MIRO_TEST_PASSWORD: process.env.MIRO_TEST_PASSWORD,
   },
