@@ -52,46 +52,27 @@ export async function createBrowserPage(
         : undefined,
   });
 
-  await context.exposeFunction("__captureLogs", (...args: unknown[]) => {
-    try {
-      const cleanMessages = args
-        .filter(
-          (part) => typeof part !== "string" || part.indexOf("color:") !== 0,
-        )
-        .map((part) =>
-          typeof part === "string" ? part.replaceAll("%c", "") : part,
-        );
-
+  context.on("console", (msg) => {
+    const txt = msg.text().replaceAll(/%c| color: [\w#]+/g, "");
+    if (msg.type() === "error") {
       // eslint-disable-next-line no-console
-      console.log(
-        colorText("browserLog", "[Browser Log]"),
-
-        ...cleanMessages,
-      );
-    } catch {
+      console.log(colorText("error", "[Browser Console Error]"), txt);
+    } else {
       // eslint-disable-next-line no-console
-      console.log(
-        colorText("browserLog", "[Browser Log]"),
-        ...args.map((part) => ({
-          typeof: typeof part,
-          part: JSON.stringify(part),
-        })),
-      );
+      console.log(colorText("browserLog", "[Browser Console]"), txt);
     }
-    return true;
   });
 
   context.on("weberror", (error) => {
     // eslint-disable-next-line no-console
     console.log(
-      colorText('error',
-
+      colorText(
+        "error",
 
         "[Browser Log] WebError:",
       ),
 
       error.error(),
-
     );
   });
   // Enable access to local resources

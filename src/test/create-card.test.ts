@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import assert from "node:assert";
 import fs from "node:fs";
 
@@ -149,11 +150,12 @@ suiteFn("Create Card", function () {
     await vscode.commands.executeCommand("editor.action.revealDefinition");
     await videoDelay("goToDefinition generateId", 2);
 
-    selectMiroCardByTitle(page, /^UserProfile$/);
+    await selectMiroCardByTitle(page, /^UserProfile$/);
     await dragCardToBoard(page, "generateId", generateIdXY);
     await getModal(page).getByRole("button", { name: "Save" }).click();
     // close editors in vscode
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+    await selectMiroCardByTitle(page, null);
     await videoDelay("No editors open", 2);
 
     // Step 5: Return to UserProfile, locate the CodeLens with app-explorer.navigate and trigger it
@@ -170,6 +172,7 @@ suiteFn("Create Card", function () {
             l.command?.command === "app-explorer.navigate" &&
             l.command.title.includes("UserProfile"),
         );
+        log("lenses", codeLenses.length);
         assert.ok(
           lens,
           "Expected a CodeLens with app-explorer.navigate on UserProfile",
@@ -179,11 +182,18 @@ suiteFn("Create Card", function () {
       { timeout: 10000 },
     );
     invariant(navigateLens.command, "CodeLens command should be defined");
+    log(
+      "CodeLens",
+      navigateLens.command.command,
+      navigateLens.command.arguments,
+    );
     await vscode.commands.executeCommand(
       navigateLens.command.command,
       ...(navigateLens.command.arguments ?? []),
     );
     await videoDelay("triggered navigate CodeLens", 2);
+
+    await page.evaluate(zoomToTestFrame);
 
     // Step 6: Back in helpers.ts, navigate to isValidEmail and drag its card below UserProfile and right of generateId
     const helpersURI = uriForFile("src/utils/helpers.ts");
@@ -266,7 +276,7 @@ async function cleanFrame() {
     (f) => f.title === "Automated Test Frame",
   );
   if (!frame) {
-    window.__captureLogs?.("Error: Missing Automated Test Frame");
+    console.log("Error: Missing Automated Test Frame");
     throw new Error("Missing Automated Test Frame");
   }
 
@@ -276,7 +286,7 @@ async function cleanFrame() {
   });
   const frameItems = items.filter((item) => {
     if (item.parentId === frame.id) {
-      window.__captureLogs?.(
+      console.log(
         `cleanFrame: Found item ${item.title} with parentId ${item.parentId} matching frame id ${frame.id}`,
       );
       return true;
@@ -286,7 +296,7 @@ async function cleanFrame() {
         Math.abs(item.y - frame.y) < frame.height / 2;
 
       if (intersects) {
-        window.__captureLogs?.(
+        console.log(
           `cleanFrame: Found item ${item.title} intersecting with frame: item (${item.x}, ${item.y}), frame (${frame.x}, ${frame.y}, ${frame.width}, ${frame.height})`,
         );
       }
@@ -331,8 +341,15 @@ async function dragCardToBoard(
   await videoDelay("dragged " + name);
 }
 
-async function selectMiroCardByTitle(page: Page, title: string | RegExp) {
-  await page.evaluate(async (title: string | RegExp) => {
+async function selectMiroCardByTitle(
+  page: Page,
+  title: null | string | RegExp,
+) {
+  await page.evaluate(async (title: null | string | RegExp) => {
+    if (title === null) {
+      miro.board.deselect();
+      return;
+    }
     const cards = await miro.board.get({ type: "app_card" });
     const card = cards.find((c) =>
       typeof title === "string"
