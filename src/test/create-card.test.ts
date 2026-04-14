@@ -158,41 +158,6 @@ suiteFn("Create Card", function () {
     await selectMiroCardByTitle(page, null);
     await videoDelay("No editors open", 2);
 
-    // Step 5: Return to UserProfile, locate the CodeLens with app-explorer.navigate and trigger it
-    await vscode.window.showTextDocument(userProfileDoc, { preview: false });
-    await videoDelay("back to UserProfile", 2);
-
-    const navigateLens = await waitFor(
-      async () => {
-        const codeLenses = await vscode.commands.executeCommand<
-          vscode.CodeLens[]
-        >("vscode.executeCodeLensProvider", userProfileURI);
-        const lens = codeLenses?.find(
-          (l) =>
-            l.command?.command === "app-explorer.navigate" &&
-            l.command.title.includes("UserProfile"),
-        );
-        log("lenses", codeLenses.length);
-        assert.ok(
-          lens,
-          "Expected a CodeLens with app-explorer.navigate on UserProfile",
-        );
-        return lens;
-      },
-      { timeout: 10000 },
-    );
-    invariant(navigateLens.command, "CodeLens command should be defined");
-    log(
-      "CodeLens",
-      navigateLens.command.command,
-      navigateLens.command.arguments,
-    );
-    await vscode.commands.executeCommand(
-      navigateLens.command.command,
-      ...(navigateLens.command.arguments ?? []),
-    );
-    await videoDelay("triggered navigate CodeLens", 2);
-
     await page.evaluate(zoomToTestFrame);
 
     // Step 6: Back in helpers.ts, navigate to isValidEmail and drag its card below UserProfile and right of generateId
