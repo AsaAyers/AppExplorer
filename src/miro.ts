@@ -13,11 +13,9 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { type AppExplorerTag, type CardData } from "./EventTypes";
-import { EventHandler, MiroSocket } from "./event-handler";
+import { EventHandler, HandlerMethodMap, MiroSocket } from "./event-handler";
 import { isAppCard } from "./miro/isAppCard";
 import { updateCard } from "./miro/updateCard";
-import { EventsTo } from "./socket-events";
-import { bindHandlers } from "./utils/bindHandlers";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/notEmpty";
 
@@ -235,92 +233,53 @@ async function zoomIntoCards(cards: AppCard[]) {
   );
 }
 
-export class MiroEventHandler extends EventHandler<"miro"> {
-  constructor(socket: MiroSocket) {
-    super("miro", socket, {
-      setBoardName: async (routedBoardId, name) => {
-        const boardId = await miro.board.getInfo().then((info) => info.id);
-        invariant(routedBoardId === boardId, "Board ID mismatch");
-        await miro.board.setAppData("name", name);
-        return true;
-      },
-      getBoardInfo: async (routedBoardId) => {
-        const boardId = await miro.board.getInfo().then((info) => info.id);
-        // The boardID might not be known by the client yet, so an empty string is passed as a placeholder.
-        invariant(
-          routedBoardId === "" || boardId === routedBoardId,
-          "Board ID mismatch",
-        );
-        const name = (await miro.board.getAppData("name")) as string;
-        const cards = await miro.board.get({ type: ["app_card"] });
-        const cardEntries = await Promise.all(
-          cards.map(async (card) => {
-            const cardData = await extractCardData(card);
-            return cardData?.miroLink
-              ? ([cardData.miroLink, cardData] as const)
-              : null;
-          }),
-        );
+class MiroEventHandler extends EventHandler<"miro"> {
+  protected readonly self = "miro" as const;
 
-        return {
-          boardId,
-          name,
-          cards: cardEntries.reduce(
-            (acc, entry) => {
-              if (entry) {
-                const [miroLink, cardData] = entry;
-                acc[miroLink] = cardData;
-              }
-              return acc;
-            },
-            {} as Record<string, CardData>,
-          ),
-        };
-      },
-    });
+  private async getBoardId() {
+    return miro.board.getInfo().then((info) => info.id);
   }
-}
 
-export async function attachToSocket() {
-  const socket = socketIO() as MiroSocket;
-  debug = debug.extend(
-    socket.id || Math.random().toString(36).substring(2, 15),
-  );
+  private async getCardsForBoard() {
+    const cards = (
+      await miro.board.get({
+        type: ["app_card"],
+      })
+    ).filter((c) => c.type === "app_card");
+    return (await Promise.all(cards.map(extractCardData))).filter(notEmpty);
+  }
 
-  await miro.board.ui.on("icon:click", async () => {
-    await miro.board.ui.openPanel({ url: "/sidebar.html" });
-  });
-
-  const boardId = await miro.board.getInfo().then((info) => info.id);
-  const queryImplementations: EventsTo<"miro"> = {
-    setBoardName: async (routedBoardId, name, done) => {
+  protected readonly handlerMethods = {
+    onSetBoardName: async (routedBoardId, name) => {
+      const boardId = await this.getBoardId();
       invariant(routedBoardId === boardId, "Board ID mismatch");
       await miro.board.setAppData("name", name);
-      done(true);
+      return true;
     },
-    getBoardInfo: async (routedBoardId, done) => {
+    onGetBoardInfo: async (routedBoardId) => {
+      const boardId = await this.getBoardId();
       // The boardID might not be known by the client yet, so an empty string is passed as a placeholder.
       invariant(
         routedBoardId === "" || boardId === routedBoardId,
         "Board ID mismatch",
       );
       const name = (await miro.board.getAppData("name")) as string;
-      queryImplementations.cards(boardId, (cardArray) => {
-        done({
-          boardId,
-          name,
-          cards: cardArray.reduce(
-            (acc: Record<string, CardData>, c: CardData) => {
-              acc[c.miroLink!] = c;
-              return acc;
-            },
-            {} as Record<string, CardData>,
-          ),
-        });
-      });
+      const cardArray = await this.getCardsForBoard();
+      return {
+        boardId,
+        name,
+        cards: cardArray.reduce(
+          (acc: Record<string, CardData>, c: CardData) => {
+            acc[c.miroLink!] = c;
+            return acc;
+          },
+          {} as Record<string, CardData>,
+        ),
+      };
     },
-    newCards: async (routedBoardId, cards, options, done) => {
+    onNewCards: async (routedBoardId, cards, options) => {
       try {
+        const boardId = await this.getBoardId();
         invariant(routedBoardId === boardId, "Board ID mismatch");
         await newCard(cards, options).then(async (cards) => {
           const selection = await miro.board.getSelection();
@@ -331,18 +290,20 @@ export async function attachToSocket() {
             await miro.board.select({ id: cards.map((c) => c.id) });
           }
         });
-        done(true);
+        return true;
       } catch (error) {
         debug("AppExplorer: Error creating new cards", error);
-        done(false);
+        return false;
       }
     },
-    getIdToken: (routedBoardId, done) => {
+    onGetIdToken: async (routedBoardId) => {
+      const boardId = await this.getBoardId();
       invariant(routedBoardId === boardId, "Board ID mismatch");
-      return miro.board.getIdToken().then((id) => done(id));
+      return miro.board.getIdToken();
     },
-    attachCard: async (routedBoardId, cardData, done) => {
+    onAttachCard: async (routedBoardId, cardData) => {
       try {
+        const boardId = await this.getBoardId();
         invariant(routedBoardId === boardId, "Board ID mismatch");
         const selection = await miro.board.getSelection();
         const card = selection[0];
@@ -356,18 +317,19 @@ export async function attachToSocket() {
           await miro.board.select({ id: card.id });
           const data = await extractCardData(updatedCard);
           if (data && data.miroLink) {
-            socket.emit("card", { url: data.miroLink, card: data });
+            await this.emit("card", { url: data.miroLink, card: data });
             miro.board.notifications.showInfo(`Updated card: ${data.title}`);
           }
         }
-        done(true);
+        return true;
       } catch (error) {
         debug("AppExplorer: Error attaching card", error);
-        done(false);
+        return false;
       }
     },
-    hoverCard: async (routedBoardId, cardUrl, done) => {
+    onHoverCard: async (routedBoardId, cardUrl) => {
       try {
+        const boardId = await this.getBoardId();
         invariant(routedBoardId === boardId, "Board ID mismatch");
         const url = new URL(cardUrl);
         const id = url.searchParams.get("moveToWidget")!;
@@ -375,23 +337,20 @@ export async function attachToSocket() {
         const card = await miro.board.getById(id);
         invariant(isAppCard(card), "card must be an app_card");
         await zoomIntoCards([card]);
-        done(true);
+        return true;
       } catch (error) {
         debug("AppExplorer: Error hovering card", error);
-        done(false);
+        return false;
       }
     },
-    cards: async (routedBoardId, done) => {
+    onCards: async (routedBoardId) => {
+      const boardId = await this.getBoardId();
       invariant(routedBoardId === boardId, "Board ID mismatch");
-      const cards = (
-        await miro.board.get({
-          type: ["app_card"],
-        })
-      ).filter((c) => c.type === "app_card");
-      done((await Promise.all(cards.map(extractCardData))).filter(notEmpty));
+      return this.getCardsForBoard();
     },
-    selectCard: async (routedBoardId, cardUrl, done) => {
+    onSelectCard: async (routedBoardId, cardUrl) => {
       try {
+        const boardId = await this.getBoardId();
         invariant(routedBoardId === boardId, "Board ID mismatch");
         const url = new URL(cardUrl);
         const id = url.searchParams.get("moveToWidget")!;
@@ -405,20 +364,21 @@ export async function attachToSocket() {
           await zoomIntoCards([card]);
           miro.board.notifications.showInfo(`Selected card: ${card.title}`);
         } else {
-          socket.emit("card", { url: cardUrl, card: null });
+          await this.emit("card", { url: cardUrl, card: null });
           miro.board.notifications.showError(`Card not found ${cardUrl}`);
         }
-        done(true);
+        return true;
       } catch (error) {
         debug("AppExplorer: Error selecting card", error);
         miro.board.notifications.showError(
           `AppExplorer: Error selecting card ${error}`,
         );
-        done(false);
+        return false;
       }
     },
-    cardStatus: async (routedBoardId, { miroLink, status, codeLink }, done) => {
+    onCardStatus: async (routedBoardId, { miroLink, status, codeLink }) => {
       try {
+        const boardId = await this.getBoardId();
         invariant(routedBoardId === boardId, "Board ID mismatch");
         const url = new URL(miroLink);
         const id = url.searchParams.get("moveToWidget")!;
@@ -434,27 +394,25 @@ export async function attachToSocket() {
       } catch (error) {
         debug("AppExplorer: Error updating card status", error);
       }
-      done(true);
+      return true;
     },
-    tags: async (routedBoardId, done) => {
+    onTags: async (routedBoardId) => {
+      const boardId = await this.getBoardId();
       invariant(routedBoardId === boardId, "Board ID mismatch");
       const selection = await miro.board.get({ type: "tag" });
-      done(
-        await Promise.all(
-          selection.map(
-            (tag): AppExplorerTag => ({
-              id: tag.id,
-              title: tag.title,
-              color: tag.color as AppExplorerTag["color"],
-            }),
-          ),
-        ),
+      return Promise.all(
+        selection.map((tag) => ({
+          id: tag.id,
+          title: tag.title,
+          color: tag.color as AppExplorerTag["color"],
+        })),
       );
     },
-    tagCards: async (routedBoardId, { miroLink: links, tag }, done) => {
+    onTagCards: async (routedBoardId, { miroLink: links, tag }) => {
       try {
+        const boardId = await this.getBoardId();
         invariant(routedBoardId === boardId, "Board ID mismatch");
-        let tagObject: Tag;
+        let tagObject: Tag | undefined;
         if (typeof tag === "string") {
           const tmp = await miro.board.getById(tag);
           if (tmp && isTag(tmp)) {
@@ -466,6 +424,7 @@ export async function attachToSocket() {
             title: tag.title,
           });
         }
+        invariant(tagObject, "Tag not found");
 
         await links.reduce(async (p, miroLink) => {
           await p;
@@ -482,21 +441,33 @@ export async function attachToSocket() {
           await card.sync();
         }, Promise.resolve());
 
-        done(true);
+        return true;
       } catch (error) {
         debug("AppExplorer: Error tagging cards", error);
-        done(false);
+        return false;
       }
     },
-    selected: async (routedBoardId, done) => {
+    onSelected: async (routedBoardId) => {
+      const boardId = await this.getBoardId();
       invariant(routedBoardId === boardId, "Board ID mismatch");
       const selection = await miro.board.getSelection();
-      done(
-        (await Promise.all(selection.map(extractCardData))).filter(notEmpty),
+      return (await Promise.all(selection.map(extractCardData))).filter(
+        notEmpty,
       );
     },
-  };
-  bindHandlers(socket, queryImplementations);
+  } satisfies HandlerMethodMap<"miro">;
+}
+
+export async function attachToSocket() {
+  const s = socketIO() as MiroSocket;
+  debug = debug.extend(s.id || Math.random().toString(36).substring(2, 15));
+  const miroEventHandler = MiroEventHandler.create(s);
+
+  await miro.board.ui.on("icon:click", async () => {
+    await miro.board.ui.openPanel({ url: "/sidebar.html" });
+  });
+
+  const boardId = await miro.board.getInfo().then((info) => info.id);
 
   miro.board.ui.on("app_card:open", async (event) => {
     await editCardModal(event.appCard);
@@ -510,7 +481,7 @@ export async function attachToSocket() {
       for (const item of event.items) {
         if (isAppCard(item)) {
           const miroLink = `https://miro.com/app/board/${boardId}/?moveToWidget=${item.id}`;
-          socket.emit("card", { url: miroLink, card: null });
+          await miroEventHandler.emit("card", { url: miroLink, card: null });
           await miro.board.notifications.showInfo("Deleting card in VSCode");
         }
       }
@@ -525,7 +496,10 @@ export async function attachToSocket() {
     const card = event.items.find(isAppCard);
     if (card) {
       const cardData = await extractCardData(card);
-      socket.emit("card", { url: cardData?.miroLink || "", card: cardData });
+      await miroEventHandler.emit("card", {
+        url: cardData?.miroLink || "",
+        card: cardData,
+      });
       await editCardModal(card);
     }
   });
@@ -538,14 +512,14 @@ export async function attachToSocket() {
       ).filter(notEmpty);
 
       if (data.length > 0) {
-        data.forEach((card) => {
-          socket.emit("card", {
+        for (const card of data) {
+          await miroEventHandler.emit("card", {
             url: card.miroLink!,
             card,
           });
-        });
+        }
       }
-      socket.emit("selectedCards", data);
+      await miroEventHandler.emit("selectedCards", data);
     } catch (error) {
       debug("AppExplorer: Notifying VSCode of updated selection", error);
     }

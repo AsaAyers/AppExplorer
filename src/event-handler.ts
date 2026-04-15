@@ -1,4 +1,5 @@
 import type { Socket } from "socket.io-client";
+import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import {
@@ -12,7 +13,7 @@ import {
   socketEventMap,
 } from "./socket-events";
 
-export type InboundSchemaMap<Target extends SocketEntity> = MergeUnionOfObjects<
+type InboundSchemaMap<Target extends SocketEntity> = MergeUnionOfObjects<
   {
     [Source in keyof SocketEventSchemaMap]: Target extends keyof SocketEventSchemaMap[Source]
       ? SocketEventSchemaMap[Source][Target]
@@ -20,37 +21,35 @@ export type InboundSchemaMap<Target extends SocketEntity> = MergeUnionOfObjects<
   }[keyof SocketEventSchemaMap]
 >;
 
-export type InboundHandlerMap<Target extends SocketEntity> =
-  MergeUnionOfObjects<
-    {
-      [Source in keyof SocketEventMap]: Target extends keyof SocketEventMap[Source]
-        ? SocketEventMap[Source][Target]
-        : never;
-    }[keyof SocketEventMap]
-  >;
+type InboundHandlerMap<Target extends SocketEntity> = MergeUnionOfObjects<
+  {
+    [Source in keyof SocketEventMap]: Target extends keyof SocketEventMap[Source]
+      ? SocketEventMap[Source][Target]
+      : never;
+  }[keyof SocketEventMap]
+>;
 
-type Last<T extends unknown[]> = T extends [...infer _, infer L] ? L : never;
-type AllButLast<T extends unknown[]> = T extends [...infer H, infer _]
-  ? H
+type OutboundSchemaMap<Source extends SocketEntity> = MergeUnionOfObjects<
+  SocketEventSchemaMap[Source][keyof SocketEventSchemaMap[Source]]
+>;
+
+type OutboundHandlerMap<Source extends SocketEntity> = MergeUnionOfObjects<
+  SocketEventMap[Source][keyof SocketEventMap[Source]]
+>;
+
+type HandlerMethodName<EventName extends string> = `on${Capitalize<EventName>}`;
+
+export type HandlerMethodMap<Target extends SocketEntity> = {
+  [EventName in keyof InboundHandlerMap<Target> &
+    string as HandlerMethodName<EventName>]: InboundHandlerMap<Target>[EventName];
+};
+
+type EventSignature<
+  Events,
+  EventName extends keyof Events,
+> = Events[EventName] extends (...args: infer Args) => infer Result
+  ? { args: Args; return: Result }
   : never;
-type FirstArg<T> = T extends (arg: infer Param, ...rest: unknown[]) => unknown
-  ? Param
-  : never;
-
-const isZodFunction = <Schema>(
-  schema: Schema,
-): schema is Extract<Schema, z.ZodFunction> => schema instanceof z.ZodFunction;
-
-const isImplementableHandler = <Schema extends z.ZodFunction>(
-  handler: unknown,
-  _schema: Schema,
-): handler is z.input<Schema> => typeof handler === "function";
-
-const implementAsync = <Schema extends z.ZodFunction>(
-  schema: Schema,
-  handler: z.input<Schema>,
-): z.output<Schema> =>
-  schema.implementAsync(handler as never) as z.output<Schema>;
 
 const getInboundSchemas = <Target extends SocketEntity>(
   target: Target,
@@ -70,74 +69,195 @@ const getInboundSchemas = <Target extends SocketEntity>(
   return schemas as InboundSchemaMap<Target>;
 };
 
-export abstract class EventHandler<Self extends keyof SocketEventMap> {
-  protected readonly self: Self;
+const getOutboundSchemas = <Source extends SocketEntity>(
+  source: Source,
+): OutboundSchemaMap<Source> => {
+  const schemas: Partial<OutboundSchemaMap<Source>> = {};
 
+  for (const targetSchemas of Object.values(socketEventMap[source])) {
+    Object.assign(schemas, targetSchemas);
+  }
+
+  return schemas as OutboundSchemaMap<Source>;
+};
+
+const toHandlerMethodName = <EventName extends string>(
+  eventName: EventName,
+): HandlerMethodName<EventName> =>
+  `on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}` as HandlerMethodName<EventName>;
+
+const serializeForError = (value: unknown): string => {
+  try {
+    return (
+      JSON.stringify(
+        value,
+        (_key, currentValue) =>
+          currentValue === undefined ? "__undefined__" : currentValue,
+        2,
+      ) ?? String(value)
+    );
+  } catch {
+    return String(value);
+  }
+};
+
+const contextualizeValidationError = (
+  direction: "emit" | "handler",
+  self: SocketEntity,
+  eventName: string,
+  args: unknown[],
+  error: unknown,
+): Error | unknown => {
+  if (error instanceof z.ZodError) {
+    return new Error(
+      `Socket ${direction} validation failed for ${self}.${eventName}\nArgs: ${serializeForError(args)}\nIssues: ${JSON.stringify(error.issues, null, 2)}`,
+    );
+  }
+
+  return error;
+};
+
+const returnsVoid = (schema: z.ZodFunction): boolean =>
+  schema.def.output instanceof z.ZodPromise &&
+  schema.def.output.def.innerType instanceof z.ZodVoid;
+
+export abstract class EventHandler<Self extends SocketEntity> {
+  protected abstract readonly self: Self;
+  protected abstract readonly handlerMethods: HandlerMethodMap<Self>;
   protected readonly socket: Socket<EventsTo<Self>, EventsFrom<Self>>;
 
-  protected handlers: Partial<InboundHandlerMap<Self>>;
-
-  protected constructor(
-    self: Self,
-    socket: Socket<EventsTo<Self>, EventsFrom<Self>>,
-    handlers: Partial<InboundHandlerMap<Self>>,
-  ) {
-    this.self = self;
+  constructor(socket: Socket<EventsTo<Self>, EventsFrom<Self>>) {
     this.socket = socket;
-    this.handlers = this.wrapHandlers(handlers);
+  }
 
-    for (const e in this.handlers) {
-      const eventName = e as keyof EventsTo<Self> & keyof typeof this.handlers;
+  static create<Self extends SocketEntity, Handler extends EventHandler<Self>>(
+    this: new (socket: Socket<EventsTo<Self>, EventsFrom<Self>>) => Handler,
+    socket: Socket<EventsTo<Self>, EventsFrom<Self>>,
+  ) {
+    const instance = new this(socket);
+    instance.registerHandlers();
+    return instance;
+  }
 
-      const handler = this.handlers[eventName] as any;
+  public emit<
+    EventName extends keyof OutboundHandlerMap<Self> &
+      keyof EventsFrom<Self> &
+      string,
+  >(
+    eventName: EventName,
+    ...args: EventSignature<OutboundHandlerMap<Self>, EventName>["args"]
+  ): EventSignature<OutboundHandlerMap<Self>, EventName>["return"] {
+    const schema = (
+      getOutboundSchemas(this.self) as Record<string, z.ZodFunction>
+    )[eventName];
+    invariant(
+      schema instanceof z.ZodFunction,
+      `No schema found for event ${String(eventName)}`,
+    );
+
+    const callSocket = schema.implementAsync(
+      async (...validatedArgs: unknown[]) => {
+        if (returnsVoid(schema)) {
+          (this.socket.emit as unknown as (...socketArgs: unknown[]) => void)(
+            eventName,
+            ...validatedArgs,
+          );
+          return;
+        }
+
+        return (
+          this.socket.emitWithAck as (
+            ...socketArgs: unknown[]
+          ) => Promise<unknown>
+        )(eventName, ...validatedArgs);
+      },
+    );
+    return callSocket(...args).catch((error) => {
+      throw contextualizeValidationError(
+        "emit",
+        this.self,
+        eventName,
+        args,
+        error,
+      );
+    }) as EventSignature<OutboundHandlerMap<Self>, EventName>["return"];
+  }
+
+  private registerHandlers(): void {
+    const wrappedHandlers = this.wrapHandlers(this.handlerMethods);
+    const inboundSchemas = getInboundSchemas(this.self);
+    const eventNames = Object.keys(inboundSchemas) as Array<
+      keyof InboundSchemaMap<Self> &
+        keyof InboundHandlerMap<Self> &
+        string &
+        keyof EventsTo<Self>
+    >;
+
+    for (const eventName of eventNames) {
+      const handlerMethodName = toHandlerMethodName(eventName);
+      const handler = wrappedHandlers[handlerMethodName];
       if (typeof handler !== "function") {
-        continue;
+        throw new Error(
+          `Missing handler method ${String(handlerMethodName)} for event ${String(eventName)}`,
+        );
       }
+      const asyncHandler = handler as unknown as (
+        ...args: any[]
+      ) => Promise<unknown>;
+
       const callbackHandler = async (...args: any[]) => {
         const callback = args.pop();
         try {
-          const result = await handler(...args);
+          const result = await asyncHandler(...args);
           callback(null, result);
         } catch (error) {
           callback(error instanceof Error ? error.message : error);
         }
       };
-      // Its not worth the effort to make sure that callbackHandler's types are
-      // correct.  So the callbackHandler is generic and then typed as an "any".
+
       this.socket.on(eventName, callbackHandler as any);
     }
   }
 
-  protected emit<EventName extends keyof EventsFrom<Self> & (string | symbol)>(
-    eventName: EventName,
-    ...args: AllButLast<Parameters<EventsFrom<Self>[EventName]>>
-  ): Promise<FirstArg<Last<Parameters<EventsFrom<Self>[EventName]>>>> {
-    return this.socket.emitWithAck(eventName, ...args) as Promise<
-      FirstArg<Last<Parameters<EventsFrom<Self>[EventName]>>>
-    >;
-  }
-
-  private wrapHandlers<Handlers extends Partial<InboundHandlerMap<Self>>>(
+  private wrapHandlers<Handlers extends HandlerMethodMap<Self>>(
     handlers: Handlers,
   ): Handlers {
     const inboundSchemas = getInboundSchemas(this.self);
     const wrappedHandlers = { ...handlers } as Handlers;
+    const eventNames = Object.keys(inboundSchemas) as Array<
+      keyof InboundSchemaMap<Self> & keyof InboundHandlerMap<Self> & string
+    >;
 
-    for (const eventName in handlers) {
-      const eventKey = eventName as unknown as keyof Handlers &
-        keyof InboundSchemaMap<Self>;
-      const handler = handlers[eventKey];
-      const schema = inboundSchemas[eventKey];
+    for (const eventName of eventNames) {
+      const handlerMethodName = toHandlerMethodName(
+        eventName,
+      ) as keyof Handlers;
+      const handler = handlers[handlerMethodName];
+      const schema = inboundSchemas[eventName];
 
-      if (isZodFunction(schema) && isImplementableHandler(handler, schema)) {
-        wrappedHandlers[eventKey] = implementAsync(
-          schema,
-          handler,
-        ) as Handlers[typeof eventKey];
+      if (schema instanceof z.ZodFunction && typeof handler === "function") {
+        const functionSchema: z.ZodFunction = schema;
+        const validatedHandler = functionSchema.implementAsync(
+          handler as never,
+        ) as (...args: unknown[]) => Promise<unknown>;
+        wrappedHandlers[handlerMethodName] = (async (...args: unknown[]) => {
+          try {
+            return await validatedHandler(...args);
+          } catch (error) {
+            throw contextualizeValidationError(
+              "handler",
+              this.self,
+              eventName,
+              args,
+              error,
+            );
+          }
+        }) as Handlers[typeof handlerMethodName];
       }
     }
 
     return wrappedHandlers;
   }
 }
+
 export type MiroSocket = Socket<EventsTo<"miro">, EventsFrom<"miro">>;
