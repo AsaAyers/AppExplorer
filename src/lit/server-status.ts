@@ -8,7 +8,9 @@ import { createDebug } from "../utils/create-debug";
 import { AppElement } from "./app-element";
 import { mirotoneStyles } from "./mirotone";
 import { ServerStatusController } from "./server-status-controller";
-import { SidebarSocket, socketContext } from "./socket-context";
+import { socketContext } from "./socket-context";
+
+import { SidebarSocket } from "@/event-handler";
 const debug = createDebug("app-explorer:server-status");
 
 @customElement("app-explorer-server-status")

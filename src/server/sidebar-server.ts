@@ -1,17 +1,20 @@
-import { Namespace, Socket } from "socket.io";
-
 import { WorkspaceInfo } from "../EventTypes";
 import { BoardInfo, CardStorage } from "../card-storage";
 import {
   DocumentSymbolTracker,
   getDocumentSymbolTracker,
 } from "../document-symbol-tracker";
+import {
+  SidebarNamespace,
+  SidebarServerSocket,
+  WorkspaceNamespace,
+} from "../event-handler";
 import { LocationFinder } from "../location-finder";
-import { EventsFrom, EventsTo, RoutedEvents } from "../socket-events";
 import { createDebug } from "../utils/create-debug";
-const debug = createDebug("app-explorer:server:sidebar");
 
-type SidebarNamespace = Namespace<EventsFrom<"sidebar">, EventsTo<"sidebar">>;
+import { ServerSidebarEventHandler } from "@/event-handlers/server-sidebar-event-handler";
+import { WorkspaceSidebarEventManager } from "@/event-handlers/workspace-sidebar-event-handler";
+export const debug = createDebug("app-explorer:server:sidebar");
 
 export class SidebarServer {
   private sidebarNamespace: SidebarNamespace;
@@ -22,10 +25,7 @@ export class SidebarServer {
   subscriptions: { dispose(): void }[] = [];
   symbolTracker: DocumentSymbolTracker;
 
-  private workspaceNamespace: Namespace<
-    RoutedEvents<"workspace", "miro">,
-    EventsTo<"workspace">
-  >;
+  private workspaceNamespace: WorkspaceNamespace;
   constructor(
     namespace: SidebarNamespace,
     cardStorage: CardStorage,
@@ -66,13 +66,10 @@ export class SidebarServer {
     this.subscriptions.forEach((d) => d.dispose());
   }
 
-  onSidebarConnection = (
-    socket: Socket<EventsFrom<"sidebar">, EventsTo<"sidebar">>,
-  ) => {
+  onSidebarConnection = (socket: SidebarServerSocket) => {
     debug("New sidebar connection", { socketId: socket.id });
-    Object.entries(this.handlers).forEach(([event, handler]) => {
-      socket.on(event as keyof EventsFrom<"sidebar">, handler);
-    });
+    ServerSidebarEventHandler.create(socket, this.#instanceId);
+    WorkspaceSidebarEventManager.create(socket, this.workspaceNamespace);
     socket.onAnyOutgoing((event) => {
       debug("outgoing", event);
     });
@@ -89,16 +86,6 @@ export class SidebarServer {
       this.emitServerStatus();
       this.symbolTracker.fire({ type: "symbolRequest" });
     }, 250);
-  };
-
-  handlers: EventsFrom<"sidebar"> = {
-    getInstanceId: (callback) => {
-      debug("getInstanceId", this.#instanceId);
-      callback(this.#instanceId);
-    },
-    navigateTo: (card) => {
-      this.workspaceNamespace.emit("navigateTo", card);
-    },
   };
 
   getServerStatus = () => {

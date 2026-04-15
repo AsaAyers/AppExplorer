@@ -1,23 +1,19 @@
-import { Socket, io as socketIO } from "socket.io-client";
+import { io as socketIO } from "socket.io-client";
 import * as vscode from "vscode";
 
 import { CardData, WorkspaceRegistrationRequest } from "./EventTypes";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
+import { WorkspaceSocket } from "./event-handler";
+import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
-import { EventsFrom, EventsTo, RoutedEvents } from "./socket-events";
 
 export class WorkspaceCardStorage
   extends CardStorage
-  implements
-    vscode.Disposable,
-    RoutedEvents<"miro", "workspace">,
-    EventsTo<"workspace">
+  implements vscode.Disposable
 {
-  public readonly socket: Socket<
-    EventsTo<"workspace">,
-    EventsFrom<"workspace">
-  >;
+  public readonly socket: WorkspaceSocket;
+  readonly #eventHandler: WorkspaceEventHandler;
 
   #workspaceId: string;
   #handlerContext: Pick<HandlerContext, "locationFinder">;
@@ -35,20 +31,16 @@ export class WorkspaceCardStorage
     const wsUrl = `${serverUrl}/workspace`;
     const connectionTimeout = 10000; // 10 second connection timeout
 
-    this.socket = socketIO(wsUrl, {
+    const socket = socketIO(wsUrl, {
       transports: ["websocket"],
       timeout: connectionTimeout,
       reconnection: true,
       forceNew: false, // Force new connection on each attempt
-    });
+    }) as WorkspaceSocket;
+    this.socket = socket;
+    this.#eventHandler = WorkspaceEventHandler.create(socket, this);
 
-    this.socket.onAny((event, ...args) => {
-      this.debug("onAny()", event, args);
-    });
-    this.socket.onAnyOutgoing((event, ...args) => {
-      this.debug("onAnyOutgoing()", event, args);
-    });
-    this.socket.on("disconnect", (reason) => {
+    socket.on("disconnect", (reason) => {
       try {
         this.emit("disconnect", { type: "disconnect" });
       } catch (e) {
@@ -60,37 +52,29 @@ export class WorkspaceCardStorage
         const i = setInterval(() => {
           this.debug(
             "Reconnecting socket...",
-            this.socket.connected,
-            this.socket.disconnected,
-            this.socket.recovered,
+            socket.connected,
+            socket.disconnected,
+            socket.recovered,
           );
-          if (this.socket.connected) {
+          if (socket.connected) {
             clearInterval(i);
             this.onConnect();
             return;
           }
-          this.socket.connect();
-          this.socket.io.connect();
+          socket.connect();
+          socket.io.connect();
         }, 1000);
       } else {
         this.debug("Socket disconnected");
       }
     });
     // @ts-expect-error Reconnect event is missing from types
-    this.socket.on("reconnect", (arg: unknown) => {
+    socket.on("reconnect", (arg: unknown) => {
       this.debug("on reconnect", { arg });
     });
 
-    this.socket.on("connectedBoards", this.connectedBoards.bind(this));
-    this.socket.on("boardUpdate", this.boardUpdate.bind(this));
-    this.socket.on("cardUpdate", this.cardUpdate.bind(this));
-    this.socket.on("card", this.card.bind(this));
-    this.socket.on("navigateTo", this.navigateTo.bind(this));
-    this.socket.on("selectedCards", this.selectedCards.bind(this));
-    this.socket.on("log", this.log.bind(this));
-
     // Register with server when connected
-    this.socket.on("connect", this.onConnect);
+    socket.on("connect", this.onConnect);
   }
   onConnect = async () => {
     this.debug("Connected to server, registering workspace");
@@ -101,7 +85,7 @@ export class WorkspaceCardStorage
         rootPath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
       };
 
-      const response = await this.socket.emitWithAck(
+      const response = await this.#eventHandler.emit(
         "workspaceRegistration",
         registrationRequest,
       );
@@ -249,7 +233,7 @@ export class WorkspaceCardStorage
         }
       }
 
-      await this.socket.emitWithAck("cardStatus", card.boardId, {
+      await this.#eventHandler.emit("cardStatus", card.boardId, {
         miroLink: card.miroLink,
         status,
         codeLink,

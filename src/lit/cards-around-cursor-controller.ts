@@ -4,7 +4,9 @@ import { LitElement, ReactiveController, ReactiveControllerHost } from "lit";
 import { CardData } from "../EventTypes";
 import { createDebug } from "../utils/create-debug";
 
-import { SidebarSocket, socketContext } from "./socket-context";
+import { socketContext } from "./socket-context";
+
+import { SidebarSocket } from "@/event-handler";
 const debug = createDebug("app-explorer:cards-around-cursor:controller");
 
 export class CardsAroundCursorController implements ReactiveController {
