@@ -207,40 +207,6 @@ export type SocketIoEventMap<Events> = {
   [EventName in keyof Events]: HandlerToSocketIoEvent<Events[EventName]>;
 };
 
-/**
- * EventsTo<Map, Target>
- * ---------------------
- * Goal:
- *   From a role→(destination-role→events) adjacency mapping (our `SocketEventMap`), build a merged
- *   object containing *all* event handlers whose destination is `Target` (e.g. "server").
- *
- * Steps:
- *   1. Mapped type iterates each source role `S in keyof Map`.
- *   2. If the source role object contains a property named `Target`, we keep that nested event map;
- *      else we yield `never` (ignored later).
- *   3. Indexing the mapped type with `[keyof Map]` converts the mapped object into a UNION of just
- *      those collected nested event maps (dropping `never`).
- *   4. Pass that union of event maps through `MergeUnionOfObjects` to flatten into a single object
- *      whose keys are the union of all inbound event names and whose values are the union of the
- *      respective handler types.
- *
- * Result:
- *   `EventsTo<SocketEventMap, "server">` ⇒ one object type describing every event that can be
- *   sent TO the server from any other role.
- */
-export type EventsTo<Target extends PropertyKey> = MergeUnionOfObjects<
-  {
-    [S in keyof SocketEventMap]: Target extends keyof SocketEventMap[S]
-      ? SocketIoEventMap<SocketEventMap[S][Target]>
-      : never;
-  }[keyof SocketEventMap]
->;
-
-export type EventsFrom<Source extends keyof SocketEventMap> =
-  MergeUnionOfObjects<
-    SocketIoEventMap<SocketEventMap[Source][keyof SocketEventMap[Source]]>
-  >;
-
 export type RoutedEvents<
   Source extends keyof SocketEventMap,
   Target extends keyof SocketEventMap[Source],
@@ -324,6 +290,4 @@ export const socketEventMap = {
 
 export type SocketEventSchemaMap = typeof socketEventMap;
 
-export type SocketEventMap = PrettyPrint<
-  InferSocketEventMap<SocketEventSchemaMap>
->;
+export type SocketEventMap = InferSocketEventMap<SocketEventSchemaMap>;

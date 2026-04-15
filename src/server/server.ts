@@ -4,19 +4,23 @@ import * as path from "node:path";
 import compression from "compression";
 import express from "express";
 import morgan from "morgan";
-import { Namespace, Server } from "socket.io";
+import { Server } from "socket.io";
 import * as vscode from "vscode";
 
 import { WorkspaceInfo } from "../EventTypes";
 import { CardStorage, MemoryAdapter } from "../card-storage";
 import { PortConfig } from "../port-config";
-import { EventsFrom, EventsTo, RoutedEvents } from "../socket-events";
+import { RoutedEvents } from "../socket-events";
 import { listenToAllEvents } from "../test/helpers/listen-to-all-events";
 import { createDebug } from "../utils/create-debug";
 
 import { SidebarServer } from "./sidebar-server";
 
-import { MiroServerSocket, WorkspaceServerSocket } from "@/event-handler";
+import {
+  MiroServerSocket,
+  WorkspaceNamespace,
+  WorkspaceServerSocket,
+} from "@/event-handler";
 import { MiroWorkspaceEventHandler } from "@/event-handlers/miro-workspace-event-handler";
 import { ServerWorkspaceEventHandler } from "@/event-handlers/server-workspace-event-handler";
 import { WorkspaceMiroEventHandler } from "@/event-handlers/workspace-miro-event-handler";
@@ -27,10 +31,7 @@ const debugEvents = debug.extend("events");
 export class MiroServer {
   subscriptions = [] as vscode.Disposable[];
   httpServer: ReturnType<typeof createServer>;
-  private workspaceNamespace: Namespace<
-    EventsFrom<"workspace">,
-    EventsTo<"workspace">
-  >;
+  private workspaceNamespace: WorkspaceNamespace;
   private connectedWorkspaces = new Map<string, WorkspaceInfo>();
 
   private cardStorage = new CardStorage(new MemoryAdapter());

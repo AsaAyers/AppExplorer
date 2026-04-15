@@ -1,16 +1,15 @@
-import { Socket as ServerSocket } from "socket.io";
+import { Namespace, Socket as ServerSocket } from "socket.io";
 import type { Socket as ClientSocket } from "socket.io-client";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
 import {
-  EventsFrom,
-  EventsTo,
   MergeUnionOfObjects,
   RoutedEvents,
   SocketEntity,
   SocketEventMap,
   SocketEventSchemaMap,
+  SocketIoEventMap,
   socketEntities,
   socketEventMap,
 } from "./socket-events";
@@ -577,3 +576,45 @@ export type SidebarServerSocket = ServerSocket<
   EventsFrom<"sidebar">,
   EventsTo<"sidebar">
 >;
+export type WorkspaceNamespace = Namespace<
+  EventsFrom<"workspace">,
+  EventsTo<"workspace">
+>;
+export type SidebarNamespace = Namespace<
+  EventsFrom<"sidebar">,
+  EventsTo<"sidebar">
+>;
+
+/**
+ * EventsTo<Map, Target>
+ * ---------------------
+ * Goal:
+ *   From a role→(destination-role→events) adjacency mapping (our `SocketEventMap`), build a merged
+ *   object containing *all* event handlers whose destination is `Target` (e.g. "server").
+ *
+ * Steps:
+ *   1. Mapped type iterates each source role `S in keyof Map`.
+ *   2. If the source role object contains a property named `Target`, we keep that nested event map;
+ *      else we yield `never` (ignored later).
+ *   3. Indexing the mapped type with `[keyof Map]` converts the mapped object into a UNION of just
+ *      those collected nested event maps (dropping `never`).
+ *   4. Pass that union of event maps through `MergeUnionOfObjects` to flatten into a single object
+ *      whose keys are the union of all inbound event names and whose values are the union of the
+ *      respective handler types.
+ *
+ * Result:
+ *   `EventsTo<SocketEventMap, "server">` ⇒ one object type describing every event that can be
+ *   sent TO the server from any other role.
+ */
+
+export type EventsTo<Target extends PropertyKey> = MergeUnionOfObjects<
+  {
+    [S in keyof SocketEventMap]: Target extends keyof SocketEventMap[S]
+      ? SocketIoEventMap<SocketEventMap[S][Target]>
+      : never;
+  }[keyof SocketEventMap]
+>;
+export type EventsFrom<Source extends keyof SocketEventMap> =
+  MergeUnionOfObjects<
+    SocketIoEventMap<SocketEventMap[Source][keyof SocketEventMap[Source]]>
+  >;

@@ -1,21 +1,20 @@
-import { Namespace } from "socket.io";
-
 import { WorkspaceInfo } from "../EventTypes";
 import { BoardInfo, CardStorage } from "../card-storage";
 import {
   DocumentSymbolTracker,
   getDocumentSymbolTracker,
 } from "../document-symbol-tracker";
-import { SidebarServerSocket } from "../event-handler";
+import {
+  SidebarNamespace,
+  SidebarServerSocket,
+  WorkspaceNamespace,
+} from "../event-handler";
 import { LocationFinder } from "../location-finder";
-import { EventsFrom, EventsTo, RoutedEvents } from "../socket-events";
 import { createDebug } from "../utils/create-debug";
 
 import { ServerSidebarEventHandler } from "@/event-handlers/server-sidebar-event-handler";
 import { WorkspaceSidebarEventManager } from "@/event-handlers/workspace-sidebar-event-handler";
 export const debug = createDebug("app-explorer:server:sidebar");
-
-type SidebarNamespace = Namespace<EventsFrom<"sidebar">, EventsTo<"sidebar">>;
 
 export class SidebarServer {
   private sidebarNamespace: SidebarNamespace;
@@ -26,10 +25,7 @@ export class SidebarServer {
   subscriptions: { dispose(): void }[] = [];
   symbolTracker: DocumentSymbolTracker;
 
-  private workspaceNamespace: Namespace<
-    RoutedEvents<"workspace", "miro">,
-    EventsTo<"workspace">
-  >;
+  private workspaceNamespace: WorkspaceNamespace;
   constructor(
     namespace: SidebarNamespace,
     cardStorage: CardStorage,

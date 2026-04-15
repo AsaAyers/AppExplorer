@@ -1,14 +1,12 @@
-import { Namespace } from "socket.io";
-
 import { CardStorage } from "@/card-storage";
 import {
   EventHandler,
   MiroServerSocket,
   HandlerMethodMap,
+  WorkspaceNamespace,
 } from "@/event-handler";
 import { logger } from "@/logger";
 import { MiroServer, debug } from "@/server/server";
-import { EventsFrom, EventsTo } from "@/socket-events";
 
 export class WorkspaceMiroEventHandler extends EventHandler<
   "workspace",
@@ -16,11 +14,7 @@ export class WorkspaceMiroEventHandler extends EventHandler<
 > {
   protected readonly self = "workspace" as const;
   private readonly cardStorage: CardStorage;
-  private readonly workspaceNamespace: Namespace<
-    EventsFrom<"workspace">,
-    EventsTo<"workspace">
-  >;
-
+  private readonly workspaceNamespace: WorkspaceNamespace;
   constructor(
     socket: MiroServerSocket,
     cardStorage: CardStorage,
