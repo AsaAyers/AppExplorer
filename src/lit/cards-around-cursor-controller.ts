@@ -24,8 +24,8 @@ export class CardsAroundCursorController implements ReactiveController {
 
   constructor(host: LitElement, socket?: SidebarSocket) {
     (this.#host = host).addController(this);
-    this.#socket = socket;
 
+    this.#socket = socket;
     if (!socket) {
       this._socketContext = new ContextConsumer(host, {
         context: socketContext,
@@ -43,11 +43,11 @@ export class CardsAroundCursorController implements ReactiveController {
     this.#host.requestUpdate();
   };
 
-  hostUpdated() {
+  hostConnected(): void {
     this.subscribe();
   }
 
-  hostConnected(): void {
+  hostUpdated() {
     this.subscribe();
   }
 

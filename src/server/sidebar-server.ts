@@ -68,7 +68,10 @@ export class SidebarServer {
 
   onSidebarConnection = (socket: SidebarServerSocket) => {
     debug("New sidebar connection", { socketId: socket.id });
-    ServerSidebarEventHandler.create(socket, this.#instanceId);
+    const serverEventHandler = ServerSidebarEventHandler.create(
+      socket,
+      this.#instanceId,
+    );
     WorkspaceSidebarEventManager.create(socket, this.workspaceNamespace);
     socket.onAnyOutgoing((event) => {
       debug("outgoing", event);
@@ -77,7 +80,10 @@ export class SidebarServer {
     this.subscriptions.push(
       this.symbolTracker.event((event) => {
         if (event.type === "symbolsChanged") {
-          socket.emit("cardsAroundCursor", event.symbols);
+          void serverEventHandler.emitEncrypted(
+            "cardsAroundCursor",
+            event.symbols,
+          );
         }
       }),
     );

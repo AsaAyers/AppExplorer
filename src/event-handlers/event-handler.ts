@@ -4,7 +4,18 @@ import type { Socket as ClientSocket } from "socket.io-client";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { SocketEntity, socketEntities, socketEventMap } from "../socket-events";
+import {
+  APP_EXPLORER_SESSION_ID,
+  getAppExplorerSessionKey,
+} from "../session-transport";
+import {
+  encryptedEventName,
+  SocketEntity,
+  socketEntities,
+  socketEventMap,
+  zEncryptedEvent,
+} from "../socket-events";
+import { decrypt, encrypt } from "../utils/crypto";
 
 import type {
   InboundSchemaMap,
@@ -116,6 +127,9 @@ const returnsVoid = (schema: z.ZodFunction): boolean =>
   schema.def.output instanceof z.ZodPromise &&
   schema.def.output.def.innerType instanceof z.ZodVoid;
 
+const unwrapSocketAckValue = (value: unknown) =>
+  Array.isArray(value) && value[0] === null ? value[1] : value;
+
 export abstract class EventHandler<
   SelfName extends SocketEntity,
   EventSources extends SocketEntity = Exclude<SocketEntity, SelfName>,
@@ -126,10 +140,18 @@ export abstract class EventHandler<
     EventSources
   >;
   protected readonly socket: EventHandlerSocket<SelfName, EventSources>;
+  protected readonly sessionId: string;
   log: Debugger;
+  #sessionKey?: Uint8Array<ArrayBuffer>;
 
-  constructor(socket: EventHandlerSocket<SelfName, EventSources>) {
+  constructor(
+    socket: EventHandlerSocket<SelfName, EventSources>,
+    sessionId = APP_EXPLORER_SESSION_ID,
+    key?: Uint8Array<ArrayBuffer>,
+  ) {
     this.socket = socket;
+    this.sessionId = sessionId;
+    this.#sessionKey = key;
     this.log = createDebug(`app-explorer:event-handler`);
   }
 
@@ -181,6 +203,67 @@ export abstract class EventHandler<
         )(eventName, ...validatedArgs);
       },
     );
+    return callSocket(...args).catch((error) => {
+      throw contextualizeValidationError(
+        "emit",
+        this.selfName,
+        eventName,
+        args,
+        error,
+      );
+    }) as EventSignature<
+      OutgoingHandlerMap<SelfName, EventSources>,
+      EventName
+    >["return"];
+  }
+
+  public emitEncrypted<
+    EventName extends keyof OutgoingHandlerMap<SelfName, EventSources> & string,
+  >(
+    eventName: EventName,
+    ...args: EventSignature<
+      OutgoingHandlerMap<SelfName, EventSources>,
+      EventName
+    >["args"]
+  ): EventSignature<
+    OutgoingHandlerMap<SelfName, EventSources>,
+    EventName
+  >["return"] {
+    const schema = (
+      getOutboundSchemas(this.selfName) as Record<string, z.ZodFunction>
+    )[eventName];
+    invariant(
+      schema instanceof z.ZodFunction,
+      `No schema found for event ${String(eventName)}`,
+    );
+
+    const callSocket = schema.implementAsync(
+      async (...validatedArgs: unknown[]) => {
+        const encryptedPayload = await this.encryptEncryptedEnvelope(
+          eventName,
+          validatedArgs,
+        );
+
+        if (returnsVoid(schema)) {
+          this.log(`Emitting encrypted event ${this.selfName}.${eventName}`);
+          (this.socket.emit as unknown as (...socketArgs: unknown[]) => void)(
+            encryptedEventName,
+            encryptedPayload,
+          );
+          return;
+        }
+
+        this.log(`Calling encrypted event ${this.selfName}.${eventName}`);
+        const encryptedResult = await (
+          this.socket.emitWithAck as (
+            ...socketArgs: unknown[]
+          ) => Promise<unknown>
+        )(encryptedEventName, encryptedPayload);
+
+        return this.decryptEncryptedResult(eventName, schema, encryptedResult);
+      },
+    );
+
     return callSocket(...args).catch((error) => {
       throw contextualizeValidationError(
         "emit",
@@ -261,6 +344,35 @@ export abstract class EventHandler<
     return this;
   }
 
+  public off<EventName extends keyof SocketLifecycleEvents & string>(
+    eventName: EventName,
+    listener: SocketLifecycleEvents[EventName],
+  ): this;
+  public off<
+    EventName extends keyof EventHandlerIncomingEventMap<
+      SelfName,
+      EventSources
+    > &
+      string,
+  >(
+    eventName: EventName,
+    listener: EventHandlerIncomingEventMap<SelfName, EventSources>[EventName],
+  ): this;
+  public off<EventName extends string>(
+    eventName: EventName,
+    listener: SocketListener<SelfName, EventSources, EventName>,
+  ): this {
+    const socket = this.socket;
+
+    if (isClientSocket(socket)) {
+      socket.off(eventName as any, listener as any);
+    } else if (isServerSocket(socket)) {
+      socket.off(eventName as any, listener as any);
+    }
+
+    return this;
+  }
+
   private registerHandlers(): void {
     this.log = this.log.extend(this.selfName);
     const wrappedHandlers = this.wrapHandlers(this.handlerMethods);
@@ -291,8 +403,6 @@ export abstract class EventHandler<
       ) => Promise<unknown>;
 
       const callbackHandler = async (...args: any[]) => {
-        // If the schema returns void, we don't expect an acknowledgment
-        // callback from the socket, so we handle it differently
         let callback = null;
         if (!returnsVoid(schema)) {
           callback = args.pop();
@@ -306,7 +416,41 @@ export abstract class EventHandler<
         }
       };
 
+      const encryptedHandler = async (...args: unknown[]) => {
+        let callback: ((...callbackArgs: unknown[]) => void) | undefined;
+        const maybeCallback = args.at(-1);
+        if (typeof maybeCallback === "function") {
+          callback = args.pop() as (...callbackArgs: unknown[]) => void;
+        }
+
+        try {
+          const decryptedArgs = await this.decryptEncryptedArgs(
+            eventName,
+            schema,
+            args[0],
+          );
+          if (!decryptedArgs) {
+            return;
+          }
+
+          const result = await asyncHandler(...decryptedArgs);
+          if (returnsVoid(schema)) {
+            return;
+          }
+
+          const encryptedResult = await this.encryptEncryptedResult(
+            eventName,
+            schema,
+            result,
+          );
+          callback?.(null, encryptedResult);
+        } catch (error) {
+          callback?.(error instanceof Error ? error.message : error);
+        }
+      };
+
       this.on(eventName, callbackHandler as any);
+      this.on(encryptedEventName as any, encryptedHandler as any);
     }
   }
 
@@ -350,5 +494,91 @@ export abstract class EventHandler<
     }
 
     return wrappedHandlers;
+  }
+
+  private getSessionKey() {
+    this.#sessionKey ??= getAppExplorerSessionKey();
+    return this.#sessionKey;
+  }
+
+  private getOutputSchema(schema: z.ZodFunction) {
+    return (schema.def.output instanceof z.ZodPromise
+      ? schema.def.output.def.innerType
+      : schema.def.output) as z.ZodType<unknown>;
+  }
+
+  private async encryptEncryptedEnvelope(eventName: string, args: unknown[]) {
+    return encrypt(
+      {
+        sessionId: this.sessionId,
+        eventName,
+        args,
+      },
+      this.getSessionKey(),
+    );
+  }
+
+  private async parseEncryptedEnvelope(payload: unknown) {
+    const encryptedPayload = z.string().parse(unwrapSocketAckValue(payload));
+    const decryptedPayload = await decrypt(
+      encryptedPayload,
+      this.getSessionKey(),
+    );
+
+    invariant(decryptedPayload, "Failed to decrypt encrypted event payload");
+
+    const parsedPayload = zEncryptedEvent.safeParse(decryptedPayload);
+    invariant(
+      parsedPayload.success,
+      `Invalid encrypted event payload: ${serializeForError(decryptedPayload)}`,
+    );
+
+    return parsedPayload.data;
+  }
+
+  private async decryptEncryptedArgs(
+    expectedEventName: string,
+    schema: z.ZodFunction,
+    payload: unknown,
+  ) {
+    const parsedPayload = await this.parseEncryptedEnvelope(payload);
+    if (
+      parsedPayload.sessionId !== this.sessionId ||
+      parsedPayload.eventName !== expectedEventName
+    ) {
+      return null;
+    }
+
+    return (schema.def.input as unknown as z.ZodType<unknown[]>).parseAsync(
+      parsedPayload.args,
+    );
+  }
+
+  private async encryptEncryptedResult(
+    eventName: string,
+    schema: z.ZodFunction,
+    result: unknown,
+  ) {
+    const validatedResult = await this.getOutputSchema(schema).parseAsync(result);
+    return this.encryptEncryptedEnvelope(eventName, [validatedResult]);
+  }
+
+  private async decryptEncryptedResult(
+    eventName: string,
+    schema: z.ZodFunction,
+    payload: unknown,
+  ) {
+    const parsedPayload = await this.parseEncryptedEnvelope(payload);
+    invariant(
+      parsedPayload.sessionId === this.sessionId &&
+        parsedPayload.eventName === eventName,
+      `Encrypted result mismatch for ${eventName}`,
+    );
+    invariant(
+      parsedPayload.args.length === 1,
+      `Encrypted result for ${eventName} must contain exactly one value`,
+    );
+
+    return this.getOutputSchema(schema).parseAsync(parsedPayload.args[0]);
   }
 }

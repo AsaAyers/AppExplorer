@@ -81,6 +81,13 @@ export const zWorkspaceRegistration = z.function({
   input: [workspaceRegistrationRequestSchema],
   output: z.promise(workspaceRegistrationResponseSchema),
 });
+export const zEncryptedEvent = z.object({
+  sessionId: z.string().min(1),
+  eventName: z.string().min(1),
+  args: z.array(z.unknown()),
+});
+
+export const encryptedEventName = "encryptedEvent" as const;
 
 export const zGetBoardInfo = z.function({
   input: [z.string()],

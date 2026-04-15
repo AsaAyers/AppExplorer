@@ -4,6 +4,10 @@ import "@webcomponents/webcomponentsjs";
 import { ReactiveElement } from "lit";
 import { io as socketIO } from "socket.io-client";
 
+import {
+  SidebarClientEventHandler,
+  SidebarSocketBridge,
+} from "../event-handlers/sidebar-client-event-handler";
 import { createDebug } from "../utils/create-debug";
 
 import { SidebarSocket } from "@/event-handlers/types";
@@ -28,18 +32,23 @@ export async function connectSidebarSocket() {
     forceNew: false, // Force new connection on each attempt
   });
 
+  const clientEventHandler = SidebarClientEventHandler.create(socket as never);
+  const bridgedSocket = new SidebarSocketBridge(socket, clientEventHandler);
+
   let connected = false;
   const onConnect = async () => {
     debug("onConnect");
     try {
-      const id = await socket.emitWithAck("getInstanceId").catch((error) => {
-        debug("Error getting instance ID:", error);
-        return null;
-      });
+      const id = await bridgedSocket
+        .emitWithAck("getInstanceId")
+        .catch((error) => {
+          debug("Error getting instance ID:", error);
+          return null;
+        });
 
       debug("onConnect", { id, instanceId });
       if (instanceId === null) {
-        instanceId = id;
+        instanceId = id as string | null;
       } else if (instanceId === id) {
         debug("socket reconnected");
       } else {
@@ -81,7 +90,7 @@ export async function connectSidebarSocket() {
     await delay(100);
   }
 
-  return socket;
+  return bridgedSocket as unknown as SidebarSocket;
 }
 
 export class SocketProvider extends ContextProvider<
