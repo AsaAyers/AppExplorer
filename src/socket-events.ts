@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-import {
-  CardData,
-  ServerStatus,
-  WorkspaceRegistrationRequest,
-  WorkspaceRegistrationResponse,
-} from "./EventTypes";
+import { CardData } from "./EventTypes";
 import { BoardInfo } from "./card-storage";
 import { PrettyPrint } from "./utils/pretty-print";
 
@@ -20,11 +15,6 @@ export type SocketEntity = (typeof socketEntities)[number];
 
 const cardDataSchema = z.custom<CardData>();
 const boardInfoSchema = z.custom<BoardInfo>();
-const serverStatusSchema = z.custom<ServerStatus>();
-const workspaceRegistrationRequestSchema =
-  z.custom<WorkspaceRegistrationRequest>();
-const workspaceRegistrationResponseSchema =
-  z.custom<WorkspaceRegistrationResponse>();
 
 const cardArraySchema = z.array(cardDataSchema);
 const cardEventDataSchema = z.object({
@@ -37,10 +27,6 @@ const cardStatusDataSchema = z.object({
   codeLink: z.string().nullable(),
 });
 
-export const zServerStatus = z.function({
-  input: [serverStatusSchema],
-  output: z.promise(z.void()),
-});
 export const zCardsAroundCursor = z.function({
   input: [cardArraySchema],
   output: z.promise(z.void()),
@@ -72,14 +58,6 @@ export const zCard = z.function({
 export const zLog = z.function({
   input: [z.array(z.unknown())],
   output: z.promise(z.void()),
-});
-export const zGetInstanceId = z.function({
-  input: [],
-  output: z.promise(z.string()),
-});
-export const zWorkspaceRegistration = z.function({
-  input: [workspaceRegistrationRequestSchema],
-  output: z.promise(workspaceRegistrationResponseSchema),
 });
 export const zEncryptedEvent = z.object({
   sessionId: z.string().min(1),
@@ -189,19 +167,10 @@ type InferSocketEventMap<
 };
 
 export const socketEventMap = {
-  server: {
-    sidebar: {
-      serverStatus: zServerStatus,
-      cardsAroundCursor: zCardsAroundCursor,
-    },
-    workspace: {
-      connectedBoards: zConnectedBoards,
-      boardUpdate: zBoardUpdate,
-      cardUpdate: zCardUpdate,
-    },
-  },
+  server: {},
   miro: {
     workspace: {
+      boardUpdate: zBoardUpdate,
       selectedCards: zSelectedCards,
       navigateTo: zNavigateTo,
       card: zCard,
@@ -209,16 +178,13 @@ export const socketEventMap = {
     },
   },
   sidebar: {
-    server: {
-      getInstanceId: zGetInstanceId,
-    },
     workspace: {
       navigateTo: zNavigateTo,
     },
   },
   workspace: {
-    server: {
-      workspaceRegistration: zWorkspaceRegistration,
+    sidebar: {
+      cardsAroundCursor: zCardsAroundCursor,
     },
     miro: {
       getBoardInfo: zGetBoardInfo,

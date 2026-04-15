@@ -1,8 +1,6 @@
 import type { AppCard, TagColor } from "@mirohq/websdk-types";
 import * as vscode from "vscode";
 
-import { BoardInfo, CardStorage } from "./card-storage";
-
 export type SymbolCardData = {
   id: string;
   x: number;
@@ -47,32 +45,6 @@ export type AppExplorerTag = {
   id: string;
   color: TagColor;
 };
-
-export type ServerStatus = {
-  allBoards: BoardInfo[];
-  connectedBoardIds: string[];
-  cardsPerBoard: Record<string, number>;
-  connectedWorkspaces: WorkspaceInfo[];
-};
-
-export interface WorkspaceInfo {
-  id: string; // Unique workspace identifier
-  workspaceName?: string;
-  rootPath?: string;
-}
-
-export interface WorkspaceRegistrationRequest {
-  workspaceId: string;
-  workspaceName?: string;
-  rootPath?: string;
-}
-
-export interface WorkspaceRegistrationResponse {
-  success: boolean;
-  workspaceId: string;
-  error?: string;
-  cardsByBoard: ReturnType<CardStorage["getCardsByBoard"]>;
-}
 
 export type SymbolAnchor = {
   type: "symbol";

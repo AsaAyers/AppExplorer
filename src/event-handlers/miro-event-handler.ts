@@ -1,5 +1,3 @@
-import invariant from "tiny-invariant";
-
 import { HandlerMethodMap } from "./types";
 
 import type { CardData } from "@/EventTypes";
@@ -28,10 +26,9 @@ export class MiroEventHandler extends EventHandler<"miro"> {
     onGetBoardInfo: async (routedBoardId) => {
       const boardId = await this.getBoardId();
       // The boardID might not be known by the client yet, so an empty string is passed as a placeholder.
-      invariant(
-        routedBoardId === "" || boardId === routedBoardId,
-        "Board ID mismatch",
-      );
+      if (routedBoardId !== "" && boardId !== routedBoardId) {
+        return this.optOut();
+      }
       const name = (await miro.board.getAppData("name")) as string;
       const cardArray = await this.getCardsForBoard();
       return {
@@ -48,13 +45,17 @@ export class MiroEventHandler extends EventHandler<"miro"> {
     },
     onCards: async (routedBoardId) => {
       const boardId = await this.getBoardId();
-      invariant(routedBoardId === boardId, "Board ID mismatch");
+      if (routedBoardId !== boardId) {
+        return this.optOut();
+      }
       return this.getCardsForBoard();
     },
     onSelectCard: async (routedBoardId, cardUrl) => {
       try {
         const boardId = await this.getBoardId();
-        invariant(routedBoardId === boardId, "Board ID mismatch");
+        if (routedBoardId !== boardId) {
+          return this.optOut();
+        }
         const url = new URL(cardUrl);
         const id = url.searchParams.get("moveToWidget")!;
         const card = await miro.board.getById(id);
@@ -82,7 +83,9 @@ export class MiroEventHandler extends EventHandler<"miro"> {
     onCardStatus: async (routedBoardId, { miroLink, status, codeLink }) => {
       try {
         const boardId = await this.getBoardId();
-        invariant(routedBoardId === boardId, "Board ID mismatch");
+        if (routedBoardId !== boardId) {
+          return this.optOut();
+        }
         const url = new URL(miroLink);
         const id = url.searchParams.get("moveToWidget")!;
         const card = await miro.board.getById(id);

@@ -16,7 +16,6 @@ import "./cards-around-cursor";
 import { CardsAroundCursorController } from "./cards-around-cursor-controller";
 import { mirotoneStyles, rawMirotoneStyles } from "./mirotone";
 import "./onboarding";
-import "./server-status";
 import { SocketProvider } from "./socket-context";
 // Mirotone must be loaded on the host page to set all the CSS variables.
 document.head.insertAdjacentHTML(

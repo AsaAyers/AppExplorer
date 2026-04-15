@@ -8,6 +8,7 @@ import {
   SidebarClientEventHandler,
   SidebarSocketBridge,
 } from "../event-handlers/sidebar-client-event-handler";
+import { APP_EXPLORER_SESSION_NAMESPACE } from "../session-transport";
 import { createDebug } from "../utils/create-debug";
 
 import { SidebarSocket } from "@/event-handlers/types";
@@ -19,17 +20,19 @@ export const socketContext = createContext<SidebarSocket>(
   Symbol("socketContext"),
 );
 
-let instanceId: string | null = null;
 export async function connectSidebarSocket() {
   debug("connectSidebarSocket");
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  const connectionTimeout = 10000; // 10 second connection timeout
-  const socket: SidebarSocket = socketIO("/sidebar", {
+  const connectionTimeout = 10000;
+  const socket: SidebarSocket = socketIO(APP_EXPLORER_SESSION_NAMESPACE, {
+    auth: {
+      role: "sidebar",
+    },
     transports: ["websocket"],
     timeout: connectionTimeout,
     reconnection: true,
-    forceNew: false, // Force new connection on each attempt
+    forceNew: false,
   });
 
   const clientEventHandler = SidebarClientEventHandler.create(socket as never);
@@ -38,30 +41,9 @@ export async function connectSidebarSocket() {
   let connected = false;
   const onConnect = async () => {
     debug("onConnect");
-    try {
-      const id = await bridgedSocket
-        .emitWithAck("getInstanceId")
-        .catch((error) => {
-          debug("Error getting instance ID:", error);
-          return null;
-        });
-
-      debug("onConnect", { id, instanceId });
-      if (instanceId === null) {
-        instanceId = id as string | null;
-      } else if (instanceId === id) {
-        debug("socket reconnected");
-      } else {
-        debug("New socket instance, refreshing...");
-        window.location.reload();
-        return;
-      }
-
-      connected = true;
-    } catch (e) {
-      debug("error", String(e));
-    }
+    connected = true;
   };
+
   socket.on("connect", onConnect);
   socket.on("disconnect", (reason) => {
     debug("disconnected", reason);
@@ -76,7 +58,7 @@ export async function connectSidebarSocket() {
         );
         if (socket.connected) {
           clearInterval(i);
-          onConnect();
+          void onConnect();
           return;
         }
         socket.connect();

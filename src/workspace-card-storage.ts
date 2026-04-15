@@ -1,12 +1,14 @@
 import { io as socketIO } from "socket.io-client";
 import * as vscode from "vscode";
 
-import { CardData, WorkspaceRegistrationRequest } from "./EventTypes";
+import { CardData } from "./EventTypes";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
+import { getDocumentSymbolTracker } from "./document-symbol-tracker";
 import { WorkspaceSocket } from "./event-handlers/types";
 import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
+import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -14,31 +16,48 @@ export class WorkspaceCardStorage
 {
   public readonly socket: WorkspaceSocket;
   readonly #eventHandler: WorkspaceEventHandler;
+  readonly #symbolTracker;
+  readonly #symbolTrackerSubscription: vscode.Disposable;
 
-  #workspaceId: string;
   #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
-    workspaceId: string,
     storageAdapter: StorageAdapter,
     serverUrl: string,
     handlerContext: Pick<HandlerContext, "locationFinder">,
   ) {
     super(storageAdapter);
     this.#handlerContext = handlerContext;
-    this.#workspaceId = workspaceId;
     this.debug = this.debug.extend("workspace");
+    this.#symbolTracker = getDocumentSymbolTracker(
+      this.#handlerContext.locationFinder,
+    );
 
-    const wsUrl = `${serverUrl}/workspace`;
-    const connectionTimeout = 10000; // 10 second connection timeout
+    const wsUrl = `${serverUrl}${APP_EXPLORER_SESSION_NAMESPACE}`;
+    const connectionTimeout = 10000;
 
     const socket = socketIO(wsUrl, {
+      auth: {
+        role: "workspace",
+      },
       transports: ["websocket"],
       timeout: connectionTimeout,
       reconnection: true,
-      forceNew: false, // Force new connection on each attempt
+      forceNew: false,
     }) as WorkspaceSocket;
     this.socket = socket;
     this.#eventHandler = WorkspaceEventHandler.create(socket, this);
+
+    this.#symbolTrackerSubscription = this.#symbolTracker.event((event) => {
+      if (event.type === "symbolsChanged") {
+        void this.#eventHandler
+          .emitEncrypted("cardsAroundCursor", event.symbols)
+          .catch((error) => {
+            this.debug("Failed to emit cardsAroundCursor", {
+              error: String(error),
+            });
+          });
+      }
+    });
 
     socket.on("disconnect", (reason) => {
       try {
@@ -58,7 +77,7 @@ export class WorkspaceCardStorage
           );
           if (socket.connected) {
             clearInterval(i);
-            this.onConnect();
+            void this.onConnect();
             return;
           }
           socket.connect();
@@ -73,42 +92,34 @@ export class WorkspaceCardStorage
       this.debug("on reconnect", { arg });
     });
 
-    // Register with server when connected
     socket.on("connect", this.onConnect);
   }
   onConnect = async () => {
-    this.debug("Connected to server, registering workspace");
     try {
-      const registrationRequest: WorkspaceRegistrationRequest = {
-        workspaceId: this.#workspaceId,
-        workspaceName: vscode.workspace.name || "Unknown Workspace",
-        rootPath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
-      };
-
-      const response = await this.#eventHandler.emit(
-        "workspaceRegistration",
-        registrationRequest,
-      );
-      this.setCardsByBoard(response.cardsByBoard);
-
-      this.debug("Workspace registration", { workspaceId: this.#workspaceId });
+      const info = await this.#eventHandler.emit("getBoardInfo", "");
+      this.connectedBoardSet.add(info.boardId);
+      this.boardUpdate(info);
+      this.#symbolTracker.fire({ type: "symbolRequest" });
     } catch (error) {
-      this.debug("Failed to register workspace", { error });
+      this.debug("No board info available on connect", { error });
     }
   };
 
-  async disconnectBoard(boardId: string) {
-    return super.disconnectBoard(
-      boardId,
-      /**
-       * The server will delete cards on disconnection, but not workspaces.
-       */
-      false,
-    );
+  override dispose(): void {
+    this.#symbolTrackerSubscription.dispose();
+    this.socket.disconnect();
+    super.dispose();
   }
 
+  async disconnectBoard(boardId: string) {
+    return super.disconnectBoard(boardId, false);
+  }
+
+  /**
+   * TODO: Remove this function and associated event
+   */
   log() {
-    // The server is going to log the events to the same logger the workspace-card-storage is using
+    //  Events already log through the transport debug path.
   }
   selectedCards(cards: CardData[]): void {
     this.debug("selectedCards()", { cards });
@@ -123,8 +134,9 @@ export class WorkspaceCardStorage
     });
   }
   boardUpdate(board: BoardInfo | null) {
-    this.debug(`Received server event boardUpdate: `, board);
+    this.debug(`Received boardUpdate: `, board);
     if (board) {
+      this.connectedBoardSet.add(board.boardId);
       this.setBoardName(board.boardId, board.name);
       this.setBoardCards(board.boardId, Object.values(board.cards));
     }
@@ -150,6 +162,10 @@ export class WorkspaceCardStorage
     this.debug("Received card event", { url, card });
     try {
       if (card) {
+        const board = this.getBoard(card.boardId);
+        if (!board) {
+          await this.addBoard(card.boardId, `Board ${card.boardId}`);
+        }
         await this.setCard(card.boardId, card);
       } else {
         this.deleteCardByLink(url);
@@ -168,7 +184,6 @@ export class WorkspaceCardStorage
     const dest =
       await this.#handlerContext.locationFinder.findCardDestination(card);
 
-    // Only connect if it's able to reach the symbol
     const success = await goToCardCode(this.#handlerContext, card, preview);
     const status = success ? "connected" : "disconnected";
 
@@ -215,7 +230,6 @@ export class WorkspaceCardStorage
         try {
           await this.setCard(card.boardId, updatedCard);
         } catch (error) {
-          // If the board doesn't exist in the workspace, create it first
           if (
             error instanceof Error &&
             error.message.includes("Board not found")
@@ -223,9 +237,7 @@ export class WorkspaceCardStorage
             this.debug("Board not found in workspace, creating it", {
               boardId: card.boardId,
             });
-            // Create the board with a default name
             await this.addBoard(card.boardId, `Board ${card.boardId}`);
-            // Now try to set the card again
             await this.setCard(card.boardId, updatedCard);
           } else {
             throw error;
@@ -239,7 +251,7 @@ export class WorkspaceCardStorage
         codeLink,
       });
     }
-    this.debug("🔍 Returning from navigateTo", {
+    this.debug("Returning from navigateTo", {
       connected: status === "connected",
     });
     return status === "connected";

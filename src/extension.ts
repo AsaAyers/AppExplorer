@@ -40,22 +40,12 @@ export async function activate(
   setUpdateCommandContext(context);
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", true);
 
-  let workspaceId = context.workspaceState.get<string | undefined>(
-    "workspaceId",
-  );
-  if (typeof workspaceId !== "string") {
-    workspaceId = `workspace-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    context.workspaceState.update("workspaceId", workspaceId);
-  }
-
   // Initialize server discovery and launcher with configured port
   const serverPort = PortConfig.getServerPort();
   baseLogger.initialize();
 
   const locationFinder = new LocationFinder();
   const cardStorage = new WorkspaceCardStorage(
-    workspaceId,
-    // new VSCodeAdapter(context),
     new MemoryAdapter(),
     `http://localhost:${serverPort}`,
     { locationFinder },
@@ -69,7 +59,6 @@ export async function activate(
   });
 
   const serverLauncher = new ServerLauncher(
-    workspaceId,
     new ServerDiscovery({ port: serverPort }),
   );
   context.subscriptions.push(serverLauncher);

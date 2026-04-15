@@ -8,7 +8,7 @@ type CardsAroundCursorListener = (cards: CardData[]) => void;
 
 export class SidebarClientEventHandler extends EventHandler<
   "sidebar",
-  "server"
+  "workspace"
 > {
   protected readonly selfName = "sidebar" as const;
   #cardsAroundCursorListeners = new Set<CardsAroundCursorListener>();
@@ -26,8 +26,7 @@ export class SidebarClientEventHandler extends EventHandler<
         listener(cards);
       });
     },
-    onServerStatus: async (_status) => {},
-  } satisfies HandlerMethodMap<"sidebar", "server">;
+  } satisfies HandlerMethodMap<"sidebar", "workspace">;
 }
 
 export class SidebarSocketBridge {

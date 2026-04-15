@@ -13,10 +13,12 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { type CardData } from "./EventTypes";
+import { BoardInfo } from "./card-storage";
 import { MiroEventHandler } from "./event-handlers/miro-event-handler";
 import { MiroSocket } from "./event-handlers/types";
 import { isAppCard } from "./miro/isAppCard";
 import { updateCard } from "./miro/updateCard";
+import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/notEmpty";
 
@@ -238,7 +240,11 @@ export async function zoomIntoCards(cards: AppCard[]) {
 }
 
 export async function attachToSocket() {
-  const s = socketIO() as MiroSocket;
+  const s = socketIO(APP_EXPLORER_SESSION_NAMESPACE, {
+    auth: {
+      role: "miro",
+    },
+  }) as MiroSocket;
   debug = debug.extend(s.id || Math.random().toString(36).substring(2, 15));
   const miroEventHandler = MiroEventHandler.create(s);
 
@@ -247,6 +253,32 @@ export async function attachToSocket() {
   });
 
   const boardId = await miro.board.getInfo().then((info) => info.id);
+  const emitBoardUpdate = async () => {
+    const info = await miro.board.getInfo();
+    const cards = await Promise.all(
+      (await miro.board.get({
+        type: ["app_card"],
+      }))
+        .filter(isAppCard)
+        .map(extractCardData),
+    );
+    const board: BoardInfo = {
+      boardId: info.id,
+      name: (await miro.board.getAppData("name")) as string,
+      cards: cards.filter(notEmpty).reduce(
+        (acc: Record<string, CardData>, card) => {
+          acc[card.miroLink!] = card;
+          return acc;
+        },
+        {},
+      ),
+    };
+    await miroEventHandler.emit("boardUpdate", board);
+  };
+
+  s.on("connect", () => {
+    void emitBoardUpdate();
+  });
 
   miro.board.ui.on("app_card:open", async (event) => {
     await editCardModal(event.appCard);

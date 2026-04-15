@@ -15,6 +15,10 @@ import {
   socketEventMap,
   zEncryptedEvent,
 } from "../socket-events";
+import {
+  EventHandlerOptOutError,
+  serializeEventHandlerError,
+} from "../unhandled-event-ack";
 import { decrypt, encrypt } from "../utils/crypto";
 
 import type {
@@ -153,6 +157,10 @@ export abstract class EventHandler<
     this.sessionId = sessionId;
     this.#sessionKey = key;
     this.log = createDebug(`app-explorer:event-handler`);
+  }
+
+  protected optOut(): never {
+    throw new EventHandlerOptOutError();
   }
 
   static create<
@@ -412,7 +420,7 @@ export abstract class EventHandler<
           const result = await asyncHandler(...args);
           callback?.(null, result);
         } catch (error) {
-          callback?.(error instanceof Error ? error.message : error);
+          callback?.(serializeEventHandlerError(error));
         }
       };
 
@@ -445,7 +453,7 @@ export abstract class EventHandler<
           );
           callback?.(null, encryptedResult);
         } catch (error) {
-          callback?.(error instanceof Error ? error.message : error);
+          callback?.(serializeEventHandlerError(error));
         }
       };
 
@@ -473,13 +481,15 @@ export abstract class EventHandler<
       ];
 
       if (schema instanceof z.ZodFunction && typeof handler === "function") {
-        const functionSchema: z.ZodFunction = schema;
-        const validatedHandler = functionSchema.implementAsync(
-          handler as never,
-        ) as (...args: unknown[]) => Promise<unknown>;
         wrappedHandlers[handlerMethodName] = (async (...args: unknown[]) => {
           try {
-            return await validatedHandler(...args);
+            const validatedArgs = await (
+              schema.def.input as unknown as z.ZodType<unknown[]>
+            ).parseAsync(args);
+            const result = await (handler as (...args: unknown[]) => Promise<unknown>)(
+              ...validatedArgs,
+            );
+            return await this.getOutputSchema(schema).parseAsync(result);
           } catch (error) {
             throw contextualizeValidationError(
               "handler",
