@@ -14,6 +14,7 @@ import { PortConfig } from "./port-config";
 import { MiroServer } from "./server/server";
 import { ServerDiscovery } from "./server-discovery";
 import { ServerLauncher } from "./server-launcher";
+import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 import { StatusBarManager } from "./status-bar-manager";
 import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
 import { createDebug } from "./utils/create-debug";
@@ -47,7 +48,7 @@ export async function activate(
   const locationFinder = new LocationFinder();
   const cardStorage = new WorkspaceCardStorage(
     new MemoryAdapter(),
-    `http://localhost:${serverPort}`,
+    `http://localhost:${serverPort}${APP_EXPLORER_SESSION_NAMESPACE}`,
     { locationFinder },
   );
   listenToAllEvents(cardStorage, (eventName, ...args) => {

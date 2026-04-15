@@ -1,9 +1,6 @@
 import { createServer } from "node:http";
 import * as path from "node:path";
 
-import compression from "compression";
-import express from "express";
-import morgan from "morgan";
 import { Server, type Socket } from "socket.io";
 import * as vscode from "vscode";
 import { z } from "zod";
@@ -21,7 +18,7 @@ import {
 import { isEventHandlerOptOutError } from "../unhandled-event-ack";
 import { createDebug } from "../utils/create-debug";
 
-export const debug = createDebug("app-explorer:server");
+const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");
 
 const getTargetRoles = (
@@ -53,38 +50,10 @@ const getRecipients = (
 
 export class MiroServer {
   subscriptions = [] as vscode.Disposable[];
-  httpServer: ReturnType<typeof createServer>;
-  #port: number;
 
   public static publicPath = path.join(__dirname, "public");
-  constructor() {
-    this.#port = 9042;
-    const app = express();
-    this.httpServer = createServer(app);
-    app.use(compression());
-    app.use(
-      "/",
-      express.static(MiroServer.publicPath, {
-        index: "index.html",
-      }),
-    );
-
-    app.post("/reset", (_req, res) => {
-      debug("Resetting server state");
-      this.httpServer.close();
-      return res.status(200).json({ success: true });
-    });
-    app.use(morgan("tiny"));
-
-    app.get("/health", (_req, res) => {
-      res.json({ status: "healthy", timestamp: new Date().toISOString() });
-    });
-
-    const io = new Server(this.httpServer);
-    this.setupSessionNamespace(io);
-  }
-
-  private setupSessionNamespace(io: Server) {
+  constructor(httpServer: ReturnType<typeof createServer>) {
+    const io = new Server(httpServer);
     const sessionNamespace = io.of(APP_EXPLORER_SESSION_NAMESPACE);
     const roleSchema = z.enum(appExplorerSessionRoles);
 
@@ -144,42 +113,7 @@ export class MiroServer {
     });
   }
 
-  static async create(): Promise<MiroServer> {
-    const server = new MiroServer();
-    await server.startServer();
-    return server;
-  }
-
-  private async startServer(): Promise<void> {
-    const port = this.#port;
-
-    return new Promise((resolve, reject) => {
-      this.httpServer.on("error", (error) => {
-        if ("code" in error && error.code === "EADDRINUSE") {
-          debug("Port already in use", {
-            port,
-            error: error.message,
-          });
-          reject(
-            new Error(
-              `Port ${port} is already in use. Another server instance may be running.`,
-            ),
-          );
-        } else {
-          debug("Server error", { error });
-          reject(error);
-        }
-      });
-
-      this.httpServer.listen(port, "127.0.0.1", () => {
-        debug("Server started successfully", { port });
-        resolve();
-      });
-    });
-  }
-
   dispose() {
     this.subscriptions.forEach((s) => s.dispose());
-    this.httpServer.closeAllConnections();
   }
 }

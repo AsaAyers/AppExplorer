@@ -1,3 +1,9 @@
+import { createServer } from "node:http";
+
+import compression from "compression";
+import express from "express";
+import morgan from "morgan";
+
 import { PortConfig } from "./port-config";
 import { MiroServer } from "./server/server";
 import { ServerDiscovery } from "./server-discovery";
@@ -136,9 +142,61 @@ export class ServerLauncher {
     debug("Starting server launch", { serverUrl });
 
     try {
+      const app = express();
+      const httpServer = createServer(app);
+      app.use(compression());
+      app.use(
+        "/",
+        express.static(MiroServer.publicPath, {
+          index: "index.html",
+        }),
+      );
+
+      app.post("/reset", (_req, res) => {
+        debug("Resetting server state");
+        httpServer.close();
+        return res.status(200).json({ success: true });
+      });
+      app.use(morgan("tiny"));
+
+      app.get("/health", (_req, res) => {
+        res.json({ status: "healthy", timestamp: new Date().toISOString() });
+      });
+
       // Create and start server instance with proper error handling
       // Use the same port as ServerDiscovery for consistency
-      const server = await MiroServer.create();
+      const server = new MiroServer(httpServer);
+
+      const port = 9042;
+      await new Promise<void>((resolve, reject) => {
+        httpServer.on("error", (error) => {
+          if ("code" in error && error.code === "EADDRINUSE") {
+            debug("Port already in use", {
+              port,
+              error: error.message,
+            });
+            reject(
+              new Error(
+                `Port ${port} is already in use. Another server instance may be running.`,
+              ),
+            );
+          } else {
+            debug("Server error", { error });
+            reject(error);
+          }
+        });
+
+        httpServer.listen(port, "127.0.0.1", () => {
+          debug("Server started successfully", { port });
+          resolve();
+        });
+      });
+
+      this.subscriptions.push({
+        dispose() {
+          httpServer.closeAllConnections();
+        },
+      });
 
       const duration = Date.now() - startTime;
       debug("Server launched successfully", {

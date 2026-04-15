@@ -8,7 +8,6 @@ import { WorkspaceSocket } from "./event-handlers/types";
 import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
-import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -22,7 +21,7 @@ export class WorkspaceCardStorage
   #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
     storageAdapter: StorageAdapter,
-    serverUrl: string,
+    wsUrl: string,
     handlerContext: Pick<HandlerContext, "locationFinder">,
   ) {
     super(storageAdapter);
@@ -32,7 +31,6 @@ export class WorkspaceCardStorage
       this.#handlerContext.locationFinder,
     );
 
-    const wsUrl = `${serverUrl}${APP_EXPLORER_SESSION_NAMESPACE}`;
     const connectionTimeout = 10000;
 
     const socket = socketIO(wsUrl, {
