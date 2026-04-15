@@ -9,7 +9,7 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 	&& chmod a+r /etc/apt/keyrings/nodesource.gpg \
 	&& echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
 	&& apt update \
-	&& apt install -y nodejs
+	&& apt install -y nodejs xwallpaper
 
 RUN curl -L 'https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64' -o /tmp/code.deb
 RUN apt install -y /tmp/code.deb

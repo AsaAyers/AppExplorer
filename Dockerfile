@@ -20,7 +20,7 @@ RUN cp -r public/ .next/standalone/ && cp -r .next/static/ .next/standalone/.nex
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache aws-cli
+RUN apk add --no-cache aws-cli xwallpaper
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/upload.js ./
