@@ -499,12 +499,18 @@ export abstract class EventHandler<
       ) => Promise<unknown>;
 
       const callbackHandler = async (...args: any[]) => {
-        const callback = args.pop();
+        // If the schema returns void, we don't expect an acknowledgment
+        // callback from the socket, so we handle it differently
+        let callback = null;
+        if (!returnsVoid(schema)) {
+          callback = args.pop();
+        }
+
         try {
           const result = await asyncHandler(...args);
-          callback(null, result);
+          callback?.(null, result);
         } catch (error) {
-          callback(error instanceof Error ? error.message : error);
+          callback?.(error instanceof Error ? error.message : error);
         }
       };
 
