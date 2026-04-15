@@ -4,7 +4,6 @@ import compression from "compression";
 import express from "express";
 import morgan from "morgan";
 
-import { PortConfig } from "./port-config";
 import { MiroServer } from "./server/server";
 import { ServerDiscovery } from "./server-discovery";
 import { delay, waitForValue } from "./test/suite/test-utils";
@@ -26,14 +25,7 @@ export class ServerLauncher {
 
   constructor(serverDiscovery?: ServerDiscovery) {
     // If no ServerDiscovery provided, create one with configured port
-    this.serverDiscovery =
-      serverDiscovery ||
-      new ServerDiscovery({
-        port: PortConfig.getServerPort(),
-      });
-    debug("ServerLauncher initialized", {
-      serverPort: this.serverDiscovery.getServerUrl(),
-    });
+    this.serverDiscovery = serverDiscovery || new ServerDiscovery();
   }
 
   /**

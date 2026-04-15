@@ -10,11 +10,9 @@ import { registerUpdateCommand } from "./commands/update-extension";
 import { EditorDecorator } from "./editor-decorator";
 import { LocationFinder } from "./location-finder";
 import { logger as baseLogger, logger } from "./logger";
-import { PortConfig } from "./port-config";
 import { MiroServer } from "./server/server";
 import { ServerDiscovery } from "./server-discovery";
 import { ServerLauncher } from "./server-launcher";
-import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 import { StatusBarManager } from "./status-bar-manager";
 import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
 import { createDebug } from "./utils/create-debug";
@@ -41,27 +39,18 @@ export async function activate(
   setUpdateCommandContext(context);
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", true);
 
-  // Initialize server discovery and launcher with configured port
-  const serverPort = PortConfig.getServerPort();
   baseLogger.initialize();
 
   const locationFinder = new LocationFinder();
-  const cardStorage = new WorkspaceCardStorage(
-    new MemoryAdapter(),
-    `http://localhost:${serverPort}${APP_EXPLORER_SESSION_NAMESPACE}`,
-    { locationFinder },
-  );
+  const cardStorage = new WorkspaceCardStorage(new MemoryAdapter(), {
+    locationFinder,
+  });
   listenToAllEvents(cardStorage, (eventName, ...args) => {
     debug("storage event", eventName, args);
   });
   // Log port configuration for debugging
-  debug("Server port configuration", {
-    port: serverPort,
-  });
 
-  const serverLauncher = new ServerLauncher(
-    new ServerDiscovery({ port: serverPort }),
-  );
+  const serverLauncher = new ServerLauncher(new ServerDiscovery());
   context.subscriptions.push(serverLauncher);
 
   const serverResult = await serverLauncher.initializeServer();

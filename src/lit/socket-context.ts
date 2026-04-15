@@ -25,15 +25,18 @@ export async function connectSidebarSocket() {
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   const connectionTimeout = 10000;
-  const socket: SidebarSocket = socketIO(APP_EXPLORER_SESSION_NAMESPACE, {
-    auth: {
-      role: "sidebar",
+  const socket: SidebarSocket = socketIO(
+    "http://localhost:9042" + APP_EXPLORER_SESSION_NAMESPACE,
+    {
+      auth: {
+        role: "sidebar",
+      },
+      transports: ["websocket"],
+      timeout: connectionTimeout,
+      reconnection: true,
+      forceNew: false,
     },
-    transports: ["websocket"],
-    timeout: connectionTimeout,
-    reconnection: true,
-    forceNew: false,
-  });
+  );
 
   const clientEventHandler = SidebarClientEventHandler.create(socket as never);
   const bridgedSocket = new SidebarSocketBridge(socket, clientEventHandler);

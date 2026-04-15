@@ -1,5 +1,4 @@
 import { createServer } from "node:http";
-import * as path from "node:path";
 
 import { Server, type Socket } from "socket.io";
 import * as vscode from "vscode";
@@ -51,7 +50,7 @@ const getRecipients = (
 export class MiroServer {
   subscriptions = [] as vscode.Disposable[];
 
-  public static publicPath = path.join(__dirname, "public");
+  public static publicPath = [__dirname, "public"].join("/");
   constructor(httpServer: ReturnType<typeof createServer>) {
     const io = new Server(httpServer);
     const sessionNamespace = io.of(APP_EXPLORER_SESSION_NAMESPACE);

@@ -8,6 +8,7 @@ import { WorkspaceSocket } from "./event-handlers/types";
 import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
+import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -21,7 +22,6 @@ export class WorkspaceCardStorage
   #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
     storageAdapter: StorageAdapter,
-    wsUrl: string,
     handlerContext: Pick<HandlerContext, "locationFinder">,
   ) {
     super(storageAdapter);
@@ -33,15 +33,18 @@ export class WorkspaceCardStorage
 
     const connectionTimeout = 10000;
 
-    const socket = socketIO(wsUrl, {
-      auth: {
-        role: "workspace",
+    const socket = socketIO(
+      "http://localhost:9042" + APP_EXPLORER_SESSION_NAMESPACE,
+      {
+        auth: {
+          role: "workspace",
+        },
+        transports: ["websocket"],
+        timeout: connectionTimeout,
+        reconnection: true,
+        forceNew: false,
       },
-      transports: ["websocket"],
-      timeout: connectionTimeout,
-      reconnection: true,
-      forceNew: false,
-    }) as WorkspaceSocket;
+    ) as WorkspaceSocket;
     this.socket = socket;
     this.#eventHandler = WorkspaceEventHandler.create(socket, this);
 

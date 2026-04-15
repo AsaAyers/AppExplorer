@@ -240,7 +240,7 @@ export async function zoomIntoCards(cards: AppCard[]) {
 }
 
 export async function attachToSocket() {
-  const s = socketIO(APP_EXPLORER_SESSION_NAMESPACE, {
+  const s = socketIO("http://localhost:9042" + APP_EXPLORER_SESSION_NAMESPACE, {
     auth: {
       role: "miro",
     },

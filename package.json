@@ -104,14 +104,6 @@
           "type": "string",
           "default": null,
           "description": "Set debug namespace"
-        },
-        "appExplorer.internal.serverPort": {
-          "type": "integer",
-          "default": 9042,
-          "minimum": 1024,
-          "maximum": 65535,
-          "description": "⚠️ INTERNAL USE ONLY: Server port for E2E testing. Production Miro integration MUST use port 9042. Only modify for automated testing purposes.",
-          "scope": "application"
         }
       }
     },

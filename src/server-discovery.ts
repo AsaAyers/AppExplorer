@@ -1,4 +1,3 @@
-import { PortConfig } from "./port-config";
 import { createDebug } from "./utils/create-debug";
 const debug = createDebug("app-explorer:server-discovery");
 
@@ -15,12 +14,10 @@ export interface ServerDiscoveryOptions {
  * Get default server options with configured port
  * Uses PortConfig to determine the appropriate port (production default or test override)
  *
- * ⚠️ IMPORTANT: Production Miro integration MUST use port 9042.
- * Port configuration is only intended for E2E testing purposes.
  */
 function getDefaultServerOptions(): ServerDiscoveryOptions {
   return {
-    port: PortConfig.getServerPort(),
+    port: 9042,
     host: "localhost",
     healthCheck: {
       endpoint: "/health",
