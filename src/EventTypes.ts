@@ -2,7 +2,6 @@ import type { AppCard, TagColor } from "@mirohq/websdk-types";
 import * as vscode from "vscode";
 
 import { BoardInfo, CardStorage } from "./card-storage";
-import { WorkspaceServerSocket } from "./server/server";
 
 export type SymbolCardData = {
   id: string;
@@ -58,7 +57,6 @@ export type ServerStatus = {
 
 export interface WorkspaceInfo {
   id: string; // Unique workspace identifier
-  socket: WorkspaceServerSocket;
   workspaceName?: string;
   rootPath?: string;
 }
