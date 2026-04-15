@@ -117,45 +117,45 @@ const returnsVoid = (schema: z.ZodFunction): boolean =>
   schema.def.output.def.innerType instanceof z.ZodVoid;
 
 export abstract class EventHandler<
-  Self extends SocketEntity,
-  EventSources extends SocketEntity = Exclude<SocketEntity, Self>,
+  SelfName extends SocketEntity,
+  EventSources extends SocketEntity = Exclude<SocketEntity, SelfName>,
 > {
-  protected abstract readonly self: Self;
+  protected abstract readonly selfName: SelfName;
   protected abstract readonly handlerMethods: HandlerMethodMap<
-    Self,
+    SelfName,
     EventSources
   >;
-  protected readonly socket: EventHandlerSocket<Self, EventSources>;
+  protected readonly socket: EventHandlerSocket<SelfName, EventSources>;
   log: Debugger;
 
-  constructor(socket: EventHandlerSocket<Self, EventSources>) {
+  constructor(socket: EventHandlerSocket<SelfName, EventSources>) {
     this.socket = socket;
-    this.log = createDebug(`app-explorer:event-handler:${self}`);
+    this.log = createDebug(`app-explorer:event-handler`);
   }
 
-  static create<Args extends unknown[], Instance>(
-    this: new (...args: Args) => Instance,
-    ...args: Args
-  ): Instance {
+  static create<
+    Args extends unknown[],
+    Instance = EventHandler<SocketEntity, SocketEntity>,
+  >(this: new (...args: Args) => Instance, ...args: Args): Instance {
     const instance = new this(...args);
     (instance as EventHandler<SocketEntity, SocketEntity>).registerHandlers();
     return instance;
   }
 
   public emit<
-    EventName extends keyof OutgoingHandlerMap<Self, EventSources> & string,
+    EventName extends keyof OutgoingHandlerMap<SelfName, EventSources> & string,
   >(
     eventName: EventName,
     ...args: EventSignature<
-      OutgoingHandlerMap<Self, EventSources>,
+      OutgoingHandlerMap<SelfName, EventSources>,
       EventName
     >["args"]
   ): EventSignature<
-    OutgoingHandlerMap<Self, EventSources>,
+    OutgoingHandlerMap<SelfName, EventSources>,
     EventName
   >["return"] {
     const schema = (
-      getOutboundSchemas(this.self) as Record<string, z.ZodFunction>
+      getOutboundSchemas(this.selfName) as Record<string, z.ZodFunction>
     )[eventName];
     invariant(
       schema instanceof z.ZodFunction,
@@ -165,7 +165,7 @@ export abstract class EventHandler<
     const callSocket = schema.implementAsync(
       async (...validatedArgs: unknown[]) => {
         if (returnsVoid(schema)) {
-          this.log(`Emitting event ${this.self}.${eventName}`);
+          this.log(`Emitting event ${this.selfName}.${eventName}`);
           (this.socket.emit as unknown as (...socketArgs: unknown[]) => void)(
             eventName,
             ...validatedArgs,
@@ -173,7 +173,7 @@ export abstract class EventHandler<
           return;
         }
 
-        this.log(`Calling event ${this.self}.${eventName}`);
+        this.log(`Calling event ${this.selfName}.${eventName}`);
         return (
           this.socket.emitWithAck as (
             ...socketArgs: unknown[]
@@ -184,13 +184,13 @@ export abstract class EventHandler<
     return callSocket(...args).catch((error) => {
       throw contextualizeValidationError(
         "emit",
-        this.self,
+        this.selfName,
         eventName,
         args,
         error,
       );
     }) as EventSignature<
-      OutgoingHandlerMap<Self, EventSources>,
+      OutgoingHandlerMap<SelfName, EventSources>,
       EventName
     >["return"];
   }
@@ -200,15 +200,18 @@ export abstract class EventHandler<
     listener: SocketLifecycleEvents[EventName],
   ): this;
   public on<
-    EventName extends keyof EventHandlerIncomingEventMap<Self, EventSources> &
+    EventName extends keyof EventHandlerIncomingEventMap<
+      SelfName,
+      EventSources
+    > &
       string,
   >(
     eventName: EventName,
-    listener: EventHandlerIncomingEventMap<Self, EventSources>[EventName],
+    listener: EventHandlerIncomingEventMap<SelfName, EventSources>[EventName],
   ): this;
   public on<EventName extends string>(
     eventName: EventName,
-    listener: SocketListener<Self, EventSources, EventName>,
+    listener: SocketListener<SelfName, EventSources, EventName>,
   ): this {
     const socket = this.socket;
 
@@ -228,11 +231,14 @@ export abstract class EventHandler<
     listener: SocketLifecycleEvents[EventName],
   ): this;
   public once<
-    EventName extends keyof EventHandlerIncomingEventMap<Self, EventSources> &
+    EventName extends keyof EventHandlerIncomingEventMap<
+      SelfName,
+      EventSources
+    > &
       string,
   >(
     eventName: EventName,
-    listener: EventHandlerIncomingEventMap<Self, EventSources>[EventName],
+    listener: EventHandlerIncomingEventMap<SelfName, EventSources>[EventName],
   ): this {
     const socket = this.socket;
 
@@ -256,17 +262,21 @@ export abstract class EventHandler<
   }
 
   private registerHandlers(): void {
+    this.log = this.log.extend(this.selfName);
     const wrappedHandlers = this.wrapHandlers(this.handlerMethods);
-    const incomingSchemas = getInboundSchemas(this.self);
+    const incomingSchemas = getInboundSchemas(this.selfName);
     const handlerMethodNames = Object.keys(wrappedHandlers) as Array<
-      keyof HandlerMethodMap<Self, EventSources> & string
+      keyof HandlerMethodMap<SelfName, EventSources> & string
     >;
 
     for (const handlerMethodName of handlerMethodNames) {
       const eventName = toEventName(
         handlerMethodName,
-      ) as unknown as keyof EventHandlerIncomingEventMap<Self, EventSources> &
-        keyof IncomingSchemaMap<Self, EventSources> &
+      ) as unknown as keyof EventHandlerIncomingEventMap<
+        SelfName,
+        EventSources
+      > &
+        keyof IncomingSchemaMap<SelfName, EventSources> &
         string;
       const handler = wrappedHandlers[handlerMethodName];
       const schema = (incomingSchemas as Record<string, z.ZodFunction>)[
@@ -300,10 +310,10 @@ export abstract class EventHandler<
     }
   }
 
-  private wrapHandlers<Handlers extends HandlerMethodMap<Self, EventSources>>(
-    handlers: Handlers,
-  ): Handlers {
-    const incomingSchemas = getInboundSchemas(this.self);
+  private wrapHandlers<
+    Handlers extends HandlerMethodMap<SelfName, EventSources>,
+  >(handlers: Handlers): Handlers {
+    const incomingSchemas = getInboundSchemas(this.selfName);
     const wrappedHandlers = { ...handlers } as Handlers;
     const handlerMethodNames = Object.keys(handlers) as Array<
       keyof Handlers & `on${string}`
@@ -312,7 +322,7 @@ export abstract class EventHandler<
     for (const handlerMethodName of handlerMethodNames) {
       const eventName = toEventName(
         handlerMethodName,
-      ) as unknown as keyof IncomingSchemaMap<Self, EventSources> & string;
+      ) as unknown as keyof IncomingSchemaMap<SelfName, EventSources> & string;
       const handler = handlers[handlerMethodName];
       const schema = (incomingSchemas as Record<string, z.ZodFunction>)[
         eventName as unknown as string
@@ -329,7 +339,7 @@ export abstract class EventHandler<
           } catch (error) {
             throw contextualizeValidationError(
               "handler",
-              this.self,
+              this.selfName,
               eventName,
               args,
               error,

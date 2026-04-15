@@ -10,7 +10,7 @@ export class WorkspaceSidebarEventManager extends EventHandler<
   "workspace",
   "sidebar"
 > {
-  protected readonly self = "workspace" as const;
+  protected readonly selfName = "workspace" as const;
   private readonly workspaceNamespace: WorkspaceNamespace;
 
   constructor(

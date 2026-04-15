@@ -14,7 +14,6 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 RUN curl -L 'https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64' -o /tmp/code.deb
 RUN apt install -y /tmp/code.deb
 RUN corepack enable yarn
-RUN npx playwright install --with-deps chromium
 
 # USER agent
 # WORKDIR /home/agent/workspace
@@ -24,6 +23,7 @@ RUN npx playwright install --with-deps chromium
 
 FROM deps AS runner
 USER agent
+RUN npx playwright install --with-deps chromium
 # WORKDIR /home/agent/workspace
 # COPY . .
 # COPY --from=deps /home/agent/workspace/node_modules ./node_modules

@@ -13,7 +13,7 @@ export class WorkspaceMiroEventHandler extends EventHandler<
   "workspace",
   "miro"
 > {
-  protected readonly self = "workspace" as const;
+  protected readonly selfName = "workspace" as const;
   private readonly cardStorage: CardStorage;
   private readonly workspaceNamespace: WorkspaceNamespace;
   constructor(

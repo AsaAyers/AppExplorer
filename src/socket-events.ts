@@ -1,15 +1,12 @@
-import { TagColor } from "@mirohq/websdk-types";
 import { z } from "zod";
 
 import {
-  AppExplorerTag,
   CardData,
   ServerStatus,
   WorkspaceRegistrationRequest,
   WorkspaceRegistrationResponse,
 } from "./EventTypes";
 import { BoardInfo } from "./card-storage";
-import { SymbolPathChangeEvent } from "./document-symbol-tracker";
 import { PrettyPrint } from "./utils/pretty-print";
 
 export const socketEntities = [
@@ -28,32 +25,16 @@ const workspaceRegistrationRequestSchema =
   z.custom<WorkspaceRegistrationRequest>();
 const workspaceRegistrationResponseSchema =
   z.custom<WorkspaceRegistrationResponse>();
-const symbolPathChangeEventSchema = z.custom<SymbolPathChangeEvent>();
-
-const appExplorerTagsCallbackSchema = z.array(z.custom<AppExplorerTag>());
 
 const cardArraySchema = z.array(cardDataSchema);
 const cardEventDataSchema = z.object({
   url: z.string(),
   card: cardDataSchema.nullable(),
 });
-const tagCardsDataSchema = z.object({
-  miroLink: z.array(z.string()),
-  tag: z.union([
-    z.string(),
-    z.object({
-      color: z.custom<TagColor>(),
-      title: z.string(),
-    }),
-  ]),
-});
 const cardStatusDataSchema = z.object({
   miroLink: z.string(),
   status: z.enum(["connected", "disconnected"]),
   codeLink: z.string().nullable(),
-});
-const newCardsOptionsSchema = z.object({
-  connect: z.array(z.string()).optional(),
 });
 
 export const zServerStatus = z.function({
@@ -96,38 +77,14 @@ export const zGetInstanceId = z.function({
   input: [],
   output: z.promise(z.string()),
 });
-export const zSymbolsChanged = z.function({
-  input: [symbolPathChangeEventSchema],
-  output: z.promise(z.void()),
-});
 export const zWorkspaceRegistration = z.function({
   input: [workspaceRegistrationRequestSchema],
   output: z.promise(workspaceRegistrationResponseSchema),
 });
 
-export const zGetIdToken = z.function({
-  input: [z.string()],
-  output: z.promise(z.string()),
-});
-export const zSetBoardName = z.function({
-  input: [z.string(), z.string()],
-  output: z.promise(z.boolean()),
-});
 export const zGetBoardInfo = z.function({
   input: [z.string()],
   output: z.promise(boardInfoSchema),
-});
-export const zTags = z.function({
-  input: [z.string()],
-  output: z.promise(appExplorerTagsCallbackSchema),
-});
-export const zAttachCard = z.function({
-  input: [z.string(), cardDataSchema],
-  output: z.promise(z.boolean()),
-});
-export const zTagCards = z.function({
-  input: [z.string(), tagCardsDataSchema],
-  output: z.promise(z.boolean()),
 });
 export const zSelectCard = z.function({
   input: [z.string(), z.string()],
@@ -140,18 +97,6 @@ export const zCardStatus = z.function({
 export const zCards = z.function({
   input: [z.string()],
   output: z.promise(z.array(cardDataSchema)),
-});
-export const zSelected = z.function({
-  input: [z.string()],
-  output: z.promise(z.array(cardDataSchema)),
-});
-export const zNewCards = z.function({
-  input: [z.string(), cardArraySchema, newCardsOptionsSchema],
-  output: z.promise(z.boolean()),
-});
-export const zHoverCard = z.function({
-  input: [z.string(), z.string()],
-  output: z.promise(z.boolean()),
 });
 
 // Roles participating in the socket mesh (exported for consumers that need to
@@ -265,25 +210,14 @@ export const socketEventMap = {
     },
   },
   workspace: {
-    sidebar: {
-      symbolsChanged: zSymbolsChanged,
-    },
     server: {
       workspaceRegistration: zWorkspaceRegistration,
     },
     miro: {
-      getIdToken: zGetIdToken,
-      setBoardName: zSetBoardName,
       getBoardInfo: zGetBoardInfo,
-      tags: zTags,
-      attachCard: zAttachCard,
-      tagCards: zTagCards,
       selectCard: zSelectCard,
       cardStatus: zCardStatus,
       cards: zCards,
-      selected: zSelected,
-      newCards: zNewCards,
-      hoverCard: zHoverCard,
     },
   },
 } as const satisfies SocketEventSchemaShape;

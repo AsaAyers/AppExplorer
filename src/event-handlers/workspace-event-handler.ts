@@ -4,7 +4,7 @@ import { EventHandler } from "@/event-handlers/event-handler";
 import { WorkspaceCardStorage } from "@/workspace-card-storage";
 
 export class WorkspaceEventHandler extends EventHandler<"workspace"> {
-  protected readonly self = "workspace" as const;
+  protected readonly selfName = "workspace" as const;
   private readonly storage: WorkspaceCardStorage;
 
   constructor(socket: WorkspaceSocket, storage: WorkspaceCardStorage) {

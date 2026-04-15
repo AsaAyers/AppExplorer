@@ -13,7 +13,7 @@ export class ServerWorkspaceEventHandler extends EventHandler<
   "server",
   "workspace"
 > {
-  protected readonly self = "server" as const;
+  protected readonly selfName = "server" as const;
   private readonly cardStorage: CardStorage;
   private readonly connectedWorkspaces: Map<string, WorkspaceInfo>;
 

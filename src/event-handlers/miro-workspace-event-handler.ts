@@ -2,7 +2,6 @@ import invariant from "tiny-invariant";
 
 import { WorkspaceServerSocket, HandlerMethodMap } from "./types";
 
-import { AppExplorerTag } from "@/EventTypes";
 import { CardStorage, BoardInfo } from "@/card-storage";
 import { EventHandler } from "@/event-handlers/event-handler";
 import { debug } from "@/server/server";
@@ -11,7 +10,7 @@ export class MiroWorkspaceEventHandler extends EventHandler<
   "miro",
   "workspace"
 > {
-  protected readonly self = "miro" as const;
+  protected readonly selfName = "miro" as const;
   private readonly cardStorage: CardStorage;
 
   constructor(socket: WorkspaceServerSocket, cardStorage: CardStorage) {
@@ -50,23 +49,6 @@ export class MiroWorkspaceEventHandler extends EventHandler<
         return false;
       }
     },
-    onGetIdToken: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("getIdToken", boardId)
-        .then((id) => id as string)
-        .catch(() => "" as string);
-    },
-    onSetBoardName: async (boardId, name) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      this.cardStorage.setBoardName(boardId, name);
-      return boardSocket
-        .emitWithAck("setBoardName", boardId, name)
-        .then((success) => success as boolean)
-        .catch(() => false);
-    },
     onGetBoardInfo: async (boardId) => {
       const boardSocket = this.cardStorage.getBoardSocket(boardId);
       invariant(boardSocket, "Board not connected");
@@ -86,30 +68,6 @@ export class MiroWorkspaceEventHandler extends EventHandler<
       } catch (_error) {
         return undefined as unknown as BoardInfo;
       }
-    },
-    onTags: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("tags", boardId)
-        .then((tags) => tags as AppExplorerTag[])
-        .catch(() => []);
-    },
-    onAttachCard: async (boardId, data) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("attachCard", boardId, data)
-        .then((success) => success as boolean)
-        .catch(() => false);
-    },
-    onTagCards: async (boardId, data) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("tagCards", boardId, data)
-        .then((success) => success as boolean)
-        .catch(() => false);
     },
     onSelectCard: async (boardId, miroLink) => {
       const boardSocket = this.cardStorage.getBoardSocket(boardId);
@@ -133,41 +91,6 @@ export class MiroWorkspaceEventHandler extends EventHandler<
       } catch (_error) {
         return [];
       }
-    },
-    onSelected: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-
-      try {
-        const selected = await boardSocket.emitWithAck("selected", boardId);
-        this.cardStorage.selectedCards(selected);
-        return selected;
-      } catch (_error) {
-        return [];
-      }
-    },
-    onNewCards: async (boardId, data, options) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-
-      try {
-        return await boardSocket.emitWithAck(
-          "newCards",
-          boardId,
-          data,
-          options,
-        );
-      } catch (_error) {
-        return false;
-      }
-    },
-    onHoverCard: async (boardId, miroLink) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("hoverCard", boardId, miroLink)
-        .then((success) => success as boolean)
-        .catch(() => false);
     },
   } satisfies HandlerMethodMap<"miro", "workspace">;
 }

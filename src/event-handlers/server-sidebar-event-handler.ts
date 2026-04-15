@@ -7,7 +7,7 @@ export class ServerSidebarEventHandler extends EventHandler<
   "server",
   "sidebar"
 > {
-  protected readonly self = "server" as const;
+  protected readonly selfName = "server" as const;
   private readonly instanceId: string;
 
   constructor(socket: SidebarServerSocket, instanceId: string) {
