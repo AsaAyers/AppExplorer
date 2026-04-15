@@ -13,8 +13,8 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { type CardData } from "./EventTypes";
-import { MiroSocket } from "./event-handler";
 import { MiroEventHandler } from "./event-handlers/miro-event-handler";
+import { MiroSocket } from "./event-handlers/types";
 import { isAppCard } from "./miro/isAppCard";
 import { updateCard } from "./miro/updateCard";
 import { createDebug } from "./utils/create-debug";

@@ -8,6 +8,6 @@ set -ex
 docker run -it \
  --volume "$(cd; pwd)/.copilot:/home/agent/.copilot" \
  --volume "$(pwd):/home/agent/workspace" \
- asa-copilot
+ asa-copilot copilot $@
   
 

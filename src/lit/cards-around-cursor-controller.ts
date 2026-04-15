@@ -6,7 +6,7 @@ import { createDebug } from "../utils/create-debug";
 
 import { socketContext } from "./socket-context";
 
-import { SidebarSocket } from "@/event-handler";
+import { SidebarSocket } from "@/event-handlers/types";
 const debug = createDebug("app-explorer:cards-around-cursor:controller");
 
 export class CardsAroundCursorController implements ReactiveController {

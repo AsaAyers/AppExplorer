@@ -10,7 +10,7 @@ import { mirotoneStyles } from "./mirotone";
 import { ServerStatusController } from "./server-status-controller";
 import { socketContext } from "./socket-context";
 
-import { SidebarSocket } from "@/event-handler";
+import { SidebarSocket } from "@/event-handlers/types";
 const debug = createDebug("app-explorer:server-status");
 
 @customElement("app-explorer-server-status")

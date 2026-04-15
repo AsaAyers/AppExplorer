@@ -1,0 +1,344 @@
+import { Debugger } from "debug";
+import { Socket as ServerSocket } from "socket.io";
+import type { Socket as ClientSocket } from "socket.io-client";
+import invariant from "tiny-invariant";
+import { z } from "zod";
+
+import { SocketEntity, socketEntities, socketEventMap } from "../socket-events";
+
+import type {
+  InboundSchemaMap,
+  OutboundSchemaMap,
+  HandlerMethodMap,
+  EventHandlerSocket,
+  OutgoingHandlerMap,
+  EventSignature,
+  EventHandlerIncomingEventMap,
+  SocketLifecycleEvents,
+  SocketListener,
+  IncomingSchemaMap,
+  EventNameFromHandlerMethodName,
+} from "./types";
+
+import { createDebug } from "@/utils/create-debug";
+
+const isClientSocket = <T>(
+  socket: T,
+): socket is Extract<T, InferClientSocket<T>> =>
+  typeof socket === "object" && socket !== null && "io" in socket;
+
+type InferClientSocket<T> =
+  T extends ClientSocket<infer L, infer E> ? ClientSocket<L, E> : never;
+
+// Extract the concrete listen/emit maps from a value's static type.
+//
+// Why this helper exists:
+// - `infer` only introduces type variables *inside* a conditional type branch.
+// - If we write `socket is ServerSocket<L, E>` directly on the function return type,
+//   `L`/`E` are out of scope because they were never declared at the function level.
+// - By capturing them in `InferServerSocket<T>`, the guard can return a valid
+//   predicate while preserving the specific event-map types when available.
+type InferServerSocket<T> =
+  T extends ServerSocket<infer L, infer E> ? ServerSocket<L, E> : never;
+
+const isServerSocket = <T>(
+  socket: T,
+): socket is Extract<T, InferServerSocket<T>> =>
+  typeof socket === "object" && socket !== null && "server" in socket;
+
+const getInboundSchemas = <Target extends SocketEntity>(
+  target: Target,
+): InboundSchemaMap<Target> => {
+  const schemas: Partial<InboundSchemaMap<Target>> = {};
+
+  for (const source of socketEntities) {
+    const sourceSchemas = socketEventMap[source] as Partial<
+      Record<SocketEntity, InboundSchemaMap<Target>>
+    >;
+    const targetSchemas = sourceSchemas[target];
+    if (targetSchemas) {
+      Object.assign(schemas, targetSchemas);
+    }
+  }
+
+  return schemas as InboundSchemaMap<Target>;
+};
+
+const getOutboundSchemas = <Source extends SocketEntity>(
+  source: Source,
+): OutboundSchemaMap<Source> => {
+  const schemas: Partial<OutboundSchemaMap<Source>> = {};
+
+  for (const targetSchemas of Object.values(socketEventMap[source])) {
+    Object.assign(schemas, targetSchemas);
+  }
+
+  return schemas as OutboundSchemaMap<Source>;
+};
+
+const toEventName = <MethodName extends `on${string}`>(
+  handlerMethodName: MethodName,
+): EventNameFromHandlerMethodName<MethodName> =>
+  `${handlerMethodName.charAt(2).toLowerCase()}${handlerMethodName.slice(3)}` as EventNameFromHandlerMethodName<MethodName>;
+
+const serializeForError = (value: unknown): string => {
+  try {
+    return (
+      JSON.stringify(
+        value,
+        (_key, currentValue) =>
+          currentValue === undefined ? "__undefined__" : currentValue,
+        2,
+      ) ?? String(value)
+    );
+  } catch {
+    return String(value);
+  }
+};
+
+const contextualizeValidationError = (
+  direction: "emit" | "handler",
+  self: SocketEntity,
+  eventName: string,
+  args: unknown[],
+  error: unknown,
+): Error | unknown => {
+  if (error instanceof z.ZodError) {
+    return new Error(
+      `Socket ${direction} validation failed for ${self}.${eventName}\nArgs: ${serializeForError(args)}\nIssues: ${JSON.stringify(error.issues, null, 2)}`,
+    );
+  }
+
+  return error;
+};
+
+const returnsVoid = (schema: z.ZodFunction): boolean =>
+  schema.def.output instanceof z.ZodPromise &&
+  schema.def.output.def.innerType instanceof z.ZodVoid;
+
+export abstract class EventHandler<
+  Self extends SocketEntity,
+  EventSources extends SocketEntity = Exclude<SocketEntity, Self>,
+> {
+  protected abstract readonly self: Self;
+  protected abstract readonly handlerMethods: HandlerMethodMap<
+    Self,
+    EventSources
+  >;
+  protected readonly socket: EventHandlerSocket<Self, EventSources>;
+  log: Debugger;
+
+  constructor(socket: EventHandlerSocket<Self, EventSources>) {
+    this.socket = socket;
+    this.log = createDebug(`app-explorer:event-handler:${self}`);
+  }
+
+  static create<Args extends unknown[], Instance>(
+    this: new (...args: Args) => Instance,
+    ...args: Args
+  ): Instance {
+    const instance = new this(...args);
+    (instance as EventHandler<SocketEntity, SocketEntity>).registerHandlers();
+    return instance;
+  }
+
+  public emit<
+    EventName extends keyof OutgoingHandlerMap<Self, EventSources> & string,
+  >(
+    eventName: EventName,
+    ...args: EventSignature<
+      OutgoingHandlerMap<Self, EventSources>,
+      EventName
+    >["args"]
+  ): EventSignature<
+    OutgoingHandlerMap<Self, EventSources>,
+    EventName
+  >["return"] {
+    const schema = (
+      getOutboundSchemas(this.self) as Record<string, z.ZodFunction>
+    )[eventName];
+    invariant(
+      schema instanceof z.ZodFunction,
+      `No schema found for event ${String(eventName)}`,
+    );
+
+    const callSocket = schema.implementAsync(
+      async (...validatedArgs: unknown[]) => {
+        if (returnsVoid(schema)) {
+          this.log(`Emitting event ${this.self}.${eventName}`);
+          (this.socket.emit as unknown as (...socketArgs: unknown[]) => void)(
+            eventName,
+            ...validatedArgs,
+          );
+          return;
+        }
+
+        this.log(`Calling event ${this.self}.${eventName}`);
+        return (
+          this.socket.emitWithAck as (
+            ...socketArgs: unknown[]
+          ) => Promise<unknown>
+        )(eventName, ...validatedArgs);
+      },
+    );
+    return callSocket(...args).catch((error) => {
+      throw contextualizeValidationError(
+        "emit",
+        this.self,
+        eventName,
+        args,
+        error,
+      );
+    }) as EventSignature<
+      OutgoingHandlerMap<Self, EventSources>,
+      EventName
+    >["return"];
+  }
+
+  public on<EventName extends keyof SocketLifecycleEvents & string>(
+    eventName: EventName,
+    listener: SocketLifecycleEvents[EventName],
+  ): this;
+  public on<
+    EventName extends keyof EventHandlerIncomingEventMap<Self, EventSources> &
+      string,
+  >(
+    eventName: EventName,
+    listener: EventHandlerIncomingEventMap<Self, EventSources>[EventName],
+  ): this;
+  public on<EventName extends string>(
+    eventName: EventName,
+    listener: SocketListener<Self, EventSources, EventName>,
+  ): this {
+    const socket = this.socket;
+
+    if (isClientSocket(socket)) {
+      const s: ClientSocket = socket;
+      s.on(eventName as any, listener as any);
+    } else if (isServerSocket(socket)) {
+      const s: ServerSocket = socket;
+      s.on(eventName as any, listener as any);
+    }
+
+    return this;
+  }
+
+  public once<EventName extends keyof SocketLifecycleEvents & string>(
+    eventName: EventName,
+    listener: SocketLifecycleEvents[EventName],
+  ): this;
+  public once<
+    EventName extends keyof EventHandlerIncomingEventMap<Self, EventSources> &
+      string,
+  >(
+    eventName: EventName,
+    listener: EventHandlerIncomingEventMap<Self, EventSources>[EventName],
+  ): this {
+    const socket = this.socket;
+
+    /**
+     * TypeScript says that the .once implementations don't share a signature,
+     * so they have to be split up to know which function signature to use. But
+     * then I don't have a way to ensure that server-only eventNames are sent to
+     * the server and client-only event names are sent to the client. Its also
+     * difficult to assure TypeScript that this listener is the specific
+     * listener for this event, so it needs an any too.
+     */
+    if (isClientSocket(socket)) {
+      socket.once(eventName as any, listener as any);
+      return this;
+    }
+    if (isServerSocket(socket)) {
+      socket.once(eventName as any, listener as any);
+    }
+
+    return this;
+  }
+
+  private registerHandlers(): void {
+    const wrappedHandlers = this.wrapHandlers(this.handlerMethods);
+    const incomingSchemas = getInboundSchemas(this.self);
+    const handlerMethodNames = Object.keys(wrappedHandlers) as Array<
+      keyof HandlerMethodMap<Self, EventSources> & string
+    >;
+
+    for (const handlerMethodName of handlerMethodNames) {
+      const eventName = toEventName(
+        handlerMethodName,
+      ) as unknown as keyof EventHandlerIncomingEventMap<Self, EventSources> &
+        keyof IncomingSchemaMap<Self, EventSources> &
+        string;
+      const handler = wrappedHandlers[handlerMethodName];
+      const schema = (incomingSchemas as Record<string, z.ZodFunction>)[
+        eventName as unknown as string
+      ];
+      invariant(
+        schema instanceof z.ZodFunction,
+        `No schema found for event ${String(eventName)}`,
+      );
+      const asyncHandler = handler as unknown as (
+        ...args: any[]
+      ) => Promise<unknown>;
+
+      const callbackHandler = async (...args: any[]) => {
+        // If the schema returns void, we don't expect an acknowledgment
+        // callback from the socket, so we handle it differently
+        let callback = null;
+        if (!returnsVoid(schema)) {
+          callback = args.pop();
+        }
+
+        try {
+          const result = await asyncHandler(...args);
+          callback?.(null, result);
+        } catch (error) {
+          callback?.(error instanceof Error ? error.message : error);
+        }
+      };
+
+      this.on(eventName, callbackHandler as any);
+    }
+  }
+
+  private wrapHandlers<Handlers extends HandlerMethodMap<Self, EventSources>>(
+    handlers: Handlers,
+  ): Handlers {
+    const incomingSchemas = getInboundSchemas(this.self);
+    const wrappedHandlers = { ...handlers } as Handlers;
+    const handlerMethodNames = Object.keys(handlers) as Array<
+      keyof Handlers & `on${string}`
+    >;
+
+    for (const handlerMethodName of handlerMethodNames) {
+      const eventName = toEventName(
+        handlerMethodName,
+      ) as unknown as keyof IncomingSchemaMap<Self, EventSources> & string;
+      const handler = handlers[handlerMethodName];
+      const schema = (incomingSchemas as Record<string, z.ZodFunction>)[
+        eventName as unknown as string
+      ];
+
+      if (schema instanceof z.ZodFunction && typeof handler === "function") {
+        const functionSchema: z.ZodFunction = schema;
+        const validatedHandler = functionSchema.implementAsync(
+          handler as never,
+        ) as (...args: unknown[]) => Promise<unknown>;
+        wrappedHandlers[handlerMethodName] = (async (...args: unknown[]) => {
+          try {
+            return await validatedHandler(...args);
+          } catch (error) {
+            throw contextualizeValidationError(
+              "handler",
+              this.self,
+              eventName,
+              args,
+              error,
+            );
+          }
+        }) as Handlers[typeof handlerMethodName];
+      }
+    }
+
+    return wrappedHandlers;
+  }
+}

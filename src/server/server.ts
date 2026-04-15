@@ -16,13 +16,13 @@ import { createDebug } from "../utils/create-debug";
 
 import { SidebarServer } from "./sidebar-server";
 
+import { MiroWorkspaceEventHandler } from "@/event-handlers/miro-workspace-event-handler";
+import { ServerWorkspaceEventHandler } from "@/event-handlers/server-workspace-event-handler";
 import {
   MiroServerSocket,
   WorkspaceNamespace,
   WorkspaceServerSocket,
-} from "@/event-handler";
-import { MiroWorkspaceEventHandler } from "@/event-handlers/miro-workspace-event-handler";
-import { ServerWorkspaceEventHandler } from "@/event-handlers/server-workspace-event-handler";
+} from "@/event-handlers/types";
 import { WorkspaceMiroEventHandler } from "@/event-handlers/workspace-miro-event-handler";
 
 export const debug = createDebug("app-explorer:server");

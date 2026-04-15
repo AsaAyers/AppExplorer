@@ -1,9 +1,10 @@
 import {
-  EventHandler,
-  SidebarServerSocket,
   HandlerMethodMap,
+  SidebarServerSocket,
   WorkspaceNamespace,
-} from "@/event-handler";
+} from "./types";
+
+import { EventHandler } from "@/event-handlers/event-handler";
 
 export class WorkspaceSidebarEventManager extends EventHandler<
   "workspace",

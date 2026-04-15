@@ -1,8 +1,10 @@
 import type { Tag } from "@mirohq/websdk-types/stable/features/widgets/tag";
 import invariant from "tiny-invariant";
 
+import { HandlerMethodMap } from "./types";
+
 import type { CardData, AppExplorerTag } from "@/EventTypes";
-import { EventHandler, HandlerMethodMap } from "@/event-handler";
+import { EventHandler } from "@/event-handlers/event-handler";
 import { extractCardData, newCard, debug, zoomIntoCards, isTag } from "@/miro";
 import { isAppCard } from "@/miro/isAppCard";
 import { updateCard } from "@/miro/updateCard";

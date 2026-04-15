@@ -4,15 +4,15 @@ import {
   DocumentSymbolTracker,
   getDocumentSymbolTracker,
 } from "../document-symbol-tracker";
-import {
-  SidebarNamespace,
-  SidebarServerSocket,
-  WorkspaceNamespace,
-} from "../event-handler";
 import { LocationFinder } from "../location-finder";
 import { createDebug } from "../utils/create-debug";
 
 import { ServerSidebarEventHandler } from "@/event-handlers/server-sidebar-event-handler";
+import {
+  SidebarNamespace,
+  SidebarServerSocket,
+  WorkspaceNamespace,
+} from "@/event-handlers/types";
 import { WorkspaceSidebarEventManager } from "@/event-handlers/workspace-sidebar-event-handler";
 export const debug = createDebug("app-explorer:server:sidebar");
 

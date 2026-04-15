@@ -1,14 +1,12 @@
+import { WorkspaceServerSocket, HandlerMethodMap } from "./types";
+
 import {
   WorkspaceInfo,
   WorkspaceRegistrationRequest,
   WorkspaceRegistrationResponse,
 } from "@/EventTypes";
 import { CardStorage } from "@/card-storage";
-import {
-  EventHandler,
-  WorkspaceServerSocket,
-  HandlerMethodMap,
-} from "@/event-handler";
+import { EventHandler } from "@/event-handlers/event-handler";
 import { debug } from "@/server/server";
 
 export class ServerWorkspaceEventHandler extends EventHandler<

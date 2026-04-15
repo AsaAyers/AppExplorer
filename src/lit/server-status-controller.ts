@@ -4,7 +4,7 @@ import invariant from "tiny-invariant";
 import { ServerStatus } from "../EventTypes";
 import { createDebug } from "../utils/create-debug";
 
-import { SidebarSocket } from "@/event-handler";
+import { SidebarSocket } from "@/event-handlers/types";
 const debug = createDebug("app-explorer:socket-subscription-controller");
 
 interface SocketHost extends ReactiveControllerHost {

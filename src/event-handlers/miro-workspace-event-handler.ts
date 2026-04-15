@@ -1,12 +1,10 @@
 import invariant from "tiny-invariant";
 
+import { WorkspaceServerSocket, HandlerMethodMap } from "./types";
+
 import { AppExplorerTag } from "@/EventTypes";
 import { CardStorage, BoardInfo } from "@/card-storage";
-import {
-  EventHandler,
-  WorkspaceServerSocket,
-  HandlerMethodMap,
-} from "@/event-handler";
+import { EventHandler } from "@/event-handlers/event-handler";
 import { debug } from "@/server/server";
 
 export class MiroWorkspaceEventHandler extends EventHandler<

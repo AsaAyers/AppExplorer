@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 
 import { CardData, WorkspaceRegistrationRequest } from "./EventTypes";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
-import { WorkspaceSocket } from "./event-handler";
+import { WorkspaceSocket } from "./event-handlers/types";
 import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";

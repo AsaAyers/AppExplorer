@@ -6,7 +6,7 @@ import { io as socketIO } from "socket.io-client";
 
 import { createDebug } from "../utils/create-debug";
 
-import { SidebarSocket } from "@/event-handler";
+import { SidebarSocket } from "@/event-handlers/types";
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const debug = createDebug("app-explorer:miro:sidebar");

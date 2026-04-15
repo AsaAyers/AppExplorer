@@ -5,7 +5,7 @@ import * as vscode from "vscode";
 
 import { CardData } from "./EventTypes";
 import { SymbolPathChangeEvent } from "./document-symbol-tracker";
-import { MiroServerSocket } from "./event-handler";
+import { MiroServerSocket } from "./event-handlers/types";
 import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/notEmpty";

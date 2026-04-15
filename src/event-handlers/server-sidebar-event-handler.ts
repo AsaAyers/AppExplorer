@@ -1,8 +1,6 @@
-import {
-  EventHandler,
-  SidebarServerSocket,
-  HandlerMethodMap,
-} from "@/event-handler";
+import { SidebarServerSocket, HandlerMethodMap } from "./types";
+
+import { EventHandler } from "@/event-handlers/event-handler";
 import { debug } from "@/server/sidebar-server";
 
 export class ServerSidebarEventHandler extends EventHandler<

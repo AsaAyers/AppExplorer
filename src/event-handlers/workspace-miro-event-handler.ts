@@ -1,10 +1,11 @@
-import { CardStorage } from "@/card-storage";
 import {
-  EventHandler,
-  MiroServerSocket,
   HandlerMethodMap,
+  MiroServerSocket,
   WorkspaceNamespace,
-} from "@/event-handler";
+} from "./types";
+
+import { CardStorage } from "@/card-storage";
+import { EventHandler } from "@/event-handlers/event-handler";
 import { logger } from "@/logger";
 import { debug } from "@/server/server";
 
