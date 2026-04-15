@@ -4,7 +4,6 @@ import {
   HandlerMethodMap,
   WorkspaceNamespace,
 } from "@/event-handler";
-import { SidebarServer } from "@/server/sidebar-server";
 
 export class WorkspaceSidebarEventManager extends EventHandler<
   "workspace",
@@ -15,7 +14,7 @@ export class WorkspaceSidebarEventManager extends EventHandler<
 
   constructor(
     socket: SidebarServerSocket,
-    workspaceNamespace: SidebarServer["workspaceNamespace"],
+    workspaceNamespace: WorkspaceNamespace,
   ) {
     super(socket);
     this.workspaceNamespace = workspaceNamespace;

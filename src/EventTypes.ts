@@ -52,7 +52,7 @@ export type ServerStatus = {
   allBoards: BoardInfo[];
   connectedBoardIds: string[];
   cardsPerBoard: Record<string, number>;
-  connectedWorkspaces: Omit<WorkspaceInfo, "socket">[];
+  connectedWorkspaces: WorkspaceInfo[];
 };
 
 export interface WorkspaceInfo {

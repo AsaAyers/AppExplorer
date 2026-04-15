@@ -6,7 +6,7 @@ import {
   WorkspaceNamespace,
 } from "@/event-handler";
 import { logger } from "@/logger";
-import { MiroServer, debug } from "@/server/server";
+import { debug } from "@/server/server";
 
 export class WorkspaceMiroEventHandler extends EventHandler<
   "workspace",
@@ -18,7 +18,7 @@ export class WorkspaceMiroEventHandler extends EventHandler<
   constructor(
     socket: MiroServerSocket,
     cardStorage: CardStorage,
-    workspaceNamespace: MiroServer["workspaceNamespace"],
+    workspaceNamespace: WorkspaceNamespace,
   ) {
     super(socket);
     this.cardStorage = cardStorage;
