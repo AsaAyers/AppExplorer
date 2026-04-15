@@ -153,6 +153,9 @@ suiteFn("Create Card", function () {
     await selectMiroCardByTitle(page, /^UserProfile$/);
     await dragCardToBoard(page, "generateId", generateIdXY);
     await getModal(page).getByRole("button", { name: "Save" }).click();
+    const helpersURI = uriForFile("src/utils/helpers.ts");
+    await waitForAppExplorerCodeLenses(helpersURI, ["generateId"]);
+
     // close editors in vscode
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await selectMiroCardByTitle(page, null);
@@ -161,7 +164,6 @@ suiteFn("Create Card", function () {
     await page.evaluate(zoomToTestFrame);
 
     // Step 6: Back in helpers.ts, navigate to isValidEmail and drag its card below UserProfile and right of generateId
-    const helpersURI = uriForFile("src/utils/helpers.ts");
     const helpersDoc = await vscode.workspace.openTextDocument(helpersURI);
     const helpersEditor = await vscode.window.showTextDocument(helpersDoc, {
       preview: false,
@@ -181,7 +183,17 @@ suiteFn("Create Card", function () {
     );
     await videoDelay("navigated to isValidEmail", 2);
 
+    await waitForAppExplorerCodeLenses(helpersDoc.uri, ["generateId"]);
+
     await dragCardToBoard(page, /isValidEmail$/, isValidEmailXY);
+    await getModal(page).getByRole("button", { name: "Save" }).click();
+    await waitForAppExplorerCodeLenses(helpersDoc.uri, [
+      "generateId",
+      "isValidEmail",
+    ]);
+
+    await removeMiroCardByTitle(page, "isValidEmail");
+    await waitForAppExplorerCodeLenses(helpersDoc.uri, ["generateId"]);
 
     log("assertions passed");
   });
@@ -304,6 +316,57 @@ async function dragCardToBoard(
     },
   });
   await videoDelay("dragged " + name);
+}
+
+async function removeMiroCardByTitle(page: Page, title: string | RegExp) {
+  await page.evaluate(async (title: string | RegExp) => {
+    const cards = await miro.board.get({ type: "app_card" });
+    const card = cards.find((c) =>
+      typeof title === "string"
+        ? c.title === title
+        : c.title.match(new RegExp(title)),
+    );
+    if (!card) {
+      throw new Error(`Card with title ${title} not found`);
+    }
+    await miro.board.remove(card);
+  }, title);
+  await videoDelay(`Removed card ${title}`, 2);
+}
+
+async function getAppExplorerCodeLensTitles(documentUri: vscode.Uri) {
+  const codeLenses =
+    (await vscode.commands.executeCommand<vscode.CodeLens[]>(
+      "vscode.executeCodeLensProvider",
+      documentUri,
+    )) ?? [];
+
+  return codeLenses
+    .map((lens) => lens.command?.title)
+    .filter(
+      (title): title is string =>
+        title?.startsWith("$(app-explorer) ") ?? false,
+    )
+    .map((title) => title.replace("$(app-explorer) ", ""))
+    .sort();
+}
+
+async function waitForAppExplorerCodeLenses(
+  documentUri: vscode.Uri,
+  expectedTitles: string[],
+) {
+  const sortedExpectedTitles = [...expectedTitles].sort();
+  await waitFor(
+    async () => {
+      const titles = await getAppExplorerCodeLensTitles(documentUri);
+      assert.deepEqual(titles, sortedExpectedTitles);
+    },
+    {
+      timeout: 15000,
+      interval: 500,
+      message: `Expected CodeLens titles ${sortedExpectedTitles.join(", ")}`,
+    },
+  );
 }
 
 async function selectMiroCardByTitle(

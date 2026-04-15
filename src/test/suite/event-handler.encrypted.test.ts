@@ -105,7 +105,10 @@ class WorkspaceTestEventHandler extends EventHandler<"workspace", "sidebar"> {
   } satisfies HandlerMethodMap<"workspace", "sidebar">;
 }
 
-class WorkspaceMiroRequestEventHandler extends EventHandler<"workspace", "miro"> {
+class WorkspaceMiroRequestEventHandler extends EventHandler<
+  "workspace",
+  "miro"
+> {
   protected readonly selfName = "workspace" as const;
   protected readonly handlerMethods = {
     onBoardUpdate: async (_board) => {},
@@ -116,7 +119,10 @@ class WorkspaceMiroRequestEventHandler extends EventHandler<"workspace", "miro">
   } satisfies HandlerMethodMap<"workspace", "miro">;
 }
 
-class MiroWorkspaceResponseEventHandler extends EventHandler<"miro", "workspace"> {
+class MiroWorkspaceResponseEventHandler extends EventHandler<
+  "miro",
+  "workspace"
+> {
   protected readonly selfName = "miro" as const;
   protected readonly handlerMethods = {
     onGetBoardInfo: async (_boardId: string) => ({
@@ -189,7 +195,11 @@ suite("Encrypted EventHandler transport", () => {
     const requester = WorkspaceMiroRequestEventHandler.create(
       requesterSocket as never,
     );
-    const result = await requester.emitEncrypted("selectCard", "board-1", "link");
+    const result = await requester.emitEncrypted(
+      "selectCard",
+      "board-1",
+      "link",
+    );
 
     assert.strictEqual(result, true);
   });
@@ -197,7 +207,9 @@ suite("Encrypted EventHandler transport", () => {
   test("ack relay can skip sockets that opt out", async () => {
     const firstResponderSocket = new MockSocket();
     const secondResponderSocket = new MockSocket();
-    OptOutMiroWorkspaceResponseEventHandler.create(firstResponderSocket as never);
+    OptOutMiroWorkspaceResponseEventHandler.create(
+      firstResponderSocket as never,
+    );
     MiroWorkspaceResponseEventHandler.create(secondResponderSocket as never);
 
     const result = await relayAckEvent(

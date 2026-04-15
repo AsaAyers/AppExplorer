@@ -256,22 +256,23 @@ export async function attachToSocket() {
   const emitBoardUpdate = async () => {
     const info = await miro.board.getInfo();
     const cards = await Promise.all(
-      (await miro.board.get({
-        type: ["app_card"],
-      }))
+      (
+        await miro.board.get({
+          type: ["app_card"],
+        })
+      )
         .filter(isAppCard)
         .map(extractCardData),
     );
     const board: BoardInfo = {
       boardId: info.id,
       name: (await miro.board.getAppData("name")) as string,
-      cards: cards.filter(notEmpty).reduce(
-        (acc: Record<string, CardData>, card) => {
+      cards: cards
+        .filter(notEmpty)
+        .reduce((acc: Record<string, CardData>, card) => {
           acc[card.miroLink!] = card;
           return acc;
-        },
-        {},
-      ),
+        }, {}),
     };
     await miroEventHandler.emit("boardUpdate", board);
   };

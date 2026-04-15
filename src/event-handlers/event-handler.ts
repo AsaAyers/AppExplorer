@@ -486,9 +486,9 @@ export abstract class EventHandler<
             const validatedArgs = await (
               schema.def.input as unknown as z.ZodType<unknown[]>
             ).parseAsync(args);
-            const result = await (handler as (...args: unknown[]) => Promise<unknown>)(
-              ...validatedArgs,
-            );
+            const result = await (
+              handler as (...args: unknown[]) => Promise<unknown>
+            )(...validatedArgs);
             return await this.getOutputSchema(schema).parseAsync(result);
           } catch (error) {
             throw contextualizeValidationError(
@@ -512,9 +512,11 @@ export abstract class EventHandler<
   }
 
   private getOutputSchema(schema: z.ZodFunction) {
-    return (schema.def.output instanceof z.ZodPromise
-      ? schema.def.output.def.innerType
-      : schema.def.output) as z.ZodType<unknown>;
+    return (
+      schema.def.output instanceof z.ZodPromise
+        ? schema.def.output.def.innerType
+        : schema.def.output
+    ) as z.ZodType<unknown>;
   }
 
   private async encryptEncryptedEnvelope(eventName: string, args: unknown[]) {
@@ -569,7 +571,8 @@ export abstract class EventHandler<
     schema: z.ZodFunction,
     result: unknown,
   ) {
-    const validatedResult = await this.getOutputSchema(schema).parseAsync(result);
+    const validatedResult =
+      await this.getOutputSchema(schema).parseAsync(result);
     return this.encryptEncryptedEnvelope(eventName, [validatedResult]);
   }
 
