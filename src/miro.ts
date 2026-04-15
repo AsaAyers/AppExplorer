@@ -9,18 +9,18 @@ import type {
   Rect,
   Tag,
 } from "@mirohq/websdk-types";
-import { type Socket, io as socketIO } from "socket.io-client";
+import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { type AppExplorerTag, type CardData } from "./EventTypes";
+import { EventHandler, MiroSocket } from "./event-handler";
 import { isAppCard } from "./miro/isAppCard";
 import { updateCard } from "./miro/updateCard";
-import { EventsFrom, EventsTo } from "./socket-events";
+import { EventsTo } from "./socket-events";
 import { bindHandlers } from "./utils/bindHandlers";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/notEmpty";
 
-type MiroSocket = Socket<EventsTo<"miro">, EventsFrom<"miro">>;
 createDebug.enable("*");
 let debug = createDebug("app-explorer:miro");
 debug("Miro SDK version:", miro);
@@ -233,6 +233,52 @@ async function zoomIntoCards(cards: AppCard[]) {
       }),
     ),
   );
+}
+
+export class MiroEventHandler extends EventHandler<"miro"> {
+  constructor(socket: MiroSocket) {
+    super("miro", socket, {
+      setBoardName: async (routedBoardId, name) => {
+        const boardId = await miro.board.getInfo().then((info) => info.id);
+        invariant(routedBoardId === boardId, "Board ID mismatch");
+        await miro.board.setAppData("name", name);
+        return true;
+      },
+      getBoardInfo: async (routedBoardId) => {
+        const boardId = await miro.board.getInfo().then((info) => info.id);
+        // The boardID might not be known by the client yet, so an empty string is passed as a placeholder.
+        invariant(
+          routedBoardId === "" || boardId === routedBoardId,
+          "Board ID mismatch",
+        );
+        const name = (await miro.board.getAppData("name")) as string;
+        const cards = await miro.board.get({ type: ["app_card"] });
+        const cardEntries = await Promise.all(
+          cards.map(async (card) => {
+            const cardData = await extractCardData(card);
+            return cardData?.miroLink
+              ? ([cardData.miroLink, cardData] as const)
+              : null;
+          }),
+        );
+
+        return {
+          boardId,
+          name,
+          cards: cardEntries.reduce(
+            (acc, entry) => {
+              if (entry) {
+                const [miroLink, cardData] = entry;
+                acc[miroLink] = cardData;
+              }
+              return acc;
+            },
+            {} as Record<string, CardData>,
+          ),
+        };
+      },
+    });
+  }
 }
 
 export async function attachToSocket() {
