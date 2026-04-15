@@ -3,47 +3,10 @@ import * as vscode from "vscode";
 
 import { CardData, WorkspaceRegistrationRequest } from "./EventTypes";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
-import {
-  EventHandler,
-  HandlerMethodMap,
-  WorkspaceSocket,
-} from "./event-handler";
+import { WorkspaceSocket } from "./event-handler";
+import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
-
-class WorkspaceEventHandler extends EventHandler<"workspace"> {
-  protected readonly self = "workspace" as const;
-  private readonly storage: WorkspaceCardStorage;
-
-  constructor(socket: WorkspaceSocket, storage: WorkspaceCardStorage) {
-    super(socket);
-    this.storage = storage;
-  }
-
-  protected readonly handlerMethods = {
-    onConnectedBoards: async (boardIds) => {
-      return this.storage.connectedBoards(boardIds);
-    },
-    onBoardUpdate: async (board) => {
-      return this.storage.boardUpdate(board);
-    },
-    onCardUpdate: async (url, card) => {
-      return this.storage.cardUpdate(url, card);
-    },
-    onSelectedCards: async (cards) => {
-      return this.storage.selectedCards(cards);
-    },
-    onNavigateTo: async (card) => {
-      await this.storage.navigateTo(card);
-    },
-    onCard: async (event) => {
-      return this.storage.card(event);
-    },
-    onLog: async (_args) => {
-      return this.storage.log();
-    },
-  } satisfies HandlerMethodMap<"workspace">;
-}
 
 export class WorkspaceCardStorage
   extends CardStorage

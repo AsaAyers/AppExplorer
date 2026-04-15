@@ -6,15 +6,14 @@ import {
   DocumentSymbolTracker,
   getDocumentSymbolTracker,
 } from "../document-symbol-tracker";
-import {
-  EventHandler,
-  HandlerMethodMap,
-  SidebarServerSocket,
-} from "../event-handler";
+import { SidebarServerSocket } from "../event-handler";
 import { LocationFinder } from "../location-finder";
 import { EventsFrom, EventsTo, RoutedEvents } from "../socket-events";
 import { createDebug } from "../utils/create-debug";
-const debug = createDebug("app-explorer:server:sidebar");
+
+import { ServerSidebarEventHandler } from "@/event-handlers/server-sidebar-event-handler";
+import { WorkspaceSidebarEventManager } from "@/event-handlers/workspace-sidebar-event-handler";
+export const debug = createDebug("app-explorer:server:sidebar");
 
 type SidebarNamespace = Namespace<EventsFrom<"sidebar">, EventsTo<"sidebar">>;
 
@@ -73,8 +72,8 @@ export class SidebarServer {
 
   onSidebarConnection = (socket: SidebarServerSocket) => {
     debug("New sidebar connection", { socketId: socket.id });
-    SidebarServerEventHandler.create(socket, this.#instanceId);
-    SidebarWorkspaceEventHandler.create(socket, this.workspaceNamespace);
+    ServerSidebarEventHandler.create(socket, this.#instanceId);
+    WorkspaceSidebarEventManager.create(socket, this.workspaceNamespace);
     socket.onAnyOutgoing((event) => {
       debug("outgoing", event);
     });
@@ -119,46 +118,4 @@ export class SidebarServer {
     debug("Emitting server status");
     this.sidebarNamespace.emit("serverStatus", this.getServerStatus());
   };
-}
-
-class SidebarServerEventHandler extends EventHandler<"server", "sidebar"> {
-  protected readonly self = "server" as const;
-  private readonly instanceId: string;
-
-  constructor(socket: SidebarServerSocket, instanceId: string) {
-    super(socket);
-    this.instanceId = instanceId;
-  }
-
-  protected readonly handlerMethods = {
-    onGetInstanceId: async () => {
-      debug("getInstanceId", this.instanceId);
-      return this.instanceId;
-    },
-  } satisfies HandlerMethodMap<"server", "sidebar">;
-}
-
-class SidebarWorkspaceEventHandler extends EventHandler<
-  "workspace",
-  "sidebar"
-> {
-  protected readonly self = "workspace" as const;
-  private readonly workspaceNamespace: Namespace<
-    RoutedEvents<"workspace", "miro">,
-    EventsTo<"workspace">
-  >;
-
-  constructor(
-    socket: SidebarServerSocket,
-    workspaceNamespace: SidebarServer["workspaceNamespace"],
-  ) {
-    super(socket);
-    this.workspaceNamespace = workspaceNamespace;
-  }
-
-  protected readonly handlerMethods = {
-    onNavigateTo: async (card) => {
-      this.workspaceNamespace.emit("navigateTo", card);
-    },
-  } satisfies HandlerMethodMap<"workspace", "sidebar">;
 }

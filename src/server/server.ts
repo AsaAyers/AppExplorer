@@ -5,17 +5,10 @@ import compression from "compression";
 import express from "express";
 import morgan from "morgan";
 import { Namespace, Server } from "socket.io";
-import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import {
-  AppExplorerTag,
-  WorkspaceInfo,
-  WorkspaceRegistrationRequest,
-  WorkspaceRegistrationResponse,
-} from "../EventTypes";
-import { BoardInfo, CardStorage, MemoryAdapter } from "../card-storage";
-import { logger } from "../logger";
+import { WorkspaceInfo } from "../EventTypes";
+import { CardStorage, MemoryAdapter } from "../card-storage";
 import { PortConfig } from "../port-config";
 import { EventsFrom, EventsTo, RoutedEvents } from "../socket-events";
 import { listenToAllEvents } from "../test/helpers/listen-to-all-events";
@@ -23,14 +16,12 @@ import { createDebug } from "../utils/create-debug";
 
 import { SidebarServer } from "./sidebar-server";
 
-import {
-  EventHandler,
-  HandlerMethodMap,
-  MiroServerSocket,
-  WorkspaceServerSocket,
-} from "@/event-handler";
+import { MiroServerSocket, WorkspaceServerSocket } from "@/event-handler";
+import { MiroWorkspaceEventHandler } from "@/event-handlers/miro-workspace-event-handler";
+import { ServerWorkspaceEventHandler } from "@/event-handlers/server-workspace-event-handler";
+import { WorkspaceMiroEventHandler } from "@/event-handlers/workspace-miro-event-handler";
 
-const debug = createDebug("app-explorer:server");
+export const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");
 
 export class MiroServer {
@@ -186,12 +177,12 @@ export class MiroServer {
 
     const cardStorage = this.cardStorage;
 
-    WorkspaceServerEventHandler.create(
+    ServerWorkspaceEventHandler.create(
       socket,
       this.cardStorage,
       this.connectedWorkspaces,
     );
-    WorkspaceMiroEventHandler.create(socket, this.cardStorage);
+    MiroWorkspaceEventHandler.create(socket, this.cardStorage);
 
     cardStorage
       .on("connectedBoards", (event) => {
@@ -252,7 +243,7 @@ export class MiroServer {
         cards: this.cardStorage.getCardsByBoard()[info.boardId],
       });
 
-      MiroServerEventHandler.create(
+      WorkspaceMiroEventHandler.create(
         socket,
         this.cardStorage,
         this.workspaceNamespace,
@@ -264,292 +255,4 @@ export class MiroServer {
       });
     }
   }
-}
-
-class WorkspaceServerEventHandler extends EventHandler<"server", "workspace"> {
-  protected readonly self = "server" as const;
-  private readonly cardStorage: CardStorage;
-  private readonly connectedWorkspaces: Map<string, WorkspaceInfo>;
-
-  constructor(
-    socket: WorkspaceServerSocket,
-    cardStorage: CardStorage,
-    connectedWorkspaces: Map<string, WorkspaceInfo>,
-  ) {
-    super(socket);
-    this.cardStorage = cardStorage;
-    this.connectedWorkspaces = connectedWorkspaces;
-  }
-
-  protected readonly handlerMethods = {
-    onWorkspaceRegistration: async (request: WorkspaceRegistrationRequest) => {
-      debug("Workspace registration request", request);
-
-      try {
-        const workspaceInfo: WorkspaceInfo = {
-          id: request.workspaceId,
-          rootPath: request.rootPath,
-          workspaceName: request.workspaceName,
-        };
-
-        this.connectedWorkspaces.set(request.workspaceId, workspaceInfo);
-        this.once("disconnect", () => {
-          this.connectedWorkspaces.delete(request.workspaceId);
-          this.cardStorage.emit("connectedBoards", {
-            type: "connectedBoards",
-            boardIds: Array.from(this.connectedWorkspaces.keys()),
-          });
-        });
-
-        debug("Workspace client", {
-          workspaceId: request.workspaceId,
-          socketId: this.socket.id,
-        });
-
-        const response: WorkspaceRegistrationResponse = {
-          success: true,
-          workspaceId: request.workspaceId,
-          cardsByBoard: this.cardStorage.getCardsByBoard(),
-        };
-
-        debug("Workspace registered successfully", {
-          workspaceId: request.workspaceId,
-        });
-
-        this.cardStorage.emit("connectedBoards", {
-          type: "connectedBoards",
-          boardIds: Array.from(this.connectedWorkspaces.keys()),
-        });
-        return response;
-      } catch (error) {
-        debug("Workspace registration failed", {
-          workspaceId: request.workspaceId,
-          error,
-        });
-        const response: WorkspaceRegistrationResponse = {
-          success: false,
-          workspaceId: request.workspaceId,
-          error: String(error),
-          cardsByBoard: this.cardStorage.getCardsByBoard(),
-        };
-        return response;
-      }
-    },
-  } satisfies HandlerMethodMap<"server", "workspace">;
-}
-
-class WorkspaceMiroEventHandler extends EventHandler<"miro", "workspace"> {
-  protected readonly self = "miro" as const;
-  private readonly cardStorage: CardStorage;
-
-  constructor(socket: WorkspaceServerSocket, cardStorage: CardStorage) {
-    super(socket);
-    this.cardStorage = cardStorage;
-  }
-
-  protected readonly handlerMethods = {
-    onCardStatus: async (boardId, data) => {
-      debug("Workspace cardStatus request", { data });
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-
-      if (!boardSocket) {
-        debug("Board not connected", { boardId });
-        return false;
-      }
-
-      try {
-        const card = this.cardStorage.getCardByLink(data.miroLink);
-        invariant(card, "Card not found in storage");
-        this.cardStorage.setCard(card.boardId, {
-          ...card,
-          status: data.status,
-          codeLink: data.codeLink,
-        });
-
-        const success = await boardSocket.emitWithAck(
-          "cardStatus",
-          boardId,
-          data,
-        );
-        debug("cardStatus routed to board successfully", { boardId, success });
-        return success;
-      } catch (error) {
-        debug("Failed to route cardStatus to board", { boardId, error });
-        return false;
-      }
-    },
-    onGetIdToken: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("getIdToken", boardId)
-        .then((id) => id as string)
-        .catch(() => "" as string);
-    },
-    onSetBoardName: async (boardId, name) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      this.cardStorage.setBoardName(boardId, name);
-      return boardSocket
-        .emitWithAck("setBoardName", boardId, name)
-        .then((success) => success as boolean)
-        .catch(() => false);
-    },
-    onGetBoardInfo: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-
-      try {
-        const info = await boardSocket.emitWithAck("getBoardInfo", boardId);
-        let boardInfo = this.cardStorage.getBoard(info.boardId);
-
-        if (!boardInfo) {
-          boardInfo = await this.cardStorage.addBoard(info.boardId, info.name);
-        } else if (boardInfo.name !== info.name) {
-          this.cardStorage.setBoardName(info.boardId, info.name);
-        }
-
-        debug("boardInfo retrieved", { boardId, info });
-        return info;
-      } catch (_error) {
-        return undefined as unknown as BoardInfo;
-      }
-    },
-    onTags: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("tags", boardId)
-        .then((tags) => tags as AppExplorerTag[])
-        .catch(() => []);
-    },
-    onAttachCard: async (boardId, data) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("attachCard", boardId, data)
-        .then((success) => success as boolean)
-        .catch(() => false);
-    },
-    onTagCards: async (boardId, data) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("tagCards", boardId, data)
-        .then((success) => success as boolean)
-        .catch(() => false);
-    },
-    onSelectCard: async (boardId, miroLink) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      this.cardStorage.selectedCards([
-        this.cardStorage.getCardByLink(miroLink)!,
-      ]);
-      return boardSocket
-        .emitWithAck("selectCard", boardId, miroLink)
-        .then((success) => success as boolean)
-        .catch(() => false);
-    },
-    onCards: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-
-      try {
-        const cards = await boardSocket.emitWithAck("cards", boardId);
-        this.cardStorage.setBoardCards(boardId, cards);
-        return cards;
-      } catch (_error) {
-        return [];
-      }
-    },
-    onSelected: async (boardId) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-
-      try {
-        const selected = await boardSocket.emitWithAck("selected", boardId);
-        this.cardStorage.selectedCards(selected);
-        return selected;
-      } catch (_error) {
-        return [];
-      }
-    },
-    onNewCards: async (boardId, data, options) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-
-      try {
-        return await boardSocket.emitWithAck(
-          "newCards",
-          boardId,
-          data,
-          options,
-        );
-      } catch (_error) {
-        return false;
-      }
-    },
-    onHoverCard: async (boardId, miroLink) => {
-      const boardSocket = this.cardStorage.getBoardSocket(boardId);
-      invariant(boardSocket, "Board not connected");
-      return boardSocket
-        .emitWithAck("hoverCard", boardId, miroLink)
-        .then((success) => success as boolean)
-        .catch(() => false);
-    },
-  } satisfies HandlerMethodMap<"miro", "workspace">;
-}
-
-class MiroServerEventHandler extends EventHandler<"workspace", "miro"> {
-  protected readonly self = "workspace" as const;
-  private readonly cardStorage: CardStorage;
-  private readonly workspaceNamespace: Namespace<
-    EventsFrom<"workspace">,
-    EventsTo<"workspace">
-  >;
-
-  constructor(
-    socket: MiroServerSocket,
-    cardStorage: CardStorage,
-    workspaceNamespace: MiroServer["workspaceNamespace"],
-  ) {
-    super(socket);
-    this.cardStorage = cardStorage;
-    this.workspaceNamespace = workspaceNamespace;
-  }
-
-  protected readonly handlerMethods = {
-    onLog: async ([message, ...args]) => {
-      logger.log(message, ...args);
-    },
-    onNavigateTo: async (card) => {
-      debug("🎯 MIRO EVENT: Navigate to card", {
-        timestamp: new Date().toISOString(),
-        boardId: card.boardId,
-        cardTitle: card.title,
-        cardPath: card.path,
-        cardSymbol: card.type === "symbol" ? card.symbol : undefined,
-        cardMiroLink: card.miroLink,
-        cardStatus: card.status,
-        eventSource: "miro-board",
-        willBroadcastTo: "assigned-workspaces",
-      });
-
-      debug("🔄 BROADCASTING TO BOARD WORKSPACES", { boardId: card.boardId });
-      this.workspaceNamespace.emit("navigateTo", card);
-    },
-    onSelectedCards: async (data) => {
-      this.workspaceNamespace.emit("selectedCards", data);
-    },
-    onCard: async ({ url, card }) => {
-      debug("Received card update", { url, card });
-      this.workspaceNamespace.emit("card", { url, card });
-
-      if (card) {
-        this.cardStorage.setCard(card.boardId, card);
-      } else {
-        this.cardStorage.deleteCardByLink(url);
-      }
-    },
-  } satisfies HandlerMethodMap<"workspace", "miro">;
 }
