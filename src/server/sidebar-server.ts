@@ -1,4 +1,4 @@
-import { Namespace, Socket } from "socket.io";
+import { Namespace } from "socket.io";
 
 import { WorkspaceInfo } from "../EventTypes";
 import { BoardInfo, CardStorage } from "../card-storage";
@@ -6,6 +6,11 @@ import {
   DocumentSymbolTracker,
   getDocumentSymbolTracker,
 } from "../document-symbol-tracker";
+import {
+  EventHandler,
+  HandlerMethodMap,
+  SidebarServerSocket,
+} from "../event-handler";
 import { LocationFinder } from "../location-finder";
 import { EventsFrom, EventsTo, RoutedEvents } from "../socket-events";
 import { createDebug } from "../utils/create-debug";
@@ -66,13 +71,10 @@ export class SidebarServer {
     this.subscriptions.forEach((d) => d.dispose());
   }
 
-  onSidebarConnection = (
-    socket: Socket<EventsFrom<"sidebar">, EventsTo<"sidebar">>,
-  ) => {
+  onSidebarConnection = (socket: SidebarServerSocket) => {
     debug("New sidebar connection", { socketId: socket.id });
-    Object.entries(this.handlers).forEach(([event, handler]) => {
-      socket.on(event as keyof EventsFrom<"sidebar">, handler);
-    });
+    SidebarServerEventHandler.create(socket, this.#instanceId);
+    SidebarWorkspaceEventHandler.create(socket, this.workspaceNamespace);
     socket.onAnyOutgoing((event) => {
       debug("outgoing", event);
     });
@@ -89,16 +91,6 @@ export class SidebarServer {
       this.emitServerStatus();
       this.symbolTracker.fire({ type: "symbolRequest" });
     }, 250);
-  };
-
-  handlers: EventsFrom<"sidebar"> = {
-    getInstanceId: (callback) => {
-      debug("getInstanceId", this.#instanceId);
-      callback(this.#instanceId);
-    },
-    navigateTo: (card) => {
-      this.workspaceNamespace.emit("navigateTo", card);
-    },
   };
 
   getServerStatus = () => {
@@ -127,4 +119,46 @@ export class SidebarServer {
     debug("Emitting server status");
     this.sidebarNamespace.emit("serverStatus", this.getServerStatus());
   };
+}
+
+class SidebarServerEventHandler extends EventHandler<"server", "sidebar"> {
+  protected readonly self = "server" as const;
+  private readonly instanceId: string;
+
+  constructor(socket: SidebarServerSocket, instanceId: string) {
+    super(socket);
+    this.instanceId = instanceId;
+  }
+
+  protected readonly handlerMethods = {
+    onGetInstanceId: async () => {
+      debug("getInstanceId", this.instanceId);
+      return this.instanceId;
+    },
+  } satisfies HandlerMethodMap<"server", "sidebar">;
+}
+
+class SidebarWorkspaceEventHandler extends EventHandler<
+  "workspace",
+  "sidebar"
+> {
+  protected readonly self = "workspace" as const;
+  private readonly workspaceNamespace: Namespace<
+    RoutedEvents<"workspace", "miro">,
+    EventsTo<"workspace">
+  >;
+
+  constructor(
+    socket: SidebarServerSocket,
+    workspaceNamespace: SidebarServer["workspaceNamespace"],
+  ) {
+    super(socket);
+    this.workspaceNamespace = workspaceNamespace;
+  }
+
+  protected readonly handlerMethods = {
+    onNavigateTo: async (card) => {
+      this.workspaceNamespace.emit("navigateTo", card);
+    },
+  } satisfies HandlerMethodMap<"workspace", "sidebar">;
 }

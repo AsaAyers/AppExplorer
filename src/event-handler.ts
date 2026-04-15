@@ -7,6 +7,7 @@ import {
   EventsFrom,
   EventsTo,
   MergeUnionOfObjects,
+  RoutedEvents,
   SocketEntity,
   SocketEventMap,
   SocketEventSchemaMap,
@@ -21,12 +22,32 @@ type SourceSocketEventMap<Sources extends SocketEntity> = MergeUnionOfObjects<
   }[Sources]
 >;
 
+type SourceSocketResponseMap<Sources extends SocketEntity> =
+  MergeUnionOfObjects<
+    {
+      [Source in Sources]: EventsTo<Source>;
+    }[Sources]
+  >;
+
+type IsUnion<T, U = T> = T extends unknown
+  ? [U] extends [T]
+    ? false
+    : true
+  : never;
+
+type IsRoutedMode<Sources extends SocketEntity> =
+  IsUnion<Sources> extends true ? false : true;
+
 type EventHandlerSocket<
   Self extends SocketEntity,
   Sources extends SocketEntity = Exclude<SocketEntity, Self>,
-> = Self extends "server"
-  ? ServerSocket<SourceSocketEventMap<Sources>, EventsTo<Self>>
-  : ClientSocket<EventsTo<Self>, EventsFrom<Self>>;
+> =
+  IsRoutedMode<Sources> extends true
+    ? ServerSocket<
+        SourceSocketEventMap<Sources>,
+        SourceSocketResponseMap<Sources>
+      >
+    : ClientSocket<EventsTo<Self>, EventsFrom<Self>>;
 
 type InboundSchemaMap<
   Target extends SocketEntity,
@@ -54,6 +75,24 @@ type InboundHandlerMap<
   }[Sources]
 >;
 
+type RoutedSchemaMap<
+  Source extends SocketEntity,
+  Target extends SocketEntity,
+> = Source extends keyof SocketEventSchemaMap
+  ? Target extends keyof SocketEventSchemaMap[Source]
+    ? SocketEventSchemaMap[Source][Target]
+    : never
+  : never;
+
+type RoutedHandlerMap<
+  Source extends SocketEntity,
+  Target extends SocketEntity,
+> = Source extends keyof SocketEventMap
+  ? Target extends keyof SocketEventMap[Source]
+    ? SocketEventMap[Source][Target]
+    : never
+  : never;
+
 type OutboundSchemaMap<Source extends SocketEntity> = MergeUnionOfObjects<
   SocketEventSchemaMap[Source][keyof SocketEventSchemaMap[Source]]
 >;
@@ -62,15 +101,39 @@ type OutboundHandlerMap<Source extends SocketEntity> = MergeUnionOfObjects<
   SocketEventMap[Source][keyof SocketEventMap[Source]]
 >;
 
+type IncomingSchemaMap<
+  Self extends SocketEntity,
+  Sources extends SocketEntity,
+> =
+  IsRoutedMode<Sources> extends true
+    ? RoutedSchemaMap<Sources, Self>
+    : InboundSchemaMap<Self, Sources>;
+
+type IncomingHandlerMap<
+  Self extends SocketEntity,
+  Sources extends SocketEntity,
+> =
+  IsRoutedMode<Sources> extends true
+    ? RoutedHandlerMap<Sources, Self>
+    : InboundHandlerMap<Self, Sources>;
+
+type OutgoingHandlerMap<
+  Self extends SocketEntity,
+  Sources extends SocketEntity,
+> =
+  IsRoutedMode<Sources> extends true
+    ? RoutedHandlerMap<Self, Sources>
+    : OutboundHandlerMap<Self>;
+
 type HandlerMethodName<EventName extends string> = `on${Capitalize<EventName>}`;
 
 export type HandlerMethodMap<
-  Target extends SocketEntity,
-  Sources extends SocketEntity = Exclude<SocketEntity, Target>,
+  Self extends SocketEntity,
+  Sources extends SocketEntity = Exclude<SocketEntity, Self>,
 > = {
-  [EventName in keyof InboundHandlerMap<Target, Sources> &
-    string as HandlerMethodName<EventName>]: InboundHandlerMap<
-    Target,
+  [EventName in keyof IncomingHandlerMap<Self, Sources> &
+    string as HandlerMethodName<EventName>]: IncomingHandlerMap<
+    Self,
     Sources
   >[EventName];
 };
@@ -102,10 +165,22 @@ type ServerSocketLifecycleEvents = {
 type SocketLifecycleEvents = ClientSocketLifecycleEvents &
   ServerSocketLifecycleEvents;
 
+type RoutedEventMap<
+  Source extends SocketEntity,
+  Target extends SocketEntity,
+> = Source extends keyof SocketEventMap
+  ? Target extends keyof SocketEventMap[Source]
+    ? RoutedEvents<Source, Target>
+    : never
+  : never;
+
 type EventHandlerIncomingEventMap<
   Self extends SocketEntity,
   Sources extends SocketEntity,
-> = Self extends "server" ? SourceSocketEventMap<Sources> : EventsTo<Self>;
+> =
+  IsRoutedMode<Sources> extends true
+    ? RoutedEventMap<Sources, Self>
+    : EventsTo<Self>;
 
 type SocketListener<
   Self extends SocketEntity,
@@ -132,8 +207,6 @@ const isClientSocket = (
 const isServerSocket = (
   socket: object,
 ): socket is ServerSocket<EventMapType, EventMapType> => "server" in socket;
-
-type EventHandlerConstructor = new (...args: any[]) => EventHandler<any, any>;
 
 const getInboundSchemas = <Target extends SocketEntity>(
   target: Target,
@@ -223,23 +296,27 @@ export abstract class EventHandler<
     this.socket = socket;
   }
 
-  static create<Constructor extends EventHandlerConstructor>(
-    this: Constructor,
-    ...args: ConstructorParameters<Constructor>
-  ): InstanceType<Constructor> {
-    const instance = new this(...args) as InstanceType<Constructor>;
-    (instance as EventHandler<any, any>).registerHandlers();
+  static create<Args extends unknown[], Instance>(
+    this: new (...args: Args) => Instance,
+    ...args: Args
+  ): Instance {
+    const instance = new this(...args);
+    (instance as EventHandler<SocketEntity, SocketEntity>).registerHandlers();
     return instance;
   }
 
   public emit<
-    EventName extends keyof OutboundHandlerMap<Self> &
-      keyof EventsFrom<Self> &
-      string,
+    EventName extends keyof OutgoingHandlerMap<Self, EventSources> & string,
   >(
     eventName: EventName,
-    ...args: EventSignature<OutboundHandlerMap<Self>, EventName>["args"]
-  ): EventSignature<OutboundHandlerMap<Self>, EventName>["return"] {
+    ...args: EventSignature<
+      OutgoingHandlerMap<Self, EventSources>,
+      EventName
+    >["args"]
+  ): EventSignature<
+    OutgoingHandlerMap<Self, EventSources>,
+    EventName
+  >["return"] {
     const schema = (
       getOutboundSchemas(this.self) as Record<string, z.ZodFunction>
     )[eventName];
@@ -273,12 +350,18 @@ export abstract class EventHandler<
         args,
         error,
       );
-    }) as EventSignature<OutboundHandlerMap<Self>, EventName>["return"];
+    }) as EventSignature<
+      OutgoingHandlerMap<Self, EventSources>,
+      EventName
+    >["return"];
   }
 
-  public on<EventName extends keyof EventsTo<Self> & string>(
+  public on<
+    EventName extends keyof EventHandlerIncomingEventMap<Self, EventSources> &
+      string,
+  >(
     eventName: EventName,
-    listener: EventsTo<Self>[EventName],
+    listener: EventHandlerIncomingEventMap<Self, EventSources>[EventName],
   ): this;
   public on<EventName extends keyof SocketLifecycleEvents & string>(
     eventName: EventName,
@@ -332,9 +415,12 @@ export abstract class EventHandler<
     return this;
   }
 
-  public once<EventName extends keyof EventsTo<Self> & string>(
+  public once<
+    EventName extends keyof EventHandlerIncomingEventMap<Self, EventSources> &
+      string,
+  >(
     eventName: EventName,
-    listener: EventsTo<Self>[EventName],
+    listener: EventHandlerIncomingEventMap<Self, EventSources>[EventName],
   ): this;
   public once<EventName extends keyof SocketLifecycleEvents & string>(
     eventName: EventName,
@@ -390,18 +476,20 @@ export abstract class EventHandler<
 
   private registerHandlers(): void {
     const wrappedHandlers = this.wrapHandlers(this.handlerMethods);
-    const inboundSchemas = getInboundSchemas(this.self);
+    const incomingSchemas = getInboundSchemas(this.self);
     const handlerMethodNames = Object.keys(wrappedHandlers) as Array<
       keyof HandlerMethodMap<Self, EventSources> & string
     >;
 
     for (const handlerMethodName of handlerMethodNames) {
-      const eventName = toEventName(handlerMethodName) as keyof EventsTo<Self> &
-        keyof InboundSchemaMap<Self> &
+      const eventName = toEventName(
+        handlerMethodName,
+      ) as unknown as keyof EventHandlerIncomingEventMap<Self, EventSources> &
+        keyof IncomingSchemaMap<Self, EventSources> &
         string;
       const handler = wrappedHandlers[handlerMethodName];
-      const schema = (inboundSchemas as Record<string, z.ZodFunction>)[
-        eventName
+      const schema = (incomingSchemas as Record<string, z.ZodFunction>)[
+        eventName as unknown as string
       ];
       invariant(
         schema instanceof z.ZodFunction,
@@ -428,7 +516,7 @@ export abstract class EventHandler<
   private wrapHandlers<Handlers extends HandlerMethodMap<Self, EventSources>>(
     handlers: Handlers,
   ): Handlers {
-    const inboundSchemas = getInboundSchemas(this.self);
+    const incomingSchemas = getInboundSchemas(this.self);
     const wrappedHandlers = { ...handlers } as Handlers;
     const handlerMethodNames = Object.keys(handlers) as Array<
       keyof Handlers & `on${string}`
@@ -437,9 +525,11 @@ export abstract class EventHandler<
     for (const handlerMethodName of handlerMethodNames) {
       const eventName = toEventName(
         handlerMethodName,
-      ) as unknown as keyof InboundSchemaMap<Self> & string;
+      ) as unknown as keyof IncomingSchemaMap<Self, EventSources> & string;
       const handler = handlers[handlerMethodName];
-      const schema = inboundSchemas[eventName];
+      const schema = (incomingSchemas as Record<string, z.ZodFunction>)[
+        eventName as unknown as string
+      ];
 
       if (schema instanceof z.ZodFunction && typeof handler === "function") {
         const functionSchema: z.ZodFunction = schema;
@@ -482,4 +572,8 @@ export type MiroServerSocket = ServerSocket<
 export type WorkspaceServerSocket = ServerSocket<
   EventsFrom<"workspace">,
   EventsTo<"workspace">
+>;
+export type SidebarServerSocket = ServerSocket<
+  EventsFrom<"sidebar">,
+  EventsTo<"sidebar">
 >;
