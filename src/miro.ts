@@ -13,6 +13,7 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { type CardData } from "./EventTypes";
+import { getHostByIndex } from "./appExplorerDevHost";
 import { BoardInfo } from "./card-storage";
 import { MiroEventHandler } from "./event-handlers/miro-event-handler";
 import { MiroSocket } from "./event-handlers/types";
@@ -240,7 +241,8 @@ export async function zoomIntoCards(cards: AppCard[]) {
 }
 
 export async function attachToSocket() {
-  const s = socketIO("http://localhost:9042" + APP_EXPLORER_SESSION_NAMESPACE, {
+  const host = getHostByIndex(1);
+  const s = socketIO(host + APP_EXPLORER_SESSION_NAMESPACE, {
     auth: {
       role: "miro",
     },

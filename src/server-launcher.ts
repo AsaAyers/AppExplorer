@@ -13,7 +13,7 @@ export type ServerMode = "server" | "client";
 
 export interface ServerLaunchResult {
   mode: ServerMode;
-  server?: MiroServer;
+  server?: boolean;
   serverUrl?: string;
   error?: string;
 }
@@ -158,7 +158,17 @@ export class ServerLauncher {
       // Create and start server instance with proper error handling
       // Use the same port as ServerDiscovery for consistency
       const server = new MiroServer(httpServer);
+      this.subscriptions.push(server);
+      this.server = server;
 
+      /**
+       * The server launcher only ever uses this port. Functionality will get
+       * migrated off of port 9042 and onto port 3000, which is the codebase
+       * that hosts https://appexplorer.dev. During the transition period, the
+       * server launcher will continue to use port 9042 and will eventually
+       * launch an unused server. Then the server on 9042 will be removed
+       * entirely once the transition is complete.
+       */
       const port = 9042;
       await new Promise<void>((resolve, reject) => {
         httpServer.on("error", (error) => {
@@ -197,11 +207,9 @@ export class ServerLauncher {
         mode: "server",
       });
 
-      this.subscriptions.push(server);
-      this.server = server;
       return {
         mode: "server",
-        server,
+        server: true,
         serverUrl,
       };
     } catch (error) {
@@ -245,6 +253,9 @@ export class ServerLauncher {
     debug("Disposing ServerLauncher resources");
     this.serverDiscovery.dispose();
     this.subscriptions.forEach((subscription) => subscription.dispose());
+    this.subscriptions = [];
+    this.server?.dispose();
+    this.server = undefined;
     debug("ServerLauncher disposed");
   }
 }

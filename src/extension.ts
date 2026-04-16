@@ -8,6 +8,7 @@ import { MemoryAdapter } from "./card-storage";
 import { makeNavigationHandler } from "./commands/navigate";
 import { registerUpdateCommand } from "./commands/update-extension";
 import { EditorDecorator } from "./editor-decorator";
+import { AppExplorerSessionCoordinator } from "./extension-session";
 import { LocationFinder } from "./location-finder";
 import { logger as baseLogger, logger } from "./logger";
 import { MiroServer } from "./server/server";
@@ -52,11 +53,23 @@ export async function activate(
 
   const serverLauncher = new ServerLauncher(new ServerDiscovery());
   context.subscriptions.push(serverLauncher);
+  const sessionCoordinator = new AppExplorerSessionCoordinator(
+    context,
+    cardStorage,
+    serverLauncher,
+  );
+  context.subscriptions.push(sessionCoordinator);
+  context.subscriptions.push(
+    vscode.window.registerUriHandler(sessionCoordinator),
+  );
+  await sessionCoordinator.initialize();
 
-  const serverResult = await serverLauncher.initializeServer();
   cardStorage.on("disconnect", () => {
+    if (!sessionCoordinator.hasActiveSession()) {
+      return;
+    }
     debug("Server disconnected");
-    return serverLauncher.initializeServer();
+    return sessionCoordinator.resumeActiveSession();
   });
 
   debug("AppExplorer extension activating");
@@ -68,6 +81,7 @@ export async function activate(
     cardStorage,
     locationFinder,
     async waitForConnections() {
+      await sessionCoordinator.waitForSessionStart();
       debug("Waiting for connections...");
       if (handlerContext.cardStorage.getConnectedBoards().length > 0) {
         return;
@@ -97,39 +111,14 @@ export async function activate(
     },
   };
 
-  // This workspace should connect as a client
-  debug("Running in client mode, connecting to server", {
-    serverUrl: serverResult.serverUrl,
-  });
-
-  // Connect to server
-  try {
-    await cardStorage.socket.connect();
-    debug("Successfully connected to server as workspace client");
-
-    debug("WorkspaceCardStorageProxy client mode enabled", {
-      hasWorkspaceClient: true,
-    });
-  } catch (error) {
-    debug("Failed to connect as workspace client", { error });
-
-    // Don't show error message during tests to avoid disrupting test execution
-    if (!process.env.VSCODE_TEST_MODE) {
-      vscode.window.showErrorMessage(
-        `AppExplorer: Failed to connect to server at ${serverResult.serverUrl}. ` +
-          `Error: ${error}`,
-      );
-    }
-
-    // Don't throw error - continue with extension activation to ensure commands are registered
-    debug("Continuing extension activation despite client connection failure");
-  }
-
   context.subscriptions.push(
     new EditorDecorator(handlerContext),
     vscode.languages.registerCodeLensProvider(
       { scheme: "file" },
       new AppExplorerLens(handlerContext),
+    ),
+    vscode.commands.registerCommand("app-explorer.disconnectSession", () =>
+      sessionCoordinator.disconnectSession(),
     ),
     vscode.commands.registerCommand(
       "app-explorer.navigate",

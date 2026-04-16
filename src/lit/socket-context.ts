@@ -11,6 +11,7 @@ import {
 import { APP_EXPLORER_SESSION_NAMESPACE } from "../session-transport";
 import { createDebug } from "../utils/create-debug";
 
+import { getHostByIndex } from "@/appExplorerDevHost";
 import { SidebarSocket } from "@/event-handlers/types";
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -24,9 +25,10 @@ export async function connectSidebarSocket() {
   debug("connectSidebarSocket");
   await new Promise((resolve) => setTimeout(resolve, 100));
 
+  const host = getHostByIndex(1);
   const connectionTimeout = 10000;
   const socket: SidebarSocket = socketIO(
-    "http://localhost:9042" + APP_EXPLORER_SESSION_NAMESPACE,
+    host + APP_EXPLORER_SESSION_NAMESPACE,
     {
       auth: {
         role: "sidebar",

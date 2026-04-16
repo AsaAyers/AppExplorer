@@ -5,6 +5,7 @@ import { Page } from "playwright";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
+import { getHealthUrlByIndex } from "../../appExplorerDevHost";
 import { ExtensionApi } from "../../extension";
 
 import { colorText } from "./colors";
@@ -109,6 +110,30 @@ export async function activateAppExplorer() {
 
   return extension.exports;
 }
+
+export async function startAppExplorerSession() {
+  await activateAppExplorer();
+  const hostIndex = 1;
+  await vscode.commands.executeCommand(
+    "vscode.open",
+    vscode.Uri.parse(
+      `vscode://asa-ayers.app-explorer/session/test-session?key=test-key&host=${hostIndex}`,
+    ),
+  );
+
+  return waitFor(
+    async () => {
+      const response = await fetch(getHealthUrlByIndex(hostIndex));
+      assert.equal(response.status, 200);
+    },
+    {
+      timeout: 15000,
+      interval: 500,
+      message: "AppExplorer server did not start after session launch",
+    },
+  );
+}
+
 export function uriForFile(filePath: string) {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   assert.equal(

@@ -8,6 +8,8 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
+import { getHostByIndex } from "../../appExplorerDevHost";
+
 import { colorText } from "./colors";
 import { isHeadless, isRecording } from "./isRecording";
 import { screenshot, waitFor } from "./test-utils";
@@ -93,22 +95,21 @@ export async function createBrowserPage(
     console.log("[Browser Log]", message);
   });
 
-  // Inject a global captureSessionLink function to capture the URL to extract the ID and key when it is clicked.
-  await page.exposeFunction("captureSessionLink", (url: URL) => {
+  // Inject a global captureSessionLink function so the real Next app can hand
+  // the extension its vscode:// session URL.
+  await page.exposeFunction("captureSessionLink", (url: string) => {
     if (blockSessionLink) {
       return;
     }
-    const id = url.searchParams.get("id");
-    const key = url.searchParams.get("key");
-    assert.ok(id, "Session ID should be present in the URL");
+    const parsedUrl = new URL(url);
+    const sessionId = parsedUrl.pathname.match(/\/session\/([^/]+)$/)?.[1];
+    const key = parsedUrl.searchParams.get("key");
+    assert.ok(sessionId, "Session ID should be present in the URL path");
     assert.ok(key, "Session key should be present in the URL");
 
-    // The extension handles vscode:// URLS. Pass the captured URL into
-    // VSCode, not using a custom event but by triggering a built in command
-    // that will route it to the correct handler.
     vscode.commands.executeCommand(
       "vscode.open",
-      vscode.Uri.parse(url.toString()),
+      vscode.Uri.parse(parsedUrl.toString()),
     );
   });
 
@@ -138,8 +139,9 @@ export async function closeBrowserContext(
 export async function establishBrowserSession() {
   const page = globalThis.playwrightPage;
   assert.ok(page, "Page should be available for the test");
+  const host = getHostByIndex(1);
 
-  await page.goto("https://dev.appexplorer.dev/test", {
+  await page.goto(new URL("/test", `${host}/`).toString(), {
     waitUntil: "domcontentloaded",
   });
 

@@ -1,11 +1,10 @@
+import { getHealthUrlByIndex, getRelayHostByIndex } from "./appExplorerDevHost";
 import { createDebug } from "./utils/create-debug";
 const debug = createDebug("app-explorer:server-discovery");
 
 export interface ServerDiscoveryOptions {
-  port: number;
-  host: string;
+  hostIndex: number;
   healthCheck: {
-    endpoint: string; // Health check endpoint path
     timeout: number; // Request timeout in milliseconds
   };
 }
@@ -17,10 +16,8 @@ export interface ServerDiscoveryOptions {
  */
 function getDefaultServerOptions(): ServerDiscoveryOptions {
   return {
-    port: 9042,
-    host: "localhost",
+    hostIndex: 1,
     healthCheck: {
-      endpoint: "/health",
       timeout: 5000, // 5 seconds
     },
   };
@@ -41,7 +38,7 @@ export class ServerDiscovery {
    * Check if a server is running on the configured port
    */
   async checkServerHealth(): Promise<boolean> {
-    const url = `http://${this.options.host}:${this.options.port}${this.options.healthCheck.endpoint}`;
+    const url = getHealthUrlByIndex(this.options.hostIndex);
     const startTime = Date.now();
 
     try {
@@ -120,7 +117,14 @@ export class ServerDiscovery {
    * Get the server URL for websocket connections
    */
   getServerUrl(): string {
-    return `http://${this.options.host}:${this.options.port}`;
+    return getRelayHostByIndex(this.options.hostIndex);
+  }
+
+  setHostIndex(hostIndex: number) {
+    this.options = {
+      ...this.options,
+      hostIndex,
+    };
   }
 
   /**

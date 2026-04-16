@@ -45,6 +45,10 @@
       {
         "command": "app-explorer.updateExtension",
         "title": "AppExplorer: Update Extension"
+      },
+      {
+        "command": "app-explorer.disconnectSession",
+        "title": "AppExplorer: Disconnect Session"
       }
     ],
     "menus": {
@@ -56,6 +60,10 @@
         {
           "command": "app-explorer.updateExtension",
           "when": "config.appExplorer.updateExtension"
+        },
+        {
+          "command": "app-explorer.disconnectSession",
+          "when": "appExplorer.enabled"
         }
       ]
     },

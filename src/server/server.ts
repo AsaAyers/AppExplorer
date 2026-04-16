@@ -52,7 +52,12 @@ export class MiroServer {
 
   public static publicPath = [__dirname, "public"].join("/");
   constructor(httpServer: ReturnType<typeof createServer>) {
-    const io = new Server(httpServer);
+    const io = new Server(httpServer, {
+      cors: {
+        origin: true,
+        credentials: true,
+      },
+    });
     const sessionNamespace = io.of(APP_EXPLORER_SESSION_NAMESPACE);
     const roleSchema = z.enum(appExplorerSessionRoles);
 

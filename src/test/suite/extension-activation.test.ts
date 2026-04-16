@@ -40,6 +40,7 @@ suite("Extension Activation Tests", () => {
 
     // Verify key commands are registered
     const expectedCommands = [
+      "app-explorer.disconnectSession",
       "app-explorer.navigate",
       "app-explorer.updateExtension",
     ];

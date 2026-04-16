@@ -24,7 +24,7 @@ RUN corepack enable yarn
 FROM deps AS runner
 USER agent
 RUN npx playwright install --with-deps chromium
-# WORKDIR /home/agent/workspace
+WORKDIR /home/agent/workspace
 # COPY . .
 # COPY --from=deps /home/agent/workspace/node_modules ./node_modules
 

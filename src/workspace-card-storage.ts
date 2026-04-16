@@ -2,6 +2,7 @@ import { io as socketIO } from "socket.io-client";
 import * as vscode from "vscode";
 
 import { CardData } from "./EventTypes";
+import { getRelayHostByIndex } from "./appExplorerDevHost";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
 import { getDocumentSymbolTracker } from "./document-symbol-tracker";
 import { WorkspaceSocket } from "./event-handlers/types";
@@ -14,10 +15,11 @@ export class WorkspaceCardStorage
   extends CardStorage
   implements vscode.Disposable
 {
-  public readonly socket: WorkspaceSocket;
-  readonly #eventHandler: WorkspaceEventHandler;
+  public socket: WorkspaceSocket;
+  #eventHandler: WorkspaceEventHandler;
   readonly #symbolTracker;
   readonly #symbolTrackerSubscription: vscode.Disposable;
+  #hostIndex = 1;
 
   #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
@@ -32,19 +34,7 @@ export class WorkspaceCardStorage
     );
 
     const connectionTimeout = 10000;
-
-    const socket = socketIO(
-      "http://localhost:9042" + APP_EXPLORER_SESSION_NAMESPACE,
-      {
-        auth: {
-          role: "workspace",
-        },
-        transports: ["websocket"],
-        timeout: connectionTimeout,
-        reconnection: true,
-        forceNew: false,
-      },
-    ) as WorkspaceSocket;
+    const socket = this.createSocket(connectionTimeout);
     this.socket = socket;
     this.#eventHandler = WorkspaceEventHandler.create(socket, this);
 
@@ -60,6 +50,39 @@ export class WorkspaceCardStorage
       }
     });
 
+    this.attachSocketListeners(socket);
+  }
+
+  setHostIndex(hostIndex: number) {
+    if (hostIndex === this.#hostIndex) {
+      return;
+    }
+
+    this.socket.disconnect();
+    this.socket.removeAllListeners();
+    this.#hostIndex = hostIndex;
+    this.socket = this.createSocket();
+    this.#eventHandler = WorkspaceEventHandler.create(this.socket, this);
+    this.attachSocketListeners(this.socket);
+  }
+
+  private createSocket(connectionTimeout = 10000) {
+    return socketIO(
+      getRelayHostByIndex(this.#hostIndex) + APP_EXPLORER_SESSION_NAMESPACE,
+      {
+        auth: {
+          role: "workspace",
+        },
+        autoConnect: false,
+        transports: ["websocket"],
+        timeout: connectionTimeout,
+        reconnection: true,
+        forceNew: false,
+      },
+    ) as WorkspaceSocket;
+  }
+
+  private attachSocketListeners(socket: WorkspaceSocket) {
     socket.on("disconnect", (reason) => {
       try {
         this.emit("disconnect", { type: "disconnect" });
@@ -93,7 +116,7 @@ export class WorkspaceCardStorage
       this.debug("on reconnect", { arg });
     });
 
-    socket.on("connect", this.onConnect);
+    socket.once("connect", this.onConnect);
   }
   onConnect = async () => {
     try {
@@ -110,6 +133,17 @@ export class WorkspaceCardStorage
     this.#symbolTrackerSubscription.dispose();
     this.socket.disconnect();
     super.dispose();
+  }
+
+  async disconnectSession() {
+    this.socket.disconnect();
+    this.connectedBoardSet.clear();
+    this.clear();
+    this.selectedCards([]);
+    this.emit("connectedBoards", {
+      type: "connectedBoards",
+      boardIds: [],
+    });
   }
 
   async disconnectBoard(boardId: string) {

@@ -12,6 +12,7 @@ import { createDebug } from "../utils/create-debug";
 import { launchBrowser, createBrowserPage } from "./helpers/browser";
 import {
   activateAppExplorer,
+  startAppExplorerSession,
   uriForFile,
   videoDelay,
   waitFor,
@@ -66,6 +67,7 @@ suiteFn("Create Card", function () {
   test("On test board", async function () {
     this.timeout(1200000);
     invariant(page, "Page should be defined after setup");
+    await startAppExplorerSession();
     await openTestBoard(page);
     await videoDelay("test start", 5);
 
