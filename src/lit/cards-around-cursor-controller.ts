@@ -13,14 +13,13 @@ export class CardsAroundCursorController implements ReactiveController {
   #host: ReactiveControllerHost;
   value: CardData[] | undefined;
   #socket: SidebarSocket | undefined;
+  #subscribedSocket: SidebarSocket | undefined;
   private _socketContext?: ContextConsumer<
     {
       __context__: SidebarSocket;
     },
     LitElement
   >;
-  listening: boolean = false;
-  retry: NodeJS.Timeout | undefined;
 
   constructor(host: LitElement, socket?: SidebarSocket) {
     (this.#host = host).addController(this);
@@ -52,22 +51,30 @@ export class CardsAroundCursorController implements ReactiveController {
   }
 
   private subscribe(): void {
-    if (this.socket) {
-      this.socket.on("cardsAroundCursor", this.onValueChange);
-      this.listening = true;
-      this.retry = undefined;
+    const socket = this.socket;
+
+    // Nothing to do if we are already listening on this socket instance.
+    if (socket && this.#subscribedSocket === socket) {
+      return;
+    }
+
+    // If the socket instance changed, detach from the previous one first.
+    if (this.#subscribedSocket) {
+      this.#subscribedSocket.off("cardsAroundCursor", this.onValueChange);
+      this.#subscribedSocket = undefined;
+    }
+
+    if (socket) {
+      socket.on("cardsAroundCursor", this.onValueChange);
+      this.#subscribedSocket = socket;
       debug("listening for cardsAroundCursor");
-    } else {
-      debug("not connected, retrying...");
-      this.retry = setTimeout(() => this.subscribe(), 500);
+      return;
     }
   }
   hostDisconnected(): void {
-    if (this.socket) {
-      this.socket.off("cardsAroundCursor", this.onValueChange);
-    }
-    if (this.retry) {
-      clearTimeout(this.retry);
+    if (this.#subscribedSocket) {
+      this.#subscribedSocket.off("cardsAroundCursor", this.onValueChange);
+      this.#subscribedSocket = undefined;
     }
   }
 }

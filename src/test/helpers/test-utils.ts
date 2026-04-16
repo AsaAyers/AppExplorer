@@ -5,8 +5,8 @@ import { Page } from "playwright";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { getHealthUrlByIndex } from "../../appExplorerDevHost";
 import { ExtensionApi } from "../../extension";
+import { getHealthUrlByIndex } from "../../host-config";
 
 import { colorText } from "./colors";
 import { isRecording } from "./isRecording";
@@ -111,19 +111,21 @@ export async function activateAppExplorer() {
   return extension.exports;
 }
 
-export async function startAppExplorerSession() {
+export async function startAppExplorerSession(page: Page) {
   await activateAppExplorer();
-  const hostIndex = 1;
-  await vscode.commands.executeCommand(
-    "vscode.open",
-    vscode.Uri.parse(
-      `vscode://asa-ayers.app-explorer/session/test-session?key=test-key&host=${hostIndex}`,
-    ),
-  );
+
+  const sidebar = getSidebar(page);
+  const sessionButton = sidebar.getByRole("link", {
+    name: "Start VSCode session",
+    exact: true,
+  });
+  await sessionButton.waitFor({ state: "visible" });
+
+  await sessionButton.click();
 
   return waitFor(
     async () => {
-      const response = await fetch(getHealthUrlByIndex(hostIndex));
+      const response = await fetch(getHealthUrlByIndex(1));
       assert.equal(response.status, 200);
     },
     {
@@ -146,4 +148,14 @@ export function uriForFile(filePath: string) {
 
   const exampleUri = vscode.Uri.joinPath(workspaceUri, filePath);
   return exampleUri;
+}
+export function getSidebar(page: Page) {
+  return page.frameLocator(
+    '[data-miro-app-id="3458764531189693223"][data-container-type="library"]',
+  );
+}
+export function getModal(page: Page) {
+  return page.frameLocator(
+    '[data-miro-app-id="3458764531189693223"][data-testid="iframe-modal-iframe"]',
+  );
 }

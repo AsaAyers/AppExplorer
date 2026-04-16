@@ -13,10 +13,10 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { type CardData } from "./EventTypes";
-import { getHostByIndex } from "./appExplorerDevHost";
 import { BoardInfo } from "./card-storage";
 import { MiroEventHandler } from "./event-handlers/miro-event-handler";
 import { MiroSocket } from "./event-handlers/types";
+import { getHostByIndex } from "./host-config";
 import { isAppCard } from "./miro/isAppCard";
 import { updateCard } from "./miro/updateCard";
 import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";

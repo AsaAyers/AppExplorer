@@ -12,6 +12,8 @@ import { createDebug } from "../utils/create-debug";
 import { launchBrowser, createBrowserPage } from "./helpers/browser";
 import {
   activateAppExplorer,
+  getModal,
+  getSidebar,
   startAppExplorerSession,
   uriForFile,
   videoDelay,
@@ -67,8 +69,8 @@ suiteFn("Create Card", function () {
   test("On test board", async function () {
     this.timeout(1200000);
     invariant(page, "Page should be defined after setup");
-    await startAppExplorerSession();
     await openTestBoard(page);
+    await startAppExplorerSession(page);
     await videoDelay("test start", 5);
 
     // Step 1: Open UserProfile.ts and jump to where generateId is called in the constructor
@@ -220,6 +222,10 @@ async function openTestBoard(page: Page) {
   const sidebar = getSidebar(page);
 
   await sidebar
+    .getByRole("link", { name: "Start VSCode session", exact: true })
+    .waitFor({ state: "visible" });
+
+  await sidebar
     .getByText("Explore your code here")
     .waitFor({ state: "visible" });
   await page.evaluate(zoomToTestFrame);
@@ -236,18 +242,6 @@ async function zoomToTestFrame() {
     throw new Error("Missing Automated Test Frame");
   }
   miro.board.viewport.zoomTo(testFrame);
-}
-
-function getSidebar(page: Page) {
-  return page.frameLocator(
-    '[data-miro-app-id="3458764531189693223"][data-container-type="library"]',
-  );
-}
-
-function getModal(page: Page) {
-  return page.frameLocator(
-    '[data-miro-app-id="3458764531189693223"][data-testid="iframe-modal-iframe"]',
-  );
 }
 
 async function cleanFrame() {

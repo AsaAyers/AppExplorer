@@ -2,13 +2,13 @@ import { io as socketIO } from "socket.io-client";
 import * as vscode from "vscode";
 
 import { CardData } from "./EventTypes";
-import { getRelayHostByIndex } from "./appExplorerDevHost";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
 import { getDocumentSymbolTracker } from "./document-symbol-tracker";
 import { WorkspaceSocket } from "./event-handlers/types";
 import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
+import { getRelayHostByIndex } from "./host-config";
 import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 
 export class WorkspaceCardStorage

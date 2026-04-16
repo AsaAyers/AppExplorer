@@ -1,4 +1,4 @@
-import { getHealthUrlByIndex, getRelayHostByIndex } from "./appExplorerDevHost";
+import { getHealthUrlByIndex, getRelayHostByIndex } from "./host-config";
 import { createDebug } from "./utils/create-debug";
 const debug = createDebug("app-explorer:server-discovery");
 

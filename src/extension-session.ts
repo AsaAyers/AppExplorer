@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
 
 import {
-  getHostByIndex,
-  getRelayHostByIndex,
-  launchesLocalRelayByIndex,
-} from "./appExplorerDevHost";
-import {
   type AppExplorerSession,
   parseSessionUri,
   zAppExplorerSession,
-} from "./appExplorerSession";
+} from "./app-explorer-session";
+import {
+  getHostByIndex,
+  getRelayHostByIndex,
+  launchesLocalRelayByIndex,
+} from "./host-config";
 import { ServerLauncher } from "./server-launcher";
 import { createDebug } from "./utils/create-debug";
 import { EventEmitter } from "./utils/event-emitter";
@@ -114,7 +114,6 @@ export class AppExplorerSessionCoordinator
     this.#currentSessionKey = undefined;
     this.#startPromise = undefined;
     await this.#cardStorage.disconnectSession();
-    this.#serverLauncher.dispose();
   }
 
   async resumeActiveSession() {

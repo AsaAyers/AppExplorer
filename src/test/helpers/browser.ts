@@ -8,7 +8,7 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
-import { getHostByIndex } from "../../appExplorerDevHost";
+import { getHostByIndex } from "../../host-config";
 
 import { colorText } from "./colors";
 import { isHeadless, isRecording } from "./isRecording";
@@ -37,6 +37,7 @@ declare global {
   var playwrightPage: Page;
   var testName: string;
   var screenshotIndex: number;
+  var captureSessionLink: ((url: string) => void) | undefined;
 }
 
 export async function createBrowserPage(
@@ -58,24 +59,16 @@ export async function createBrowserPage(
     const txt = msg.text().replaceAll(/%c| color: [\w#]+/g, "");
     if (msg.type() === "error") {
       // eslint-disable-next-line no-console
-      console.log(colorText("error", "[Browser Console Error]"), txt);
+      console.log(colorText("error", "[Browser]"), txt);
     } else {
       // eslint-disable-next-line no-console
-      console.log(colorText("browserLog", "[Browser Console]"), txt);
+      console.log(colorText("browserLog", "[Browser]"), txt);
     }
   });
 
   context.on("weberror", (error) => {
     // eslint-disable-next-line no-console
-    console.log(
-      colorText(
-        "error",
-
-        "[Browser Log] WebError:",
-      ),
-
-      error.error(),
-    );
+    console.log(colorText("error", "[Browser] WebError:"), error.error());
   });
   // Enable access to local resources
   await context.grantPermissions([
@@ -90,10 +83,6 @@ export async function createBrowserPage(
 
   const debugValue = process.env.DEBUG || "";
   await page.exposeBinding("getDebugNamespace", () => debugValue);
-  await page.exposeFunction("captureBrowserLogs", (message: string) => {
-    // eslint-disable-next-line no-console
-    console.log("[Browser Log]", message);
-  });
 
   // Inject a global captureSessionLink function so the real Next app can hand
   // the extension its vscode:// session URL.

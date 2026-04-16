@@ -53,6 +53,7 @@ export async function activate(
 
   const serverLauncher = new ServerLauncher(new ServerDiscovery());
   context.subscriptions.push(serverLauncher);
+  await serverLauncher.initializeServer();
   const sessionCoordinator = new AppExplorerSessionCoordinator(
     context,
     cardStorage,

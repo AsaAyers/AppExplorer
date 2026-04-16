@@ -4,8 +4,9 @@ import { z } from "zod";
 export const zAppExplorerSession = z.object({
   sessionId: z.string().min(1),
   key: z.string().min(1),
+  insiders: z.boolean().default(false),
   hostIndex: z
-    .string()
+    .union([z.string(), z.number()])
     .nullable()
     .default("0")
     .transform((str) => {
@@ -18,6 +19,20 @@ export const zAppExplorerSession = z.object({
 });
 
 export type AppExplorerSession = z.infer<typeof zAppExplorerSession>;
+
+export const makeSessionUrl = (session: AppExplorerSession) => {
+  const url = new URL("vscode://asa-ayers.app-explorer/session/");
+  url.pathname += encodeURIComponent(session.sessionId);
+  url.searchParams.set("key", session.key);
+  if (session.hostIndex > 0) {
+    url.searchParams.set("host", session.hostIndex.toString());
+  }
+
+  if (session.insiders) {
+    url.protocol = "vscode-insiders:";
+  }
+  return url.toString();
+};
 
 export const parseSessionUri = (url: string): AppExplorerSession => {
   const uri = new URL(url);

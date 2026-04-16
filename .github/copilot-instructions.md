@@ -6,7 +6,7 @@ AppExplorer is a VS Code extension and web app that connect Miro boards to sourc
 
 - the old relay is the local extension-hosted Socket.IO server on `http://localhost:9042`
 - the target architecture is a Next.js-hosted relay on the app host (`https://appexplorer.dev` in production, `http://localhost:3000` in local development)
-- session startup is now URI-driven instead of eager-on-activation
+- session startup is URI-driven, but the legacy `9042` server still starts on extension activation so browser clients can load the existing HTML assets
 
 When working in this repo, do not assume everything still runs through `9042`. The current code supports multiple host modes during the migration.
 
@@ -19,8 +19,8 @@ When working in this repo, do not assume everything still runs through `9042`. T
     - Do not include "host=0" in URLs for production sessions; treat host=0 as the default when the host parameter is omitted
   - `1` = local development app host on `3000`, but relay still on `9042`
   - `2` = local development app host on `3000` and relay on `3000`
-- Host resolution lives in `src/appExplorerDevHost.ts`
-- Session parsing lives in `src/appExplorerSession.ts`
+- Host resolution lives in `src/host-config.ts`
+- Session parsing lives in `src/app-explorer-session.ts`
 - Extension-side coordination lives in `src/extension-session.ts`
 
 Prefer using the host index plus helper functions rather than hardcoding hostnames throughout the code.
@@ -29,8 +29,8 @@ Prefer using the host index plus helper functions rather than hardcoding hostnam
 
 1. **VS Code extension**
    - Entry point: `src/extension.ts`
-   - Activation is intentionally lightweight
-   - The extension waits for a session to start before attempting to connect to boards
+   - The extension still launches the legacy `9042` server on activation
+   - Session connection remains lazy: the extension waits for a session to start before attempting to connect workspace sockets to boards
    - Session state is broadcast across windows through `session.json` in `context.globalStorageUri`
    - Includes `AppExplorer: Disconnect Session` to clear the broadcast file and disconnect sibling windows
 
@@ -39,7 +39,7 @@ Prefer using the host index plus helper functions rather than hardcoding hostnam
    - Parses `vscode://` session URLs
    - Watches the broadcast file
    - Sets the active host mode on the workspace transport
-   - Starts the legacy local relay only when the selected host mode still requires it
+   - Starts session-specific transport only after a session begins; it does not own the always-on legacy asset server
 
 3. **Relay servers**
    - Transitional local relay: `src/server/server.ts`, launched by `src/server-launcher.ts`
@@ -69,6 +69,7 @@ Prefer using the host index plus helper functions rather than hardcoding hostnam
 ## Migration Notes
 
 - `9042` is transitional infrastructure, not the desired final architecture
+- Even so, the extension still starts the `9042` server on activation because the browser currently loads HTML assets from it
 - Host mode `1` intentionally splits app host and relay host:
   - app UI on `3000`
   - relay on `9042`
@@ -118,15 +119,15 @@ That runs the Next.js app on `http://localhost:3000`.
 - **Card metadata**: Miro cards link back to code using metadata such as `path`, `symbol`, and `codeLink`
 - **Socket transport**: real-time updates use Socket.IO, and encrypted transport is handled in the event-handler layer
 - **Host selection**: use host indexes and helper functions instead of scattering raw hostnames
-- **Delayed startup**: do not reintroduce eager connection or server startup during extension activation
+- **Split startup behavior**: the legacy `9042` asset server starts on activation, but workspace session connection stays lazy
 - **Routing-only relay**: avoid reintroducing server-owned board/workspace/card state
 
 ## Important Files
 
 - `src/extension.ts`: extension activation and command registration
 - `src/extension-session.ts`: URI handling, broadcast file sync, session startup
-- `src/appExplorerSession.ts`: session URL parsing
-- `src/appExplorerDevHost.ts`: host-index helpers and relay/app host mapping
+- `src/app-explorer-session.ts`: session URL parsing
+- `src/host-config.ts`: host-index helpers and relay/app host mapping
 - `src/workspace-card-storage.ts`: workspace socket lifecycle and host switching
 - `src/server-launcher.ts`: legacy local relay lifecycle
 - `src/server/server.ts`: routing-only Socket.IO relay
