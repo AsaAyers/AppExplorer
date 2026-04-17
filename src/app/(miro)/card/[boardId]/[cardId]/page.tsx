@@ -1,21 +1,44 @@
 "use client";
 
-import Script from "next/script";
 import React from "react";
+import invariant from "tiny-invariant";
+
+import type { CardData } from "@/card-data";
+import { AppExplorerEditCard } from "@/components/app-explorer-edit-card";
 
 export default function CardPage() {
-  const [isMounted, setIsMounted] = React.useState(false);
+  const [cardData, setCardData] = React.useState<CardData | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setIsMounted(true);
+    const abortController = new AbortController();
+
+    void miro.board.ui
+      .getModalData<CardData>()
+      .then((data) => {
+        invariant(data, "Missing modal data");
+        if (!abortController.signal.aborted) {
+          setCardData(data);
+        }
+      })
+      .catch((reason: unknown) => {
+        if (!abortController.signal.aborted) {
+          setError(reason instanceof Error ? reason.message : String(reason));
+        }
+      });
+
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
-  return (
-    <>
-      <Script src="/lit.js" strategy="afterInteractive" type="module" />
-      <div suppressHydrationWarning>
-        {isMounted ? React.createElement("app-explorer-edit-card") : null}
-      </div>
-    </>
-  );
+  if (error) {
+    return <p>Error loading card data {error}</p>;
+  }
+
+  if (!cardData) {
+    return <p>Loading...</p>;
+  }
+
+  return <AppExplorerEditCard cardData={cardData} />;
 }

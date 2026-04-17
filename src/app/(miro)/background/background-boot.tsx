@@ -2,18 +2,14 @@
 
 import { useEffect } from "react";
 
+import { backgroundInit } from "@/miro";
+
 export function BackgroundBoot() {
   useEffect(() => {
-    let isActive = true;
-
-    void import("@/miro").then(({ backgroundInit }) => {
-      if (isActive) {
-        void backgroundInit();
-      }
-    });
+    const background = backgroundInit();
 
     return () => {
-      isActive = false;
+      background.dispose();
     };
   }, []);
 

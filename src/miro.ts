@@ -25,7 +25,6 @@ import { notEmpty } from "./utils/not-empty";
 
 createDebug.enable("*");
 export let debug = createDebug("app-explorer:miro");
-debug("Miro SDK version:", miro);
 
 function decode(str: string) {
   return str.replaceAll(/&#([0-9A-F]{2});/g, (_, charCode) =>
@@ -240,20 +239,35 @@ export async function zoomIntoCards(cards: AppCard[]) {
   );
 }
 
-export async function backgroundInit() {
+export type Disposable = {
+  dispose(): void;
+};
+
+export function backgroundInit(): Disposable {
   window.name = "app-explorer:background";
-  window.addEventListener("message", (event) => {
+  debug("Miro SDK version:", (globalThis as typeof globalThis & { miro?: unknown }).miro);
+  const handleMessage = (event: MessageEvent<{ type?: string; session?: AppExplorerSession }>) => {
     if (
       event.origin === window.origin &&
-      event.data?.type === "attachSession"
+      event.data?.type === "attachSession" &&
+      event.data.session
     ) {
       void attachSession(event.data.session);
     }
-  });
-
-  await miro.board.ui.on("icon:click", async () => {
+  };
+  const handleIconClick = async () => {
     await miro.board.ui.openPanel({ url: "/sidebar" });
-  });
+  };
+
+  window.addEventListener("message", handleMessage);
+  miro.board.ui.on("icon:click", handleIconClick);
+
+  return {
+    dispose() {
+      window.removeEventListener("message", handleMessage);
+      miro.board.ui.off("icon:click", handleIconClick);
+    },
+  };
 }
 
 export async function attachSession(session: AppExplorerSession) {
