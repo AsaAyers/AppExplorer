@@ -11,7 +11,11 @@ import * as vscode from "vscode";
 import { getHostByIndex } from "../../host-config";
 
 import { colorText } from "./colors";
-import { isBrowserSpam, isCriticalPath, timeline } from "./critical-path-timeline";
+import {
+  isBrowserSpam,
+  isCriticalPath,
+  timeline,
+} from "./critical-path-timeline";
 import { isHeadless, isRecording } from "./is-recording";
 import { screenshot, waitFor } from "./test-utils";
 
