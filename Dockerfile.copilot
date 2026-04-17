@@ -36,6 +36,8 @@ RUN corepack enable yarn
 
 FROM deps AS runner
 USER agent
+RUN git config --global user.name "Copilot" \
+	&& git config --global user.email "asa+copilot@asaayers.com"
 RUN npx playwright install --with-deps chromium
 RUN copilot update
 WORKDIR /home/agent/workspace
