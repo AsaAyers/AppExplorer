@@ -39,19 +39,6 @@ export type MetaData = {
   codeLink: string | null;
 };
 
-function getHostedMiroPath(path: "edit-card" | "sidebar") {
-  const hostedPath = `/${path}`;
-
-  if (
-    window.location.pathname === "/" ||
-    window.location.pathname.endsWith(".html")
-  ) {
-    return `${hostedPath}.html`;
-  }
-
-  return hostedPath;
-}
-
 type BoundingBox = {
   min: { x: number; y: number };
   max: { x: number; y: number };
@@ -265,7 +252,7 @@ export async function backgroundInit() {
   });
 
   await miro.board.ui.on("icon:click", async () => {
-    await miro.board.ui.openPanel({ url: getHostedMiroPath("sidebar") });
+    await miro.board.ui.openPanel({ url: "/sidebar" });
   });
 }
 
@@ -374,7 +361,7 @@ async function editCardModal(card: AppCard) {
     CardData | null
   >({
     data: cardData,
-    url: getHostedMiroPath("edit-card"),
+    url: `/card/${cardData.boardId}/${cardData.id}`,
     width: 500,
     height: 600,
   });

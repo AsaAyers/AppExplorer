@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import path from "node:path";
 
 import compression from "compression";
 import express from "express";
@@ -143,6 +144,12 @@ export class ServerLauncher {
           index: "index.html",
         }),
       );
+      app.get("/sidebar", (_req, res) => {
+        res.sendFile(path.join(MiroServer.publicPath, "sidebar.html"));
+      });
+      app.get("/card/:boardId/:cardId", (_req, res) => {
+        res.sendFile(path.join(MiroServer.publicPath, "edit-card.html"));
+      });
 
       app.post("/reset", (_req, res) => {
         debug("Resetting server state");

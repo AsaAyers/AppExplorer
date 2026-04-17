@@ -177,11 +177,3 @@ export function getSidebar(page: Page) {
 export function getModal(page: Page) {
   return page.frameLocator('[data-testid="iframe-modal-iframe"]:visible');
 }
-
-export function getMiroAppName(hostIndex: HostIndex) {
-  if (hostIndex === 3) {
-    return "DevAppExplorer";
-  }
-
-  return "AppExplorer";
-}
