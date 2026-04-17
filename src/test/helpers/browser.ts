@@ -11,6 +11,7 @@ import * as vscode from "vscode";
 import { getHostByIndex } from "../../host-config";
 
 import { colorText } from "./colors";
+import { isBrowserSpam, isCriticalPath, timeline } from "./critical-path-timeline";
 import { isHeadless, isRecording } from "./is-recording";
 import { screenshot, waitFor } from "./test-utils";
 
@@ -57,6 +58,18 @@ export async function createBrowserPage(
 
   context.on("console", (msg) => {
     const txt = msg.text().replaceAll(/%c| color: [\w#]+/g, "");
+
+    // Suppress known platform/Miro spam without recording or printing.
+    if (isBrowserSpam(txt)) {
+      return;
+    }
+
+    // Record critical-path events to the per-test timeline.
+    const msgType = msg.type() === "error" ? "error" : "log";
+    if (isCriticalPath(txt)) {
+      timeline.record("browser", msgType, txt);
+    }
+
     if (msg.type() === "error") {
       // eslint-disable-next-line no-console
       console.log(colorText("error", "[Browser]"), txt);
