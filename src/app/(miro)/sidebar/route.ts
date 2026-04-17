@@ -1,0 +1,26 @@
+const sidebarHtml = `<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AppExplorer</title>
+    <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
+    <link rel="stylesheet" href="/index.css" />
+    <link rel="icon" type="image/svg+xml" href="/AppExplorer.svg" />
+  </head>
+  <body class="sidebar">
+    <script type="module" src="/lit.js"></script>
+
+    <div class="container full sidebar">
+      <app-explorer-sidebar></app-explorer-sidebar>
+    </div>
+  </body>
+</html>
+`;
+
+export async function GET() {
+  return new Response(sidebarHtml, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+    },
+  });
+}

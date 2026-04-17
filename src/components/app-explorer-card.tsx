@@ -127,9 +127,8 @@ export function AppExplorerCard({
           <button
             disabled={!cardData.miroLink}
             onClick={async () => {
-              const boardId = (await miro.board.getInfo()).id;
               await miro.board.ui.openModal({
-                url: `/card/${boardId}/${cardData.id}`,
+                url: "/edit-card",
                 data: cardData,
                 width: 400,
               });

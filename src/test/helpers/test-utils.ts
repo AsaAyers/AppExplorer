@@ -6,7 +6,7 @@ import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 import { ExtensionApi } from "../../extension";
-import { HEALTH_URL, type HostIndex } from "../../host-config";
+import { LOCAL_RELAY_HEALTH_URL, type HostIndex } from "../../host-config";
 
 import { colorText } from "./colors";
 import { isCriticalPath, timeline } from "./critical-path-timeline";
@@ -114,9 +114,14 @@ export async function activateAppExplorer() {
     }
   });
 
+  await waitForLegacyRelayHealth();
+  return extension.exports;
+}
+
+export async function waitForLegacyRelayHealth() {
   await waitFor(
     async () => {
-      const response = await fetch(HEALTH_URL);
+      const response = await fetch(LOCAL_RELAY_HEALTH_URL);
       assert.equal(response.status, 200);
     },
     {
@@ -125,7 +130,6 @@ export async function activateAppExplorer() {
       message: "AppExplorer server did not start after session launch",
     },
   );
-  return extension.exports;
 }
 
 export async function startAppExplorerSession(
@@ -168,12 +172,16 @@ export function uriForFile(filePath: string) {
   return exampleUri;
 }
 export function getSidebar(page: Page) {
-  return page.frameLocator(
-    '[data-miro-app-id="3458764531189693223"][data-container-type="library"]',
-  );
+  return page.frameLocator('[data-container-type="library"]:visible');
 }
 export function getModal(page: Page) {
-  return page.frameLocator(
-    '[data-miro-app-id="3458764531189693223"][data-testid="iframe-modal-iframe"]',
-  );
+  return page.frameLocator('[data-testid="iframe-modal-iframe"]:visible');
+}
+
+export function getMiroAppName(hostIndex: HostIndex) {
+  if (hostIndex === 3) {
+    return "DevAppExplorer";
+  }
+
+  return "AppExplorer";
 }

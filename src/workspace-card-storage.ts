@@ -10,6 +10,7 @@ import { WorkspaceSocket } from "./event-handlers/types";
 import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
+import { getSocketClientOptions } from "./socket-client-options";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -109,6 +110,7 @@ export class WorkspaceCardStorage
       timeout: connectionTimeout,
       reconnection: true,
       forceNew: false,
+      ...getSocketClientOptions(this.#session),
     }) as WorkspaceSocket;
 
     this.#eventHandler?.dispose();

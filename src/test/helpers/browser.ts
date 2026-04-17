@@ -8,7 +8,7 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
-import { getHostByIndex } from "../../host-config";
+import { getAppHostByIndex } from "../../host-config";
 
 import { colorText } from "./colors";
 import {
@@ -49,6 +49,7 @@ export async function createBrowserPage(
   browser: Browser,
 ): Promise<BrowserPage> {
   const context = await browser.newContext({
+    ignoreHTTPSErrors: true,
     storageState: "playwright/.auth/user.json",
     viewport: { width: 1440, height: 900 },
     recordVideo:
@@ -145,7 +146,7 @@ export async function closeBrowserContext(
 export async function establishBrowserSession() {
   const page = globalThis.playwrightPage;
   assert.ok(page, "Page should be available for the test");
-  const host = getHostByIndex(1);
+  const host = getAppHostByIndex(1);
 
   await page.goto(new URL("/test", `${host}/`).toString(), {
     waitUntil: "domcontentloaded",

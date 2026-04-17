@@ -19,6 +19,7 @@ import { MiroEventHandler } from "./event-handlers/miro-event-handler";
 import { MiroSocket } from "./event-handlers/types";
 import { isAppCard } from "./miro/is-app-card";
 import { updateCard } from "./miro/update-card";
+import { getSocketClientOptions } from "./socket-client-options";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/not-empty";
 
@@ -37,6 +38,19 @@ export type MetaData = {
   symbol: string | null;
   codeLink: string | null;
 };
+
+function getHostedMiroPath(path: "edit-card" | "sidebar") {
+  const hostedPath = `/${path}`;
+
+  if (
+    window.location.pathname === "/" ||
+    window.location.pathname.endsWith(".html")
+  ) {
+    return `${hostedPath}.html`;
+  }
+
+  return hostedPath;
+}
 
 type BoundingBox = {
   min: { x: number; y: number };
@@ -251,7 +265,7 @@ export async function backgroundInit() {
   });
 
   await miro.board.ui.on("icon:click", async () => {
-    await miro.board.ui.openPanel({ url: "/sidebar.html" });
+    await miro.board.ui.openPanel({ url: getHostedMiroPath("sidebar") });
   });
 }
 
@@ -260,6 +274,7 @@ export async function attachSession(session: AppExplorerSession) {
     auth: {
       role: "miro",
     },
+    ...getSocketClientOptions(session),
   }) as MiroSocket;
   debug = debug.extend(s.id || Math.random().toString(36).substring(2, 15));
   const miroEventHandler = MiroEventHandler.create(s);
@@ -359,7 +374,7 @@ async function editCardModal(card: AppCard) {
     CardData | null
   >({
     data: cardData,
-    url: "/edit-card.html",
+    url: getHostedMiroPath("edit-card"),
     width: 500,
     height: 600,
   });

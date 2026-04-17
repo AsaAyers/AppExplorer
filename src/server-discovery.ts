@@ -1,4 +1,4 @@
-import { getRelayHostByIndex, HEALTH_URL } from "./host-config";
+import { getRelayHostByIndex, LOCAL_RELAY_HEALTH_URL } from "./host-config";
 import { createDebug } from "./utils/create-debug";
 const debug = createDebug("app-explorer:server-discovery");
 
@@ -41,7 +41,7 @@ export class ServerDiscovery {
     const startTime = Date.now();
 
     try {
-      debug("Starting server health check", { url: HEALTH_URL });
+      debug("Starting server health check", { url: LOCAL_RELAY_HEALTH_URL });
 
       const controller = new AbortController();
       const timeoutId = setTimeout(
@@ -49,7 +49,7 @@ export class ServerDiscovery {
         this.options.healthCheck.timeout,
       );
 
-      const response = await fetch(HEALTH_URL, {
+      const response = await fetch(LOCAL_RELAY_HEALTH_URL, {
         method: "GET",
         signal: controller.signal,
         headers: {
@@ -65,7 +65,7 @@ export class ServerDiscovery {
         this.lastHealthCheck = new Date();
 
         debug("Server health check successful", {
-          url: HEALTH_URL,
+          url: LOCAL_RELAY_HEALTH_URL,
           status: response.status,
           duration: `${duration}ms`,
           consecutiveFailures: this.consecutiveFailures,
@@ -76,7 +76,7 @@ export class ServerDiscovery {
         this.consecutiveFailures++;
 
         debug("Server health check failed - non-200 response", {
-          url: HEALTH_URL,
+          url: LOCAL_RELAY_HEALTH_URL,
           status: response.status,
           statusText: response.statusText,
           duration: `${duration}ms`,
@@ -90,7 +90,7 @@ export class ServerDiscovery {
       const duration = Date.now() - startTime;
 
       debug("Server health check failed - network error", {
-        url: HEALTH_URL,
+        url: LOCAL_RELAY_HEALTH_URL,
         error: error instanceof Error ? error.message : String(error),
         duration: `${duration}ms`,
         consecutiveFailures: this.consecutiveFailures,

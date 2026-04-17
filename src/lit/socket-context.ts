@@ -8,6 +8,7 @@ import {
   SidebarClientEventHandler,
   SidebarSocketBridge,
 } from "../event-handlers/sidebar-client-event-handler";
+import { getSocketClientOptions } from "../socket-client-options";
 import { createDebug } from "../utils/create-debug";
 
 import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
@@ -33,6 +34,7 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
     timeout: connectionTimeout,
     reconnection: true,
     forceNew: false,
+    ...getSocketClientOptions(session),
   });
 
   const clientEventHandler = SidebarClientEventHandler.create(socket as never);

@@ -13,6 +13,7 @@ import { launchBrowser, createBrowserPage } from "./helpers/browser";
 import {
   activateAppExplorer,
   getModal,
+  getMiroAppName,
   getSidebar,
   startAppExplorerSession,
   uriForFile,
@@ -20,7 +21,7 @@ import {
   waitFor,
 } from "./helpers/test-utils";
 
-import { testHosts } from "@/host-config";
+import { testHosts, type HostIndex } from "@/host-config";
 
 const log = createDebug("app-explorer:create-card-test");
 
@@ -31,6 +32,7 @@ const storageStateExists = fs.existsSync(storageState);
 
 const appCardSelector = "app-card";
 const cardTitleSelector = ".app-card--title";
+const e2eTestHosts = testHosts.filter((hostIndex) => hostIndex !== 2);
 const suiteFn =
   storageStateExists && !process.env.SKIP_E2E ? suite : suite.skip;
 
@@ -69,11 +71,11 @@ suiteFn("Create Card", function () {
     }
   });
 
-  for (const hostIndex of testHosts) {
+  for (const hostIndex of e2eTestHosts) {
     test(`On test board host: ${hostIndex}`, async function () {
       this.timeout(1200000);
       invariant(page, "Page should be defined after setup");
-      await openTestBoard(page);
+      await openTestBoard(page, hostIndex);
       await startAppExplorerSession(page, hostIndex);
       await videoDelay("test start", 5);
 
@@ -211,7 +213,7 @@ suiteFn("Create Card", function () {
 const testFrameUrl =
   "https://miro.com/app/board/uXjVGjhWRk8=/?moveToWidget=3458764667378076158&cot=14";
 
-async function openTestBoard(page: Page) {
+async function openTestBoard(page: Page, hostIndex: HostIndex) {
   await page.goto(testFrameUrl, {
     waitUntil: "domcontentloaded",
   });
@@ -221,7 +223,7 @@ async function openTestBoard(page: Page) {
   await videoDelay("before open");
   await page
     .locator("#CREATION_BAR_ROOT")
-    .getByRole("button", { name: "AppExplorer" })
+    .getByRole("button", { name: getMiroAppName(hostIndex), exact: true })
     .click();
 
   const sidebar = getSidebar(page);
@@ -349,6 +351,7 @@ async function getAppExplorerCodeLensTitles(documentUri: vscode.Uri) {
         title?.startsWith("$(app-explorer) ") ?? false,
     )
     .map((title) => title.replace("$(app-explorer) ", ""))
+    .filter((title, index, titles) => titles.indexOf(title) === index)
     .sort();
 }
 

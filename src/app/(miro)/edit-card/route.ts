@@ -1,0 +1,24 @@
+const editCardHtml = `<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AppExplorer</title>
+    <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
+    <link rel="stylesheet" href="/index.css" />
+    <link rel="icon" type="image/svg+xml" href="/AppExplorer.svg" />
+  </head>
+  <body>
+    <script type="module" src="/lit.js"></script>
+
+    <app-explorer-edit-card></app-explorer-edit-card>
+  </body>
+</html>
+`;
+
+export async function GET() {
+  return new Response(editCardHtml, {
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+    },
+  });
+}
