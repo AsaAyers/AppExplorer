@@ -29,7 +29,8 @@ const storageStateExists = fs.existsSync(storageState);
 
 const appCardSelector = "app-card";
 const cardTitleSelector = ".app-card--title";
-const suiteFn = storageStateExists ? suite : suite.skip;
+const suiteFn =
+  storageStateExists && !process.env.SKIP_E2E ? suite : suite.skip;
 
 suiteFn("Create Card", function () {
   let browser: Browser | undefined;

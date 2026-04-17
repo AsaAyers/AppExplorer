@@ -59,6 +59,10 @@ export const zLog = z.function({
   input: [z.array(z.unknown())],
   output: z.promise(z.void()),
 });
+export const zSessionShutdown = z.function({
+  input: [],
+  output: z.promise(z.void()),
+});
 export const zEncryptedEvent = z.object({
   sessionId: z.string().min(1),
   eventName: z.string().min(1),
@@ -185,6 +189,7 @@ export const socketEventMap = {
   workspace: {
     sidebar: {
       cardsAroundCursor: zCardsAroundCursor,
+      sessionShutdown: zSessionShutdown,
     },
     miro: {
       getBoardInfo: zGetBoardInfo,

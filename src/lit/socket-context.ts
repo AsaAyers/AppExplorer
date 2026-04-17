@@ -8,12 +8,10 @@ import {
   SidebarClientEventHandler,
   SidebarSocketBridge,
 } from "../event-handlers/sidebar-client-event-handler";
-import { APP_EXPLORER_SESSION_NAMESPACE } from "../session-transport";
 import { createDebug } from "../utils/create-debug";
 
-import { AppExplorerSession } from "@/app-explorer-session";
+import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
 import { SidebarSocket } from "@/event-handlers/types";
-import { getHostByIndex } from "@/host-config";
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const debug = createDebug("app-explorer:miro:sidebar");
@@ -22,26 +20,23 @@ export const socketContext = createContext<SidebarSocket>(
   Symbol("socketContext"),
 );
 
-export async function connectSidebarSocket(hostIndex: number) {
+export async function connectSidebarSocket(session: AppExplorerSession) {
   debug("connectSidebarSocket");
   await new Promise((resolve) => setTimeout(resolve, 100));
 
-  const host = getHostByIndex(hostIndex);
   const connectionTimeout = 10000;
-  const socket: SidebarSocket = socketIO(
-    host + APP_EXPLORER_SESSION_NAMESPACE,
-    {
-      auth: {
-        role: "sidebar",
-      },
-      transports: ["websocket"],
-      timeout: connectionTimeout,
-      reconnection: true,
-      forceNew: false,
+  const socket: SidebarSocket = socketIO(getSocketUrl(session), {
+    auth: {
+      role: "sidebar",
     },
-  );
+    transports: ["websocket"],
+    timeout: connectionTimeout,
+    reconnection: true,
+    forceNew: false,
+  });
 
   const clientEventHandler = SidebarClientEventHandler.create(socket as never);
+  clientEventHandler.attachSession(session);
   const bridgedSocket = new SidebarSocketBridge(socket, clientEventHandler);
 
   let connected = false;
@@ -90,7 +85,7 @@ export class SocketProvider extends ContextProvider<
   onSocketConnectionComplete: (value: SidebarSocket) => void;
 
   private readonly connectTask: Task<
-    [number | undefined],
+    [AppExplorerSession | undefined],
     SidebarSocket | undefined
   >;
 
@@ -104,10 +99,10 @@ export class SocketProvider extends ContextProvider<
 
     this.connectTask = new Task(this.host, {
       // Runs only when hostIndex changes
-      args: () => [this.session?.hostIndex],
-      task: async ([hostIndex]) => {
-        if (hostIndex === undefined) return undefined; // no session yet => do nothing
-        return connectSidebarSocket(hostIndex);
+      args: () => [this.session],
+      task: async ([session]) => {
+        if (session === undefined) return undefined; // no session yet => do nothing
+        return connectSidebarSocket(session);
       },
       onComplete: (socket) => {
         if (!socket) return;
@@ -124,6 +119,13 @@ export class SocketProvider extends ContextProvider<
   setHostIndex(session: AppExplorerSession | undefined) {
     this.session = session;
     // Task re-evaluates args on host update
+    this.host.requestUpdate();
+  }
+
+  disconnect() {
+    this.currentSocket?.disconnect();
+    this.currentSocket = undefined;
+    this.setValue(undefined as never);
     this.host.requestUpdate();
   }
 }

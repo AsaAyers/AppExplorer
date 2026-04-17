@@ -5,6 +5,7 @@ import { type HandlerMethodMap, SidebarSocket } from "./types";
 import { EventHandler } from "@/event-handlers/event-handler";
 
 type CardsAroundCursorListener = (cards: CardData[]) => void;
+type SessionShutdownListener = () => void;
 
 export class SidebarClientEventHandler extends EventHandler<
   "sidebar",
@@ -12,6 +13,7 @@ export class SidebarClientEventHandler extends EventHandler<
 > {
   protected readonly selfName = "sidebar" as const;
   #cardsAroundCursorListeners = new Set<CardsAroundCursorListener>();
+  #sessionShutdownListeners = new Set<SessionShutdownListener>();
 
   onCardsAroundCursor(listener: CardsAroundCursorListener) {
     this.#cardsAroundCursorListeners.add(listener);
@@ -20,10 +22,22 @@ export class SidebarClientEventHandler extends EventHandler<
     };
   }
 
+  onSessionShutdown(listener: SessionShutdownListener) {
+    this.#sessionShutdownListeners.add(listener);
+    return () => {
+      this.#sessionShutdownListeners.delete(listener);
+    };
+  }
+
   protected readonly handlerMethods = {
     onCardsAroundCursor: async (cards: CardData[]) => {
       this.#cardsAroundCursorListeners.forEach((listener) => {
         listener(cards);
+      });
+    },
+    onSessionShutdown: async () => {
+      this.#sessionShutdownListeners.forEach((listener) => {
+        listener();
       });
     },
   } satisfies HandlerMethodMap<"sidebar", "workspace">;
@@ -34,6 +48,7 @@ export class SidebarSocketBridge {
     CardsAroundCursorListener,
     () => void
   >();
+  #sessionShutdownListeners = new Map<SessionShutdownListener, () => void>();
   private readonly socket: SidebarSocket;
   private readonly eventHandler: SidebarClientEventHandler;
 
@@ -77,6 +92,16 @@ export class SidebarSocketBridge {
       return this;
     }
 
+    if (eventName === "sessionShutdown") {
+      this.#sessionShutdownListeners.set(
+        listener as SessionShutdownListener,
+        this.eventHandler.onSessionShutdown(
+          listener as SessionShutdownListener,
+        ),
+      );
+      return this;
+    }
+
     this.socket.on(eventName as any, listener as any);
     return this;
   }
@@ -88,6 +113,16 @@ export class SidebarSocketBridge {
       )?.();
       this.#cardsAroundCursorListeners.delete(
         listener as CardsAroundCursorListener,
+      );
+      return this;
+    }
+
+    if (eventName === "sessionShutdown") {
+      this.#sessionShutdownListeners.get(
+        listener as SessionShutdownListener,
+      )?.();
+      this.#sessionShutdownListeners.delete(
+        listener as SessionShutdownListener,
       );
       return this;
     }

@@ -47,7 +47,7 @@ export const getNormalizedHostIndex = (hostIndex: number) => {
   });
   return 0 as HostIndex;
 };
-function getHostConfig(hostIndex: number) {
+export function getHostConfig(hostIndex: number) {
   const i = getNormalizedHostIndex(hostIndex);
   const config = hostConfig.find((config) => config.index === i);
   invariant(config, `No host config found for index ${hostIndex}`);

@@ -2,11 +2,17 @@ import * as assert from "node:assert";
 import { EventEmitter } from "node:events";
 
 import { EventHandler } from "../../event-handlers/event-handler";
+import {
+  SidebarClientEventHandler,
+  SidebarSocketBridge,
+} from "../../event-handlers/sidebar-client-event-handler";
 import { encryptedEventName } from "../../socket-events";
 import { isEventHandlerOptOutError } from "../../unhandled-event-ack";
 
 import type { CardData } from "@/EventTypes";
+import { zAppExplorerSession } from "@/app-explorer-session";
 import type { HandlerMethodMap } from "@/event-handlers/types";
+import { randomHex } from "@/utils/to-hex";
 
 class MockSocket extends EventEmitter {
   id = "mock-socket";
@@ -91,6 +97,7 @@ class SidebarTestEventHandler extends EventHandler<"sidebar", "workspace"> {
   protected readonly selfName = "sidebar" as const;
   protected readonly handlerMethods = {
     onCardsAroundCursor: async (_cards: CardData[]) => {},
+    onSessionShutdown: async () => {},
   } satisfies HandlerMethodMap<"sidebar", "workspace">;
 }
 
@@ -153,8 +160,18 @@ suite("Encrypted EventHandler transport", () => {
   test("emitEncrypted sends hidden envelopes that dispatch to handler methods", async () => {
     const senderSocket = new MockSocket();
     const receiverSocket = new MockSocket();
+    const session = zAppExplorerSession.parse({
+      sessionId: crypto.randomUUID(),
+      hostIndex: 0,
+      key: randomHex(512),
+      insiders: false,
+    });
+
     const sender = SidebarTestEventHandler.create(senderSocket as never);
+    sender.attachSession(session);
+
     const receiver = WorkspaceTestEventHandler.create(receiverSocket as never);
+    receiver.attachSession(session);
 
     const card: CardData = {
       id: "card-1",
@@ -190,11 +207,21 @@ suite("Encrypted EventHandler transport", () => {
     requesterSocket.peer = responderSocket;
     responderSocket.peer = requesterSocket;
 
-    MiroWorkspaceResponseEventHandler.create(responderSocket as never);
+    const session = zAppExplorerSession.parse({
+      sessionId: crypto.randomUUID(),
+      hostIndex: 0,
+      key: randomHex(512),
+      insiders: false,
+    });
+    MiroWorkspaceResponseEventHandler.create(
+      responderSocket as never,
+    ).attachSession(session);
 
     const requester = WorkspaceMiroRequestEventHandler.create(
       requesterSocket as never,
     );
+    requester.attachSession(session);
+
     const result = await requester.emitEncrypted(
       "selectCard",
       "board-1",
@@ -220,5 +247,31 @@ suite("Encrypted EventHandler transport", () => {
     );
 
     assert.strictEqual(result, true);
+  });
+
+  test("sidebar bridge forwards session shutdown events", async () => {
+    const sidebarSocket = new MockSocket();
+    const sidebarEventHandler = SidebarClientEventHandler.create(
+      sidebarSocket as never,
+    );
+    const bridge = new SidebarSocketBridge(
+      sidebarSocket as never,
+      sidebarEventHandler,
+    );
+
+    let shutdownCount = 0;
+    const onShutdown = () => {
+      shutdownCount += 1;
+    };
+    bridge.on("sessionShutdown", onShutdown);
+
+    sidebarSocket.emit("sessionShutdown");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.strictEqual(shutdownCount, 1);
+
+    bridge.off("sessionShutdown", onShutdown);
+    sidebarSocket.emit("sessionShutdown");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.strictEqual(shutdownCount, 1);
   });
 });

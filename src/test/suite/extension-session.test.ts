@@ -5,6 +5,7 @@ import {
   parseSessionUri,
   zAppExplorerSession,
 } from "@/app-explorer-session";
+import { randomHex } from "@/utils/to-hex";
 
 suite("Extension session URLs", () => {
   for (const hostIndex of [0, 1, 2]) {
@@ -12,7 +13,7 @@ suite("Extension session URLs", () => {
       test(`parses session URLs with hostIndex=${hostIndex} and insiders=${insiders}`, () => {
         const sessionConfig = zAppExplorerSession.parse({
           sessionId: crypto.randomUUID(),
-          key: crypto.randomUUID(),
+          key: randomHex(512),
           insider: insiders,
           hostIndex,
         });

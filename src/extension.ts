@@ -57,7 +57,6 @@ export async function activate(
   const sessionCoordinator = new AppExplorerSessionCoordinator(
     context,
     cardStorage,
-    serverLauncher,
   );
   context.subscriptions.push(sessionCoordinator);
   context.subscriptions.push(

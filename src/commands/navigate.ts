@@ -13,13 +13,13 @@ export const makeNavigationHandler = (context: HandlerContext) => {
       const boardId = card.boardId;
       const codeLink = await getGitHubUrl(locationLink);
 
-      await context.cardStorage.socket.emitWithAck("cardStatus", boardId, {
+      await context.cardStorage.socket?.emitWithAck("cardStatus", boardId, {
         codeLink,
         miroLink,
         status: "connected",
       });
 
-      const success = await context.cardStorage.socket.emitWithAck(
+      const success = await context.cardStorage.socket?.emitWithAck(
         "selectCard",
         boardId,
         miroLink,

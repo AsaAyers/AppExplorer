@@ -12,6 +12,7 @@ import "./onboarding";
 import { SocketProvider } from "./socket-context";
 
 import { AppExplorerSession, makeSessionUrl } from "@/app-explorer-session";
+import { randomHex } from "@/utils/to-hex";
 // Mirotone must be loaded on the host page to set all the CSS variables.
 document.head.insertAdjacentHTML(
   "beforeend",
@@ -51,10 +52,44 @@ export class SidebarElement extends AppElement {
     `,
   ];
 
-  private _socketProvider = new SocketProvider(this);
+  #disposeSessionShutdownListener?: () => void;
+  private _socketProvider = new SocketProvider(this, (socket) => {
+    this.#disposeSessionShutdownListener?.();
+    socket.on("sessionShutdown", this.handleSessionShutdown);
+    this.#disposeSessionShutdownListener = () => {
+      socket.off("sessionShutdown", this.handleSessionShutdown);
+    };
+  });
+
+  private makeFreshSession(base: AppExplorerSession = this.session) {
+    return {
+      sessionId: crypto.randomUUID(),
+      key: randomHex(512),
+      insiders: base.insiders,
+      hostIndex: base.hostIndex,
+    };
+  }
+
+  private handleSessionShutdown = () => {
+    log("Received session shutdown");
+    this.#disposeSessionShutdownListener?.();
+    this.#disposeSessionShutdownListener = undefined;
+    this._socketProvider.setHostIndex(undefined);
+    this._socketProvider.disconnect();
+    this.session = this.makeFreshSession();
+  };
 
   startSession = (event: PointerEvent, session: AppExplorerSession) => {
     this.session = session;
+    for (let i = 0; i < (window.top?.length ?? 0); i++) {
+      window.top?.[i].postMessage(
+        {
+          type: "attachSession",
+          session,
+        },
+        window.origin,
+      );
+    }
     this._socketProvider.setHostIndex(session);
     if (globalThis.captureSessionLink) {
       globalThis.captureSessionLink(makeSessionUrl(session));
@@ -65,18 +100,24 @@ export class SidebarElement extends AppElement {
   @property({
     type: Object,
   })
-  session: AppExplorerSession = {
+  session: AppExplorerSession = this.makeFreshSession({
     sessionId: crypto.randomUUID(),
-    key: crypto.randomUUID(),
+    key: randomHex(512),
     insiders: false,
     hostIndex: 1,
-  };
+  });
 
   setInsiders(value: boolean) {
     this.session = {
       ...this.session,
       insiders: value,
     };
+  }
+
+  override disconnectedCallback(): void {
+    this.#disposeSessionShutdownListener?.();
+    this.#disposeSessionShutdownListener = undefined;
+    super.disconnectedCallback();
   }
 
   render() {

@@ -1,3 +1,4 @@
+import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 import {
@@ -5,12 +6,7 @@ import {
   parseSessionUri,
   zAppExplorerSession,
 } from "./app-explorer-session";
-import {
-  getHostByIndex,
-  getRelayHostByIndex,
-  launchesLocalRelayByIndex,
-} from "./host-config";
-import { ServerLauncher } from "./server-launcher";
+import { getHostByIndex, getRelayHostByIndex } from "./host-config";
 import { createDebug } from "./utils/create-debug";
 import { EventEmitter } from "./utils/event-emitter";
 import { WorkspaceCardStorage } from "./workspace-card-storage";
@@ -27,7 +23,6 @@ export class AppExplorerSessionCoordinator
 {
   readonly #context: vscode.ExtensionContext;
   readonly #cardStorage: WorkspaceCardStorage;
-  readonly #serverLauncher: ServerLauncher;
   readonly #onDidStartSessionEmitter = new EventEmitter<AppExplorerSession>();
   readonly onDidStartSession = this.#onDidStartSessionEmitter.event;
   #sessionWatcher?: vscode.FileSystemWatcher;
@@ -38,11 +33,9 @@ export class AppExplorerSessionCoordinator
   constructor(
     context: vscode.ExtensionContext,
     cardStorage: WorkspaceCardStorage,
-    serverLauncher: ServerLauncher,
   ) {
     this.#context = context;
     this.#cardStorage = cardStorage;
-    this.#serverLauncher = serverLauncher;
   }
 
   async initialize() {
@@ -106,14 +99,17 @@ export class AppExplorerSessionCoordinator
   }
 
   async disconnectSession(shouldDeleteBroadcast = true) {
-    if (shouldDeleteBroadcast) {
-      await this.deleteSessionBroadcast();
+    if (this.#currentSession || this.#cardStorage.socket?.connected) {
+      await this.#cardStorage.disconnectSession();
     }
 
     this.#currentSession = undefined;
     this.#currentSessionKey = undefined;
     this.#startPromise = undefined;
-    await this.#cardStorage.disconnectSession();
+
+    if (shouldDeleteBroadcast) {
+      await this.deleteSessionBroadcast();
+    }
   }
 
   async resumeActiveSession() {
@@ -212,13 +208,11 @@ export class AppExplorerSessionCoordinator
     this.#currentSessionKey = sessionKey;
 
     this.#startPromise = (async () => {
-      this.#cardStorage.setHostIndex(session.hostIndex);
-      const serverResult = launchesLocalRelayByIndex(session.hostIndex)
-        ? await this.#serverLauncher.initializeServer()
-        : {
-            mode: "client" as const,
-            serverUrl: getRelayHostByIndex(session.hostIndex),
-          };
+      this.#cardStorage.attachSession(session);
+      const serverResult = {
+        mode: "client" as const,
+        serverUrl: getRelayHostByIndex(session.hostIndex),
+      };
       debug("Starting AppExplorer session", {
         appHost: getHostByIndex(session.hostIndex),
         relayHost: getRelayHostByIndex(session.hostIndex),
@@ -243,9 +237,12 @@ export class AppExplorerSessionCoordinator
   }
 
   private async connectWorkspaceSocket() {
-    if (this.#cardStorage.socket.connected) {
+    if (this.#cardStorage.socket?.connected) {
       return;
     }
+
+    const socket = this.#cardStorage.socket;
+    invariant(socket, "Expected socket to be initialized by this point");
 
     await new Promise<void>((resolve, reject) => {
       let lastError: unknown;
@@ -263,13 +260,13 @@ export class AppExplorerSessionCoordinator
       };
       const cleanup = () => {
         clearTimeout(timeout);
-        this.#cardStorage.socket.off("connect", onConnect);
-        this.#cardStorage.socket.off("connect_error", onError);
+        socket.off("connect", onConnect);
+        socket.off("connect_error", onError);
       };
 
-      this.#cardStorage.socket.on("connect", onConnect);
-      this.#cardStorage.socket.on("connect_error", onError);
-      this.#cardStorage.socket.connect();
+      socket.on("connect", onConnect);
+      socket.on("connect_error", onError);
+      socket.connect();
     });
   }
 }

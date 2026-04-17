@@ -13,13 +13,12 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { type CardData } from "./EventTypes";
+import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
 import { BoardInfo } from "./card-storage";
 import { MiroEventHandler } from "./event-handlers/miro-event-handler";
 import { MiroSocket } from "./event-handlers/types";
-import { getHostByIndex } from "./host-config";
 import { isAppCard } from "./miro/isAppCard";
 import { updateCard } from "./miro/updateCard";
-import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/notEmpty";
 
@@ -240,19 +239,30 @@ export async function zoomIntoCards(cards: AppCard[]) {
   );
 }
 
-export async function attachToSocket() {
-  const host = getHostByIndex(1);
-  const s = socketIO(host + APP_EXPLORER_SESSION_NAMESPACE, {
+export async function backgroundInit() {
+  window.name = "app-explorer:background";
+  window.addEventListener("message", (event) => {
+    if (
+      event.origin === window.origin &&
+      event.data?.type === "attachSession"
+    ) {
+      void attachSession(event.data.session);
+    }
+  });
+
+  await miro.board.ui.on("icon:click", async () => {
+    await miro.board.ui.openPanel({ url: "/sidebar.html" });
+  });
+}
+
+export async function attachSession(session: AppExplorerSession) {
+  const s = socketIO(getSocketUrl(session), {
     auth: {
       role: "miro",
     },
   }) as MiroSocket;
   debug = debug.extend(s.id || Math.random().toString(36).substring(2, 15));
   const miroEventHandler = MiroEventHandler.create(s);
-
-  await miro.board.ui.on("icon:click", async () => {
-    await miro.board.ui.openPanel({ url: "/sidebar.html" });
-  });
 
   const boardId = await miro.board.getInfo().then((info) => info.id);
   const emitBoardUpdate = async () => {

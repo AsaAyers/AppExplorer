@@ -1,25 +1,25 @@
 import { io as socketIO } from "socket.io-client";
+import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 import { CardData } from "./EventTypes";
+import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
 import { getDocumentSymbolTracker } from "./document-symbol-tracker";
 import { WorkspaceSocket } from "./event-handlers/types";
 import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "./extension";
 import { getGitHubUrl } from "./get-github-url";
-import { getRelayHostByIndex } from "./host-config";
-import { APP_EXPLORER_SESSION_NAMESPACE } from "./session-transport";
 
 export class WorkspaceCardStorage
   extends CardStorage
   implements vscode.Disposable
 {
-  public socket: WorkspaceSocket;
-  #eventHandler: WorkspaceEventHandler;
+  public socket: WorkspaceSocket | null = null;
+  #eventHandler?: WorkspaceEventHandler;
   readonly #symbolTracker;
   readonly #symbolTrackerSubscription: vscode.Disposable;
-  #hostIndex = 1;
+  #session: undefined | AppExplorerSession;
 
   #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
@@ -33,13 +33,8 @@ export class WorkspaceCardStorage
       this.#handlerContext.locationFinder,
     );
 
-    const connectionTimeout = 10000;
-    const socket = this.createSocket(connectionTimeout);
-    this.socket = socket;
-    this.#eventHandler = WorkspaceEventHandler.create(socket, this);
-
     this.#symbolTrackerSubscription = this.#symbolTracker.event((event) => {
-      if (event.type === "symbolsChanged") {
+      if (event.type === "symbolsChanged" && this.#eventHandler?.hasSession()) {
         void this.#eventHandler
           .emitEncrypted("cardsAroundCursor", event.symbols)
           .catch((error) => {
@@ -49,37 +44,38 @@ export class WorkspaceCardStorage
           });
       }
     });
-
-    this.attachSocketListeners(socket);
   }
 
-  setHostIndex(hostIndex: number) {
-    if (hostIndex === this.#hostIndex) {
+  attachSession(session: AppExplorerSession) {
+    if (session === this.#session) {
       return;
     }
 
-    this.socket.disconnect();
-    this.socket.removeAllListeners();
-    this.#hostIndex = hostIndex;
-    this.socket = this.createSocket();
-    this.#eventHandler = WorkspaceEventHandler.create(this.socket, this);
-    this.attachSocketListeners(this.socket);
+    this.socket?.disconnect();
+    this.socket?.removeAllListeners();
+    this.#session = session;
+    const socket = this.createSocket(session);
+    this.socket = socket;
+    this.attachSocketListeners(socket);
   }
 
-  private createSocket(connectionTimeout = 10000) {
-    return socketIO(
-      getRelayHostByIndex(this.#hostIndex) + APP_EXPLORER_SESSION_NAMESPACE,
-      {
-        auth: {
-          role: "workspace",
-        },
-        autoConnect: false,
-        transports: ["websocket"],
-        timeout: connectionTimeout,
-        reconnection: true,
-        forceNew: false,
+  private createSocket(session: AppExplorerSession, connectionTimeout = 10000) {
+    this.#session = session;
+    const socket = socketIO(getSocketUrl(this.#session), {
+      auth: {
+        role: "workspace",
       },
-    ) as WorkspaceSocket;
+      autoConnect: false,
+      transports: ["websocket"],
+      timeout: connectionTimeout,
+      reconnection: true,
+      forceNew: false,
+    }) as WorkspaceSocket;
+
+    this.#eventHandler?.dispose();
+    this.#eventHandler = WorkspaceEventHandler.create(socket, this);
+    this.#eventHandler.attachSession(session);
+    return socket;
   }
 
   private attachSocketListeners(socket: WorkspaceSocket) {
@@ -120,6 +116,10 @@ export class WorkspaceCardStorage
   }
   onConnect = async () => {
     try {
+      invariant(
+        this.#eventHandler,
+        "Event handler should be initialized on connect",
+      );
       const info = await this.#eventHandler.emit("getBoardInfo", "");
       this.connectedBoardSet.add(info.boardId);
       this.boardUpdate(info);
@@ -131,12 +131,15 @@ export class WorkspaceCardStorage
 
   override dispose(): void {
     this.#symbolTrackerSubscription.dispose();
-    this.socket.disconnect();
+    this.socket?.disconnect();
     super.dispose();
   }
 
   async disconnectSession() {
-    this.socket.disconnect();
+    if (this.socket?.connected && this.#eventHandler) {
+      await this.#eventHandler.emit("sessionShutdown");
+    }
+    this.socket?.disconnect();
     this.connectedBoardSet.clear();
     this.clear();
     this.selectedCards([]);
@@ -280,7 +283,7 @@ export class WorkspaceCardStorage
         }
       }
 
-      await this.#eventHandler.emit("cardStatus", card.boardId, {
+      await this.#eventHandler?.emit("cardStatus", card.boardId, {
         miroLink: card.miroLink,
         status,
         codeLink,

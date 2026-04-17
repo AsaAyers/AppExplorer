@@ -1,6 +1,8 @@
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
+import { getHostConfig } from "./host-config";
+
 export const zAppExplorerSession = z.object({
   sessionId: z.string().min(1),
   key: z.string().min(1),
@@ -19,6 +21,12 @@ export const zAppExplorerSession = z.object({
 });
 
 export type AppExplorerSession = z.infer<typeof zAppExplorerSession>;
+
+export const getSocketUrl = (session: AppExplorerSession) => {
+  const config = getHostConfig(session.hostIndex);
+
+  return `${config.relayUrl}/session/${session.sessionId}`;
+};
 
 export const makeSessionUrl = (session: AppExplorerSession) => {
   const url = new URL("vscode://asa-ayers.app-explorer/session/");

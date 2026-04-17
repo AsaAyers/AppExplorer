@@ -2,12 +2,9 @@ import { Debugger } from "debug";
 import { Socket as ServerSocket } from "socket.io";
 import type { Socket as ClientSocket } from "socket.io-client";
 import invariant from "tiny-invariant";
+import { Disposable } from "vscode";
 import { z } from "zod";
 
-import {
-  APP_EXPLORER_SESSION_ID,
-  getAppExplorerSessionKey,
-} from "../session-transport";
 import {
   encryptedEventName,
   SocketEntity,
@@ -35,7 +32,9 @@ import type {
   EventNameFromHandlerMethodName,
 } from "./types";
 
+import { AppExplorerSession } from "@/app-explorer-session";
 import { createDebug } from "@/utils/create-debug";
+import { fromHex } from "@/utils/to-hex";
 
 const isClientSocket = <T>(
   socket: T,
@@ -144,19 +143,18 @@ export abstract class EventHandler<
     EventSources
   >;
   protected readonly socket: EventHandlerSocket<SelfName, EventSources>;
-  protected readonly sessionId: string;
   log: Debugger;
-  #sessionKey?: Uint8Array<ArrayBuffer>;
 
-  constructor(
-    socket: EventHandlerSocket<SelfName, EventSources>,
-    sessionId = APP_EXPLORER_SESSION_ID,
-    key?: Uint8Array<ArrayBuffer>,
-  ) {
+  #subscriptions: Array<Disposable> = [];
+  #session?: AppExplorerSession;
+
+  constructor(socket: EventHandlerSocket<SelfName, EventSources>) {
     this.socket = socket;
-    this.sessionId = sessionId;
-    this.#sessionKey = key;
     this.log = createDebug(`app-explorer:event-handler`);
+  }
+
+  attachSession(session: AppExplorerSession) {
+    this.#session = session;
   }
 
   protected optOut(): never {
@@ -245,6 +243,10 @@ export abstract class EventHandler<
       `No schema found for event ${String(eventName)}`,
     );
 
+    invariant(
+      this.#session,
+      "Session must be attached to encrypt encrypted events",
+    );
     const callSocket = schema.implementAsync(
       async (...validatedArgs: unknown[]) => {
         const encryptedPayload = await this.encryptEncryptedEnvelope(
@@ -309,9 +311,15 @@ export abstract class EventHandler<
     if (isClientSocket(socket)) {
       const s: ClientSocket = socket;
       s.on(eventName as any, listener as any);
+      this.#subscriptions.push({
+        dispose: () => s.off(eventName as any, listener as any),
+      });
     } else if (isServerSocket(socket)) {
       const s: ServerSocket = socket;
       s.on(eventName as any, listener as any);
+      this.#subscriptions.push({
+        dispose: () => s.off(eventName as any, listener as any),
+      });
     }
 
     return this;
@@ -343,10 +351,15 @@ export abstract class EventHandler<
      */
     if (isClientSocket(socket)) {
       socket.once(eventName as any, listener as any);
-      return this;
+      this.#subscriptions.push({
+        dispose: () => socket.off(eventName as any, listener as any),
+      });
     }
     if (isServerSocket(socket)) {
       socket.once(eventName as any, listener as any);
+      this.#subscriptions.push({
+        dispose: () => socket.off(eventName as any, listener as any),
+      });
     }
 
     return this;
@@ -506,11 +519,6 @@ export abstract class EventHandler<
     return wrappedHandlers;
   }
 
-  private getSessionKey() {
-    this.#sessionKey ??= getAppExplorerSessionKey();
-    return this.#sessionKey;
-  }
-
   private getOutputSchema(schema: z.ZodFunction) {
     return (
       schema.def.output instanceof z.ZodPromise
@@ -520,21 +528,29 @@ export abstract class EventHandler<
   }
 
   private async encryptEncryptedEnvelope(eventName: string, args: unknown[]) {
+    invariant(
+      this.#session,
+      "Session must be attached to encrypt encrypted events",
+    );
     return encrypt(
       {
-        sessionId: this.sessionId,
+        sessionId: this.#session.sessionId,
         eventName,
         args,
       },
-      this.getSessionKey(),
+      fromHex(this.#session.key),
     );
   }
 
   private async parseEncryptedEnvelope(payload: unknown) {
+    invariant(
+      this.#session,
+      "Session must be attached to decrypt encrypted events",
+    );
     const encryptedPayload = z.string().parse(unwrapSocketAckValue(payload));
     const decryptedPayload = await decrypt(
       encryptedPayload,
-      this.getSessionKey(),
+      fromHex(this.#session.key),
     );
 
     invariant(decryptedPayload, "Failed to decrypt encrypted event payload");
@@ -555,7 +571,7 @@ export abstract class EventHandler<
   ) {
     const parsedPayload = await this.parseEncryptedEnvelope(payload);
     if (
-      parsedPayload.sessionId !== this.sessionId ||
+      parsedPayload.sessionId !== this.#session?.sessionId ||
       parsedPayload.eventName !== expectedEventName
     ) {
       return null;
@@ -583,7 +599,7 @@ export abstract class EventHandler<
   ) {
     const parsedPayload = await this.parseEncryptedEnvelope(payload);
     invariant(
-      parsedPayload.sessionId === this.sessionId &&
+      parsedPayload.sessionId === this.#session?.sessionId &&
         parsedPayload.eventName === eventName,
       `Encrypted result mismatch for ${eventName}`,
     );
@@ -593,5 +609,14 @@ export abstract class EventHandler<
     );
 
     return this.getOutputSchema(schema).parseAsync(parsedPayload.args[0]);
+  }
+
+  hasSession = () => !!this.#session;
+
+  dispose() {
+    for (const subscription of this.#subscriptions) {
+      subscription.dispose();
+    }
+    this.#subscriptions = [];
   }
 }
