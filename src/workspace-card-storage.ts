@@ -84,6 +84,7 @@ export class WorkspaceCardStorage
     }
 
     this.#lastCardsAroundCursorKey = payloadKey;
+    this.debug("(cards_around_cursor_send)", "cards:", cards.length);
     void this.#eventHandler
       .emitEncrypted("cardsAroundCursor", cards)
       .catch((error) => {
@@ -125,10 +126,10 @@ export class WorkspaceCardStorage
       }
 
       if (reason === "transport close") {
-        this.debug("retry");
+        this.debug("(workspace_socket_retry)");
         const i = setInterval(() => {
           this.debug(
-            "Reconnecting socket...",
+            "(workspace_socket_reconnecting)",
             socket.connected,
             socket.disconnected,
             socket.recovered,
@@ -142,12 +143,12 @@ export class WorkspaceCardStorage
           socket.io.connect();
         }, 1000);
       } else {
-        this.debug("Socket disconnected");
+        this.debug("(workspace_socket_disconnect)");
       }
     });
     // @ts-expect-error Reconnect event is missing from types
     socket.on("reconnect", (arg: unknown) => {
-      this.debug("on reconnect", { arg });
+      this.debug("(workspace_socket_reconnect)", { arg });
     });
 
     socket.once("connect", this.onConnect);
@@ -160,6 +161,7 @@ export class WorkspaceCardStorage
       );
       const info = await this.#eventHandler.emit("getBoardInfo", "");
       this.connectedBoardSet.add(info.boardId);
+      this.debug("(workspace_socket_connect)", "boardId:", info.boardId);
       this.boardUpdate(info);
     } catch (error) {
       this.debug("No board info available on connect", { error });
@@ -219,7 +221,7 @@ export class WorkspaceCardStorage
     });
   }
   boardUpdate(board: BoardInfo | null) {
-    this.debug(`Received boardUpdate: `, board);
+    this.debug("(board_update)", board);
     if (board) {
       this.connectedBoardSet.add(board.boardId);
       this.setBoardName(board.boardId, board.name);

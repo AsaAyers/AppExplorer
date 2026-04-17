@@ -11,7 +11,7 @@ import { createDebug } from "./utils/create-debug";
 import { EventEmitter } from "./utils/event-emitter";
 import { WorkspaceCardStorage } from "./workspace-card-storage";
 
-export const debug = createDebug("app-explorer:extension-session");
+const log = createDebug("app-explorer:extension-session");
 
 const sessionBroadcastFileName = "session.json";
 
@@ -48,24 +48,24 @@ export class AppExplorerSessionCoordinator
     );
     this.#sessionWatcher.onDidCreate(() => {
       void this.syncFromBroadcastFile().catch((error) => {
-        debug("Failed to sync session broadcast on create", { error });
+        log("Failed to sync session broadcast on create", { error });
       });
     });
     this.#sessionWatcher.onDidChange(() => {
       void this.syncFromBroadcastFile().catch((error) => {
-        debug("Failed to sync session broadcast on change", { error });
+        log("Failed to sync session broadcast on change", { error });
       });
     });
     this.#sessionWatcher.onDidDelete(() => {
       void this.disconnectSession(false).catch((error) => {
-        debug("Failed to disconnect session from delete", { error });
+        log("Failed to disconnect session from delete", { error });
       });
     });
 
     try {
       await this.syncFromBroadcastFile();
     } catch (error) {
-      debug("Failed to hydrate session from broadcast file", { error });
+      log("Failed to hydrate session from broadcast file", { error });
     }
   }
 
@@ -139,7 +139,7 @@ export class AppExplorerSessionCoordinator
       const value = JSON.parse(Buffer.from(bytes).toString("utf8"));
       const parsed = zAppExplorerSession.safeParse(value);
       if (!parsed.success) {
-        debug("Ignoring invalid session broadcast payload", { value });
+        log("Ignoring invalid session broadcast payload", { value });
         return undefined;
       }
       return parsed.data;
@@ -213,7 +213,7 @@ export class AppExplorerSessionCoordinator
         mode: "client" as const,
         serverUrl: getRelayHostByIndex(session.hostIndex),
       };
-      debug("Starting AppExplorer session", {
+      log("(session_start)", {
         appHost: getHostByIndex(session.hostIndex),
         relayHost: getRelayHostByIndex(session.hostIndex),
         hostIndex: session.hostIndex,
@@ -256,7 +256,7 @@ export class AppExplorerSessionCoordinator
       };
       const onError = (error: unknown) => {
         lastError = error;
-        debug("Workspace socket connect_error", { error });
+        log("(workspace_socket_error)", { error });
       };
       const cleanup = () => {
         clearTimeout(timeout);

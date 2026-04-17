@@ -6,10 +6,19 @@
  * - A per-test critical-path timeline that records key session/transport events
  *   in memory and only prints them to the console when a test fails.
  *
- * Critical path covered:
- *   extension session start, workspace socket connect/disconnect,
- *   sidebar socket connect/disconnect, boardUpdate, requestCardsAroundCursor,
- *   encrypted emit/receive, cardsAroundCursor controller updates.
+ * Critical-path events are identified by exact token strings placed at the
+ * start of the matching log call in the source, e.g. "(session_start)".
+ * This makes markers visually distinct and avoids fragile regex matching.
+ *
+ * Covered tokens:
+ *   (session_start), (workspace_socket_connect), (workspace_socket_disconnect),
+ *   (workspace_socket_error), (workspace_socket_retry),
+ *   (workspace_socket_reconnecting), (workspace_socket_reconnect),
+ *   (sidebar_socket_connecting), (sidebar_socket_connect),
+ *   (sidebar_socket_disconnect), (sidebar_socket_retry),
+ *   (sidebar_socket_reconnecting), (board_update),
+ *   (cards_around_cursor_subscribe), (cards_around_cursor_send),
+ *   (symbols_changed), (encrypted_send), (encrypted_call).
  */
 
 // ---------------------------------------------------------------------------
@@ -32,33 +41,36 @@ export const BROWSER_SPAM_PATTERNS: RegExp[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Critical-path patterns – messages matching any of these are recorded to the
-// timeline (and still printed to the console as usual).
+// Critical-path tokens – log messages containing any of these exact strings
+// are recorded to the timeline (and still printed to the console as usual).
+// Every token corresponds to a deliberate marker added at the start of the
+// matching log call in the source code.
 // ---------------------------------------------------------------------------
-const CRITICAL_PATH_PATTERNS: RegExp[] = [
+const CRITICAL_PATH_TOKENS: string[] = [
   // Extension session lifecycle
-  /Starting AppExplorer session/i,
-  /app-explorer:extension-session/,
-  /session.*start/i,
+  "(session_start)",
   // Workspace socket lifecycle
-  /workspace socket/i,
-  /Workspace socket connect/i,
+  "(workspace_socket_connect)",
+  "(workspace_socket_disconnect)",
+  "(workspace_socket_error)",
+  "(workspace_socket_retry)",
+  "(workspace_socket_reconnecting)",
+  "(workspace_socket_reconnect)",
   // Sidebar socket lifecycle
-  /sidebar.*socket/i,
-  /socket.*connect/i,
-  /socket.*disconnect/i,
+  "(sidebar_socket_connecting)",
+  "(sidebar_socket_connect)",
+  "(sidebar_socket_disconnect)",
+  "(sidebar_socket_retry)",
+  "(sidebar_socket_reconnecting)",
   // Board events
-  /boardUpdate/i,
+  "(board_update)",
   // Cards-around-cursor
-  /cardsAroundCursor/i,
-  /requestCardsAroundCursor/i,
+  "(cards_around_cursor_subscribe)",
+  "(cards_around_cursor_send)",
+  "(symbols_changed)",
   // Encrypted transport
-  /encrypted event/i,
-  /emitting encrypted/i,
-  /calling encrypted/i,
-  // Controller updates
-  /listening for cardsAroundCursor/i,
-  /symbolsChanged/i,
+  "(encrypted_send)",
+  "(encrypted_call)",
 ];
 
 // ---------------------------------------------------------------------------
@@ -140,7 +152,7 @@ export function isBrowserSpam(text: string): boolean {
 
 /** Returns true when a log line belongs to the critical transport path. */
 export function isCriticalPath(text: string): boolean {
-  return CRITICAL_PATH_PATTERNS.some((pattern) => pattern.test(text));
+  return CRITICAL_PATH_TOKENS.some((token) => text.includes(token));
 }
 
 // ---------------------------------------------------------------------------
