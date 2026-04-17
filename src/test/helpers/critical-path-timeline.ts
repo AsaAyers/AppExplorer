@@ -15,7 +15,8 @@
  *   (workspace_socket_error), (workspace_socket_retry),
  *   (workspace_socket_reconnecting), (workspace_socket_reconnect),
  *   (sidebar_socket_connecting), (sidebar_socket_connect),
- *   (sidebar_socket_disconnect), (sidebar_socket_retry),
+ *   (sidebar_socket_disconnect), (sidebar_socket_disconnect_permanent),
+ *   (sidebar_socket_retry),
  *   (sidebar_socket_reconnecting), (board_update),
  *   (cards_around_cursor_subscribe), (cards_around_cursor_send),
  *   (symbols_changed), (encrypted_send), (encrypted_call).
@@ -60,6 +61,7 @@ const CRITICAL_PATH_TOKENS: string[] = [
   "(sidebar_socket_connecting)",
   "(sidebar_socket_connect)",
   "(sidebar_socket_disconnect)",
+  "(sidebar_socket_disconnect_permanent)",
   "(sidebar_socket_retry)",
   "(sidebar_socket_reconnecting)",
   // Board events

@@ -65,7 +65,7 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
         socket.connect();
       }, 1000);
     } else {
-      log("(sidebar_socket_disconnect)");
+      log("(sidebar_socket_disconnect_permanent)", reason);
     }
   });
 
