@@ -5,12 +5,12 @@ import React from "react";
 import { AppExplorerCard } from "./app-explorer-card";
 import { AppExplorerOnboarding } from "./app-explorer-onboarding";
 
-import type { CardData } from "@/card-data";
 import {
   AppExplorerSession,
   makeSessionUrl,
   parseSessionUri,
 } from "@/app-explorer-session";
+import type { CardData } from "@/card-data";
 import { SidebarSocket } from "@/event-handlers/types";
 import { isAppCard } from "@/miro/is-app-card";
 import { updateCard } from "@/miro/update-card";
@@ -200,7 +200,11 @@ export function AppExplorerSidebar() {
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 p-4">
         {!hasConnectedSession ? (
           <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <a className="text-blue-600 underline" href={sessionLink} onClick={startSession}>
+            <a
+              className="text-blue-600 underline"
+              href={sessionLink}
+              onClick={startSession}
+            >
               Start VSCode session
             </a>
             <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -229,7 +233,8 @@ export function AppExplorerSidebar() {
             type="checkbox"
           />
           <label htmlFor="attach-selected">
-            Add connecting lines from selected cards to new cards ({selectedCardCount} cards)
+            Add connecting lines from selected cards to new cards (
+            {selectedCardCount} cards)
           </label>
         </div>
 
