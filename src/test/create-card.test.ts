@@ -31,7 +31,7 @@ const storageState = "playwright/.auth/user.json";
 const storageStateExists = fs.existsSync(storageState);
 const localAppHealthUrl = "http://localhost:3000/api/health-check";
 
-const appCardSelector = "app-card";
+const appCardSelector = ".app-card";
 const cardTitleSelector = ".app-card--title";
 const suiteFn =
   storageStateExists && !process.env.SKIP_E2E ? suite : suite.skip;

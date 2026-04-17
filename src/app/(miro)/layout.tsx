@@ -1,6 +1,7 @@
-/* eslint-disable @next/next/no-css-tags */
 import type { Metadata } from "next";
 import Script from "next/script";
+
+import "@/app/globals.css";
 
 export const metadata: Metadata = {
   title: "AppExplorer",
@@ -14,7 +15,6 @@ export default function MiroLayout({
 }>) {
   return (
     <>
-      <link rel="stylesheet" href="/index.css" />
       <Script
         src="https://miro.com/app/static/sdk/v2/miro.js"
         strategy="beforeInteractive"
