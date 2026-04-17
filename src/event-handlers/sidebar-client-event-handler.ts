@@ -14,9 +14,13 @@ export class SidebarClientEventHandler extends EventHandler<
   protected readonly selfName = "sidebar" as const;
   #cardsAroundCursorListeners = new Set<CardsAroundCursorListener>();
   #sessionShutdownListeners = new Set<SessionShutdownListener>();
+  #latestCardsAroundCursor?: CardData[];
 
   onCardsAroundCursor(listener: CardsAroundCursorListener) {
     this.#cardsAroundCursorListeners.add(listener);
+    if (this.#latestCardsAroundCursor) {
+      listener(this.#latestCardsAroundCursor);
+    }
     return () => {
       this.#cardsAroundCursorListeners.delete(listener);
     };
@@ -31,11 +35,13 @@ export class SidebarClientEventHandler extends EventHandler<
 
   protected readonly handlerMethods = {
     onCardsAroundCursor: async (cards: CardData[]) => {
+      this.#latestCardsAroundCursor = cards;
       this.#cardsAroundCursorListeners.forEach((listener) => {
         listener(cards);
       });
     },
     onSessionShutdown: async () => {
+      this.#latestCardsAroundCursor = undefined;
       this.#sessionShutdownListeners.forEach((listener) => {
         listener();
       });
@@ -78,7 +84,7 @@ export class SidebarSocketBridge {
   }
 
   emitWithAck(...args: Parameters<typeof this.socket.emitWithAck>) {
-    return this.socket.emitWithAck(...args);
+    return this.socket.emitWithAck(args[0], ...args.slice(1));
   }
 
   on(eventName: string, listener: (...args: unknown[]) => unknown) {

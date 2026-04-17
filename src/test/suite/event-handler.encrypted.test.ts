@@ -9,8 +9,8 @@ import {
 import { encryptedEventName } from "../../socket-events";
 import { isEventHandlerOptOutError } from "../../unhandled-event-ack";
 
-import type { CardData } from "@/card-data";
 import { zAppExplorerSession } from "@/app-explorer-session";
+import type { CardData } from "@/card-data";
 import type { HandlerMethodMap } from "@/event-handlers/types";
 import { randomHex } from "@/utils/to-hex";
 
@@ -109,6 +109,7 @@ class WorkspaceTestEventHandler extends EventHandler<"workspace", "sidebar"> {
     onNavigateTo: async (card: CardData) => {
       this.receivedCard = card;
     },
+    onRequestCardsAroundCursor: async () => {},
   } satisfies HandlerMethodMap<"workspace", "sidebar">;
 }
 
@@ -273,5 +274,42 @@ suite("Encrypted EventHandler transport", () => {
     sidebarSocket.emit("sessionShutdown");
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.strictEqual(shutdownCount, 1);
+  });
+
+  test("sidebar bridge replays the latest cardsAroundCursor to late listeners", async () => {
+    const sidebarSocket = new MockSocket();
+    const sidebarEventHandler = SidebarClientEventHandler.create(
+      sidebarSocket as never,
+    );
+    const bridge = new SidebarSocketBridge(
+      sidebarSocket as never,
+      sidebarEventHandler,
+    );
+    const cards: CardData[] = [
+      {
+        id: "card-1",
+        x: 0,
+        y: 0,
+        type: "symbol",
+        boardId: "board-1",
+        title: "Example",
+        description: "",
+        miroLink: "https://miro.com/app/board/board-1/?moveToWidget=1",
+        path: "src/example.ts",
+        symbol: "example",
+        codeLink: "https://github.com/example/repo/blob/main/src/example.ts",
+        status: "connected",
+      },
+    ];
+
+    sidebarSocket.emit("cardsAroundCursor", cards);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    let receivedCards: CardData[] | undefined;
+    bridge.on("cardsAroundCursor", (value) => {
+      receivedCards = value as CardData[];
+    });
+
+    assert.deepStrictEqual(receivedCards, cards);
   });
 });

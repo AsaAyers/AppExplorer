@@ -22,6 +22,9 @@ export class WorkspaceEventHandler extends EventHandler<"workspace"> {
     onNavigateTo: async (card) => {
       await this.storage.navigateTo(card);
     },
+    onRequestCardsAroundCursor: async () => {
+      this.storage.requestCurrentCardsAroundCursor();
+    },
     onCard: async (event) => {
       return this.storage.card(event);
     },

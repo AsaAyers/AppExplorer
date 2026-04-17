@@ -12,8 +12,8 @@ import type {
 import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
-import { type CardData } from "./card-data";
 import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
+import { type CardData } from "./card-data";
 import { BoardInfo } from "./card-storage";
 import { MiroEventHandler } from "./event-handlers/miro-event-handler";
 import { MiroSocket } from "./event-handlers/types";

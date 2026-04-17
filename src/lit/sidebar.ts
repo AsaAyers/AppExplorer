@@ -1,6 +1,7 @@
 import "@webcomponents/webcomponentsjs";
 import { css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import invariant from "tiny-invariant";
 
 import { createDebug } from "../utils/create-debug";
 
@@ -11,7 +12,11 @@ import { mirotoneStyles, rawMirotoneStyles } from "./mirotone";
 import "./onboarding";
 import { SocketProvider } from "./socket-context";
 
-import { AppExplorerSession, makeSessionUrl } from "@/app-explorer-session";
+import {
+  AppExplorerSession,
+  makeSessionUrl,
+  parseSessionUri,
+} from "@/app-explorer-session";
 import { randomHex } from "@/utils/to-hex";
 // Mirotone must be loaded on the host page to set all the CSS variables.
 document.head.insertAdjacentHTML(
@@ -79,7 +84,14 @@ export class SidebarElement extends AppElement {
     this.session = this.makeFreshSession();
   };
 
-  startSession = (event: PointerEvent, session: AppExplorerSession) => {
+  startSession = (event: PointerEvent) => {
+    const link = event.currentTarget;
+    invariant(
+      link instanceof HTMLAnchorElement,
+      "Session link must be an anchor",
+    );
+    const href = link.href;
+    const session = parseSessionUri(href);
     this.session = session;
     for (let i = 0; i < (window.top?.length ?? 0); i++) {
       window.top?.[i].postMessage(
@@ -104,7 +116,7 @@ export class SidebarElement extends AppElement {
     sessionId: crypto.randomUUID(),
     key: randomHex(512),
     insiders: false,
-    hostIndex: 1,
+    hostIndex: 0,
   });
 
   setInsiders(value: boolean) {
@@ -125,16 +137,9 @@ export class SidebarElement extends AppElement {
       return html`<div class="session-setup">
         <a
           href="${makeSessionUrl(this.session)}"
-          @click=${(e: PointerEvent) => this.startSession(e, this.session)}
+          @click=${(e: PointerEvent) => this.startSession(e)}
         >
           Start VSCode session
-        </a>
-        <a
-          href="${makeSessionUrl({ ...this.session, hostIndex: 2 })}"
-          @click=${(e: PointerEvent) =>
-            this.startSession(e, { ...this.session, hostIndex: 2 })}
-        >
-          Start VSCode session (host 2 dev)
         </a>
         <label>
           <input

@@ -1,4 +1,4 @@
-import { getHealthUrlByIndex, getRelayHostByIndex } from "./host-config";
+import { getRelayHostByIndex, HEALTH_URL } from "./host-config";
 import { createDebug } from "./utils/create-debug";
 const debug = createDebug("app-explorer:server-discovery");
 
@@ -38,11 +38,10 @@ export class ServerDiscovery {
    * Check if a server is running on the configured port
    */
   async checkServerHealth(): Promise<boolean> {
-    const url = getHealthUrlByIndex(this.options.hostIndex);
     const startTime = Date.now();
 
     try {
-      debug("Starting server health check", { url });
+      debug("Starting server health check", { url: HEALTH_URL });
 
       const controller = new AbortController();
       const timeoutId = setTimeout(
@@ -50,7 +49,7 @@ export class ServerDiscovery {
         this.options.healthCheck.timeout,
       );
 
-      const response = await fetch(url, {
+      const response = await fetch(HEALTH_URL, {
         method: "GET",
         signal: controller.signal,
         headers: {
@@ -66,7 +65,7 @@ export class ServerDiscovery {
         this.lastHealthCheck = new Date();
 
         debug("Server health check successful", {
-          url,
+          url: HEALTH_URL,
           status: response.status,
           duration: `${duration}ms`,
           consecutiveFailures: this.consecutiveFailures,
@@ -77,7 +76,7 @@ export class ServerDiscovery {
         this.consecutiveFailures++;
 
         debug("Server health check failed - non-200 response", {
-          url,
+          url: HEALTH_URL,
           status: response.status,
           statusText: response.statusText,
           duration: `${duration}ms`,
@@ -91,7 +90,7 @@ export class ServerDiscovery {
       const duration = Date.now() - startTime;
 
       debug("Server health check failed - network error", {
-        url,
+        url: HEALTH_URL,
         error: error instanceof Error ? error.message : String(error),
         duration: `${duration}ms`,
         consecutiveFailures: this.consecutiveFailures,

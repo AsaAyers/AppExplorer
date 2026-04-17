@@ -67,6 +67,7 @@ export class CardsAroundCursorController implements ReactiveController {
     if (socket) {
       socket.on("cardsAroundCursor", this.onValueChange);
       this.#subscribedSocket = socket;
+      socket.emit("requestCardsAroundCursor");
       debug("listening for cardsAroundCursor");
       return;
     }

@@ -2,8 +2,8 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { CardData } from "./card-data";
 import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
+import { CardData } from "./card-data";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
 import { getDocumentSymbolTracker } from "./document-symbol-tracker";
 import { WorkspaceSocket } from "./event-handlers/types";
@@ -22,6 +22,7 @@ export class WorkspaceCardStorage
   #session: undefined | AppExplorerSession;
   #lastCardsAroundCursorKey?: string;
   #pendingInitialCardsAroundCursor = false;
+  #initialCardsAroundCursorRetry?: NodeJS.Timeout;
 
   #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
@@ -52,6 +53,10 @@ export class WorkspaceCardStorage
     this.#session = session;
     this.#lastCardsAroundCursorKey = undefined;
     this.#pendingInitialCardsAroundCursor = true;
+    if (this.#initialCardsAroundCursorRetry) {
+      clearTimeout(this.#initialCardsAroundCursorRetry);
+      this.#initialCardsAroundCursorRetry = undefined;
+    }
     const socket = this.createSocket(session);
     this.socket = socket;
     this.attachSocketListeners(socket);
@@ -88,7 +93,7 @@ export class WorkspaceCardStorage
       });
   }
 
-  private requestCurrentCardsAroundCursor() {
+  requestCurrentCardsAroundCursor() {
     this.#symbolTracker.fire({ type: "symbolRequest" });
   }
 
@@ -163,6 +168,10 @@ export class WorkspaceCardStorage
 
   override dispose(): void {
     this.#symbolTrackerSubscription.dispose();
+    if (this.#initialCardsAroundCursorRetry) {
+      clearTimeout(this.#initialCardsAroundCursorRetry);
+      this.#initialCardsAroundCursorRetry = undefined;
+    }
     this.socket?.disconnect();
     super.dispose();
   }
@@ -174,6 +183,10 @@ export class WorkspaceCardStorage
     this.socket?.disconnect();
     this.#lastCardsAroundCursorKey = undefined;
     this.#pendingInitialCardsAroundCursor = false;
+    if (this.#initialCardsAroundCursorRetry) {
+      clearTimeout(this.#initialCardsAroundCursorRetry);
+      this.#initialCardsAroundCursorRetry = undefined;
+    }
     this.connectedBoardSet.clear();
     this.clear();
     this.selectedCards([]);
@@ -214,6 +227,10 @@ export class WorkspaceCardStorage
       if (this.#pendingInitialCardsAroundCursor) {
         this.#pendingInitialCardsAroundCursor = false;
         this.requestCurrentCardsAroundCursor();
+        this.#initialCardsAroundCursorRetry = setTimeout(() => {
+          this.requestCurrentCardsAroundCursor();
+          this.#initialCardsAroundCursorRetry = undefined;
+        }, 250);
       }
     }
   }

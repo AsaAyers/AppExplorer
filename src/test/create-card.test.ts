@@ -67,141 +67,143 @@ suiteFn("Create Card", function () {
     }
   });
 
-  test("On test board", async function () {
-    this.timeout(1200000);
-    invariant(page, "Page should be defined after setup");
-    await openTestBoard(page);
-    await startAppExplorerSession(page);
-    await videoDelay("test start", 5);
+  for (const hostIndex of [1, 2]) {
+    test(`On test board host: ${hostIndex}`, async function () {
+      this.timeout(1200000);
+      invariant(page, "Page should be defined after setup");
+      await openTestBoard(page);
+      await startAppExplorerSession(page, hostIndex);
+      await videoDelay("test start", 5);
 
-    // Step 1: Open UserProfile.ts and jump to where generateId is called in the constructor
-    const userProfileURI = uriForFile("src/components/UserProfile.ts");
-    const userProfileDoc =
-      await vscode.workspace.openTextDocument(userProfileURI);
-    const userProfileEditor = await vscode.window.showTextDocument(
-      userProfileDoc,
-      { preview: false },
-    );
+      // Step 1: Open UserProfile.ts and jump to where generateId is called in the constructor
+      const userProfileURI = uriForFile("src/components/UserProfile.ts");
+      const userProfileDoc =
+        await vscode.workspace.openTextDocument(userProfileURI);
+      const userProfileEditor = await vscode.window.showTextDocument(
+        userProfileDoc,
+        { preview: false },
+      );
 
-    const sessionIdIndex = userProfileDoc
-      .getText()
-      .indexOf("sessionId: generateId");
-    assert.notStrictEqual(
-      sessionIdIndex,
-      -1,
-      'Expected "sessionId: generateId" to exist in UserProfile.ts',
-    );
-    const sessionIdPosition = userProfileDoc.positionAt(sessionIdIndex);
-    userProfileEditor.selection = new vscode.Selection(
-      sessionIdPosition,
-      sessionIdPosition,
-    );
-    await videoDelay("openUserProfile", 2);
+      const sessionIdIndex = userProfileDoc
+        .getText()
+        .indexOf("sessionId: generateId");
+      assert.notStrictEqual(
+        sessionIdIndex,
+        -1,
+        'Expected "sessionId: generateId" to exist in UserProfile.ts',
+      );
+      const sessionIdPosition = userProfileDoc.positionAt(sessionIdIndex);
+      userProfileEditor.selection = new vscode.Selection(
+        sessionIdPosition,
+        sessionIdPosition,
+      );
+      await videoDelay("openUserProfile", 2);
 
-    // Step 2: Wait for 3-deep card stack: UserProfile, UserProfile/constructor, UserProfile/constructor/sessionId
-    const sidebar = getSidebar(page);
-    await waitFor(async () => {
-      assert.equal(await sidebar.locator(appCardSelector).count(), 3);
+      // Step 2: Wait for 3-deep card stack: UserProfile, UserProfile/constructor, UserProfile/constructor/sessionId
+      const sidebar = getSidebar(page);
+      await waitFor(async () => {
+        assert.equal(await sidebar.locator(appCardSelector).count(), 3);
+      });
+      await videoDelay("3 cards");
+
+      await sidebar
+        .locator(appCardSelector)
+        .locator(cardTitleSelector)
+        .getByText(/sessionId$/)
+        .waitFor({ state: "visible" });
+
+      // Step 3: Arrange the 3 stack cards vertically on canvas, starting with UserProfile at the top
+      const pageWidthInPixels = await page.evaluate(() => window.innerWidth);
+      const pageHeightInPixels = await page.evaluate(() => window.innerHeight);
+
+      const centerX = pageWidthInPixels * 0.5;
+      const topY = pageHeightInPixels * 0.2;
+      const horizontalGap = pageWidthInPixels * 0.1;
+      const verticalGap = pageHeightInPixels * 0.12;
+
+      const userProfileXY = [centerX, topY] as const;
+      const sessionXY = [centerX, topY + verticalGap * 2] as const;
+      const generateIdXY = [
+        centerX + horizontalGap,
+        topY + verticalGap * 2,
+      ] as const;
+      const isValidEmailXY = [
+        centerX + horizontalGap,
+        topY + verticalGap * 3,
+      ] as const;
+
+      await dragCardToBoard(page, /^UserProfile$/, userProfileXY);
+      await getModal(page).getByRole("button", { name: "Save" }).click();
+      selectMiroCardByTitle(page, /^UserProfile$/);
+
+      await dragCardToBoard(page, /sessionId$/, sessionXY);
+      await getModal(page).getByRole("button", { name: "Save" }).click();
+
+      // Step 4: Go to definition on generateId, then drag the generateId card below and left of UserProfile
+      const generateIdCallIndex = userProfileDoc
+        .getText()
+        .indexOf("generateId(12)");
+      assert.notStrictEqual(
+        generateIdCallIndex,
+        -1,
+        'Expected "generateId(12)" in UserProfile.ts',
+      );
+      userProfileEditor.selection = new vscode.Selection(
+        userProfileDoc.positionAt(generateIdCallIndex),
+        userProfileDoc.positionAt(generateIdCallIndex),
+      );
+      await videoDelay("Selected generateId");
+      await vscode.commands.executeCommand("editor.action.revealDefinition");
+      await videoDelay("goToDefinition generateId", 2);
+
+      await selectMiroCardByTitle(page, /^UserProfile$/);
+      await dragCardToBoard(page, "generateId", generateIdXY);
+      await getModal(page).getByRole("button", { name: "Save" }).click();
+      const helpersURI = uriForFile("src/utils/helpers.ts");
+      await waitForAppExplorerCodeLenses(helpersURI, ["generateId"]);
+
+      // close editors in vscode
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+      await selectMiroCardByTitle(page, null);
+      await videoDelay("No editors open", 2);
+
+      await page.evaluate(zoomToTestFrame);
+
+      // Step 6: Back in helpers.ts, navigate to isValidEmail and drag its card below UserProfile and right of generateId
+      const helpersDoc = await vscode.workspace.openTextDocument(helpersURI);
+      const helpersEditor = await vscode.window.showTextDocument(helpersDoc, {
+        preview: false,
+      });
+
+      const isValidEmailIndex = helpersDoc
+        .getText()
+        .indexOf("export function isValidEmail");
+      assert.notStrictEqual(
+        isValidEmailIndex,
+        -1,
+        'Expected "isValidEmail" in helpers.ts',
+      );
+      helpersEditor.selection = new vscode.Selection(
+        helpersDoc.positionAt(isValidEmailIndex),
+        helpersDoc.positionAt(isValidEmailIndex),
+      );
+      await videoDelay("navigated to isValidEmail", 2);
+
+      await waitForAppExplorerCodeLenses(helpersDoc.uri, ["generateId"]);
+
+      await dragCardToBoard(page, /isValidEmail$/, isValidEmailXY);
+      await getModal(page).getByRole("button", { name: "Save" }).click();
+      await waitForAppExplorerCodeLenses(helpersDoc.uri, [
+        "generateId",
+        "isValidEmail",
+      ]);
+
+      await removeMiroCardByTitle(page, "isValidEmail");
+      await waitForAppExplorerCodeLenses(helpersDoc.uri, ["generateId"]);
+
+      log("assertions passed");
     });
-    await videoDelay("3 cards");
-
-    await sidebar
-      .locator(appCardSelector)
-      .locator(cardTitleSelector)
-      .getByText(/sessionId$/)
-      .waitFor({ state: "visible" });
-
-    // Step 3: Arrange the 3 stack cards vertically on canvas, starting with UserProfile at the top
-    const pageWidthInPixels = await page.evaluate(() => window.innerWidth);
-    const pageHeightInPixels = await page.evaluate(() => window.innerHeight);
-
-    const centerX = pageWidthInPixels * 0.5;
-    const topY = pageHeightInPixels * 0.2;
-    const horizontalGap = pageWidthInPixels * 0.1;
-    const verticalGap = pageHeightInPixels * 0.12;
-
-    const userProfileXY = [centerX, topY] as const;
-    const sessionXY = [centerX, topY + verticalGap * 2] as const;
-    const generateIdXY = [
-      centerX + horizontalGap,
-      topY + verticalGap * 2,
-    ] as const;
-    const isValidEmailXY = [
-      centerX + horizontalGap,
-      topY + verticalGap * 3,
-    ] as const;
-
-    await dragCardToBoard(page, /^UserProfile$/, userProfileXY);
-    await getModal(page).getByRole("button", { name: "Save" }).click();
-    selectMiroCardByTitle(page, /^UserProfile$/);
-
-    await dragCardToBoard(page, /sessionId$/, sessionXY);
-    await getModal(page).getByRole("button", { name: "Save" }).click();
-
-    // Step 4: Go to definition on generateId, then drag the generateId card below and left of UserProfile
-    const generateIdCallIndex = userProfileDoc
-      .getText()
-      .indexOf("generateId(12)");
-    assert.notStrictEqual(
-      generateIdCallIndex,
-      -1,
-      'Expected "generateId(12)" in UserProfile.ts',
-    );
-    userProfileEditor.selection = new vscode.Selection(
-      userProfileDoc.positionAt(generateIdCallIndex),
-      userProfileDoc.positionAt(generateIdCallIndex),
-    );
-    await videoDelay("Selected generateId");
-    await vscode.commands.executeCommand("editor.action.revealDefinition");
-    await videoDelay("goToDefinition generateId", 2);
-
-    await selectMiroCardByTitle(page, /^UserProfile$/);
-    await dragCardToBoard(page, "generateId", generateIdXY);
-    await getModal(page).getByRole("button", { name: "Save" }).click();
-    const helpersURI = uriForFile("src/utils/helpers.ts");
-    await waitForAppExplorerCodeLenses(helpersURI, ["generateId"]);
-
-    // close editors in vscode
-    await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-    await selectMiroCardByTitle(page, null);
-    await videoDelay("No editors open", 2);
-
-    await page.evaluate(zoomToTestFrame);
-
-    // Step 6: Back in helpers.ts, navigate to isValidEmail and drag its card below UserProfile and right of generateId
-    const helpersDoc = await vscode.workspace.openTextDocument(helpersURI);
-    const helpersEditor = await vscode.window.showTextDocument(helpersDoc, {
-      preview: false,
-    });
-
-    const isValidEmailIndex = helpersDoc
-      .getText()
-      .indexOf("export function isValidEmail");
-    assert.notStrictEqual(
-      isValidEmailIndex,
-      -1,
-      'Expected "isValidEmail" in helpers.ts',
-    );
-    helpersEditor.selection = new vscode.Selection(
-      helpersDoc.positionAt(isValidEmailIndex),
-      helpersDoc.positionAt(isValidEmailIndex),
-    );
-    await videoDelay("navigated to isValidEmail", 2);
-
-    await waitForAppExplorerCodeLenses(helpersDoc.uri, ["generateId"]);
-
-    await dragCardToBoard(page, /isValidEmail$/, isValidEmailXY);
-    await getModal(page).getByRole("button", { name: "Save" }).click();
-    await waitForAppExplorerCodeLenses(helpersDoc.uri, [
-      "generateId",
-      "isValidEmail",
-    ]);
-
-    await removeMiroCardByTitle(page, "isValidEmail");
-    await waitForAppExplorerCodeLenses(helpersDoc.uri, ["generateId"]);
-
-    log("assertions passed");
-  });
+  }
 });
 
 const testFrameUrl =

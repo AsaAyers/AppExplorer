@@ -6,11 +6,12 @@ import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 import { ExtensionApi } from "../../extension";
-import { getHealthUrlByIndex } from "../../host-config";
+import { HEALTH_URL } from "../../host-config";
 
 import { colorText } from "./colors";
 import { isRecording } from "./is-recording";
 
+import { makeSessionUrl, parseSessionUri } from "@/app-explorer-session";
 import { createDebug } from "@/utils/create-debug";
 
 const debug = createDebug("app-explorer:test-utils");
@@ -108,24 +109,9 @@ export async function activateAppExplorer() {
     console.log(colorText("extensionLog", "[Extension Log]"), line),
   );
 
-  return extension.exports;
-}
-
-export async function startAppExplorerSession(page: Page) {
-  await activateAppExplorer();
-
-  const sidebar = getSidebar(page);
-  const sessionButton = sidebar.getByRole("link", {
-    name: "Start VSCode session",
-    exact: true,
-  });
-  await sessionButton.waitFor({ state: "visible" });
-
-  await sessionButton.click();
-
-  return waitFor(
+  await waitFor(
     async () => {
-      const response = await fetch(getHealthUrlByIndex(1));
+      const response = await fetch(HEALTH_URL);
       assert.equal(response.status, 200);
     },
     {
@@ -134,6 +120,30 @@ export async function startAppExplorerSession(page: Page) {
       message: "AppExplorer server did not start after session launch",
     },
   );
+  return extension.exports;
+}
+
+export async function startAppExplorerSession(page: Page, hostIndex = 1) {
+  await activateAppExplorer();
+
+  const sidebar = getSidebar(page);
+  const sessionButton = sidebar.getByRole("link", {
+    name: "Start VSCode session",
+    exact: true,
+  });
+  await sessionButton.waitFor({ state: "visible" });
+  await sessionButton.getAttribute("href").then((href) => {
+    invariant(href, "Session button href should be defined");
+    const session = parseSessionUri(href);
+    session.hostIndex = hostIndex;
+    const newHref = makeSessionUrl(session);
+    return sessionButton.evaluate(
+      (el, newHref) => el.setAttribute("href", newHref),
+      newHref,
+    );
+  });
+
+  await sessionButton.click();
 }
 
 export function uriForFile(filePath: string) {
