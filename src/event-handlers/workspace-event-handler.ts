@@ -28,8 +28,5 @@ export class WorkspaceEventHandler extends EventHandler<"workspace"> {
     onCard: async (event) => {
       return this.storage.card(event);
     },
-    onLog: async (_args) => {
-      return this.storage.log();
-    },
   } satisfies HandlerMethodMap<"workspace">;
 }

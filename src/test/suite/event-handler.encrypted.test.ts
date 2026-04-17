@@ -123,7 +123,6 @@ class WorkspaceMiroRequestEventHandler extends EventHandler<
     onSelectedCards: async (_cards) => {},
     onNavigateTo: async (_card) => {},
     onCard: async (_event) => {},
-    onLog: async (_args) => {},
   } satisfies HandlerMethodMap<"workspace", "miro">;
 }
 

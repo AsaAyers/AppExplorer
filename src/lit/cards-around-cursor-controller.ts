@@ -7,7 +7,7 @@ import { createDebug } from "../utils/create-debug";
 import { socketContext } from "./socket-context";
 
 import { SidebarSocket } from "@/event-handlers/types";
-const debug = createDebug("app-explorer:cards-around-cursor:controller");
+const log = createDebug("app-explorer:cards-around-cursor:controller");
 
 export class CardsAroundCursorController implements ReactiveController {
   #host: ReactiveControllerHost;
@@ -37,7 +37,7 @@ export class CardsAroundCursorController implements ReactiveController {
   }
 
   private onValueChange = (newValue: CardData[]): void => {
-    debug("symbolsChanged event", newValue.length);
+    log("(symbols_changed)", "cards:", newValue.length);
     this.value = newValue;
     this.#host.requestUpdate();
   };
@@ -68,7 +68,7 @@ export class CardsAroundCursorController implements ReactiveController {
       socket.on("cardsAroundCursor", this.onValueChange);
       this.#subscribedSocket = socket;
       socket.emit("requestCardsAroundCursor");
-      debug("listening for cardsAroundCursor");
+      log("(cards_around_cursor_subscribe)");
       return;
     }
   }

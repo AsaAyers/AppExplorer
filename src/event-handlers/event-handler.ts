@@ -255,7 +255,7 @@ export abstract class EventHandler<
         );
 
         if (returnsVoid(schema)) {
-          this.log(`Emitting encrypted event ${this.selfName}.${eventName}`);
+          this.log("(encrypted_send)", `${this.selfName}.${eventName}`);
           (this.socket.emit as unknown as (...socketArgs: unknown[]) => void)(
             encryptedEventName,
             encryptedPayload,
@@ -263,7 +263,7 @@ export abstract class EventHandler<
           return;
         }
 
-        this.log(`Calling encrypted event ${this.selfName}.${eventName}`);
+        this.log("(encrypted_call)", `${this.selfName}.${eventName}`);
         const encryptedResult = await (
           this.socket.emitWithAck as (
             ...socketArgs: unknown[]

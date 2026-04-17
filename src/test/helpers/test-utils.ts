@@ -9,6 +9,7 @@ import { ExtensionApi } from "../../extension";
 import { HEALTH_URL } from "../../host-config";
 
 import { colorText } from "./colors";
+import { isCriticalPath, timeline } from "./critical-path-timeline";
 import { isRecording } from "./is-recording";
 
 import { makeSessionUrl, parseSessionUri } from "@/app-explorer-session";
@@ -104,10 +105,14 @@ export async function activateAppExplorer() {
 
   baseDebug.enable(debugValue);
   baseDebug.log(`Activated extension with DEBUG=${debugValue}`);
-  extension.exports.__watchOutput(debugValue, (line) =>
+  extension.exports.__watchOutput(debugValue, (line) => {
     // eslint-disable-next-line no-console
-    console.log(colorText("extensionLog", "[Extension Log]"), line),
-  );
+    console.log(colorText("extensionLog", "[Extension Log]"), line);
+    // Record critical-path extension log lines to the per-test timeline.
+    if (isCriticalPath(line)) {
+      timeline.record("extension", "log", line);
+    }
+  });
 
   await waitFor(
     async () => {

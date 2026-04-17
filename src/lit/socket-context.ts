@@ -14,14 +14,14 @@ import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
 import { SidebarSocket } from "@/event-handlers/types";
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const debug = createDebug("app-explorer:miro:sidebar");
+const log = createDebug("app-explorer:miro:sidebar");
 
 export const socketContext = createContext<SidebarSocket>(
   Symbol("socketContext"),
 );
 
 export async function connectSidebarSocket(session: AppExplorerSession) {
-  debug("connectSidebarSocket");
+  log("(sidebar_socket_connecting)");
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   const connectionTimeout = 10000;
@@ -41,18 +41,18 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
 
   let connected = false;
   const onConnect = async () => {
-    debug("onConnect");
+    log("(sidebar_socket_connect)");
     connected = true;
   };
 
   socket.on("connect", onConnect);
   socket.on("disconnect", (reason) => {
-    debug("disconnected", reason);
+    log("(sidebar_socket_disconnect)", reason);
     if (reason === "transport close") {
-      debug("retry");
+      log("(sidebar_socket_retry)");
       const i = setInterval(() => {
-        debug(
-          "Reconnecting socket...",
+        log(
+          "(sidebar_socket_reconnecting)",
           socket.connected,
           socket.disconnected,
           socket.recovered,
@@ -65,7 +65,7 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
         socket.connect();
       }, 1000);
     } else {
-      debug("Socket disconnected");
+      log("(sidebar_socket_disconnect_permanent)", reason);
     }
   });
 

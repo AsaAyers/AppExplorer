@@ -31,7 +31,7 @@ export class WorkspaceCardStorage
   ) {
     super(storageAdapter);
     this.#handlerContext = handlerContext;
-    this.debug = this.debug.extend("workspace");
+    this.log = this.log.extend("workspace");
     this.#symbolTracker = getDocumentSymbolTracker(
       this.#handlerContext.locationFinder,
     );
@@ -84,10 +84,11 @@ export class WorkspaceCardStorage
     }
 
     this.#lastCardsAroundCursorKey = payloadKey;
+    this.log("(cards_around_cursor_send)", "cards:", cards.length);
     void this.#eventHandler
       .emitEncrypted("cardsAroundCursor", cards)
       .catch((error) => {
-        this.debug("Failed to emit cardsAroundCursor", {
+        this.log("Failed to emit cardsAroundCursor", {
           error: String(error),
         });
       });
@@ -121,14 +122,14 @@ export class WorkspaceCardStorage
       try {
         this.emit("disconnect", { type: "disconnect" });
       } catch (e) {
-        this.debug("Error handling disconnect event", { error: String(e) });
+        this.log("Error handling disconnect event", { error: String(e) });
       }
 
       if (reason === "transport close") {
-        this.debug("retry");
+        this.log("(workspace_socket_retry)");
         const i = setInterval(() => {
-          this.debug(
-            "Reconnecting socket...",
+          this.log(
+            "(workspace_socket_reconnecting)",
             socket.connected,
             socket.disconnected,
             socket.recovered,
@@ -142,12 +143,12 @@ export class WorkspaceCardStorage
           socket.io.connect();
         }, 1000);
       } else {
-        this.debug("Socket disconnected");
+        this.log("(workspace_socket_disconnect)");
       }
     });
     // @ts-expect-error Reconnect event is missing from types
     socket.on("reconnect", (arg: unknown) => {
-      this.debug("on reconnect", { arg });
+      this.log("(workspace_socket_reconnect)", { arg });
     });
 
     socket.once("connect", this.onConnect);
@@ -160,9 +161,10 @@ export class WorkspaceCardStorage
       );
       const info = await this.#eventHandler.emit("getBoardInfo", "");
       this.connectedBoardSet.add(info.boardId);
+      this.log("(workspace_socket_connect)", "boardId:", info.boardId);
       this.boardUpdate(info);
     } catch (error) {
-      this.debug("No board info available on connect", { error });
+      this.log("No board info available on connect", { error });
     }
   };
 
@@ -200,18 +202,12 @@ export class WorkspaceCardStorage
     return super.disconnectBoard(boardId, false);
   }
 
-  /**
-   * TODO: Remove this function and associated event
-   */
-  log() {
-    //  Events already log through the transport debug path.
-  }
   selectedCards(cards: CardData[]): void {
-    this.debug("selectedCards()", { cards });
+    this.log("selectedCards()", { cards });
     return super.selectedCards(cards);
   }
   connectedBoards(boardIds: string[]) {
-    this.debug("connectedBoards())", { boardIds });
+    this.log("connectedBoards())", { boardIds });
     this.connectedBoardSet = new Set(boardIds);
     this.emit("connectedBoards", {
       type: "connectedBoards",
@@ -219,7 +215,7 @@ export class WorkspaceCardStorage
     });
   }
   boardUpdate(board: BoardInfo | null) {
-    this.debug(`Received boardUpdate: `, board);
+    this.log("(board_update)", board);
     if (board) {
       this.connectedBoardSet.add(board.boardId);
       this.setBoardName(board.boardId, board.name);
@@ -235,7 +231,7 @@ export class WorkspaceCardStorage
     }
   }
   async cardUpdate(url: string, card: CardData | null) {
-    this.debug("Received card update", { url, card });
+    this.log("Received card update", { url, card });
     try {
       if (card) {
         await this.setCard(card.boardId, card);
@@ -243,7 +239,7 @@ export class WorkspaceCardStorage
         this.deleteCardByLink(url);
       }
     } catch (error) {
-      this.debug("Error handling cardUpdate event", {
+      this.log("Error handling cardUpdate event", {
         error: String(error),
         url,
         card,
@@ -252,7 +248,7 @@ export class WorkspaceCardStorage
   }
 
   async card({ url, card }: { url: string; card: CardData | null }) {
-    this.debug("Received card event", { url, card });
+    this.log("Received card event", { url, card });
     try {
       if (card) {
         const board = this.getBoard(card.boardId);
@@ -264,7 +260,7 @@ export class WorkspaceCardStorage
         this.deleteCardByLink(url);
       }
     } catch (error) {
-      this.debug("Error handling card event", {
+      this.log("Error handling card event", {
         error: String(error),
         url,
         card,
@@ -273,7 +269,7 @@ export class WorkspaceCardStorage
   }
 
   public navigateTo = async (card: CardData, preview = false) => {
-    this.debug("Navigating to card", { card, preview });
+    this.log("Navigating to card", { card, preview });
     const dest =
       await this.#handlerContext.locationFinder.findCardDestination(card);
 
@@ -327,7 +323,7 @@ export class WorkspaceCardStorage
             error instanceof Error &&
             error.message.includes("Board not found")
           ) {
-            this.debug("Board not found in workspace, creating it", {
+            this.log("Board not found in workspace, creating it", {
               boardId: card.boardId,
             });
             await this.addBoard(card.boardId, `Board ${card.boardId}`);
@@ -344,7 +340,7 @@ export class WorkspaceCardStorage
         codeLink,
       });
     }
-    this.debug("Returning from navigateTo", {
+    this.log("Returning from navigateTo", {
       connected: status === "connected",
     });
     return status === "connected";
