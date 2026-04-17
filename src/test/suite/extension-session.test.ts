@@ -5,10 +5,11 @@ import {
   parseSessionUri,
   zAppExplorerSession,
 } from "@/app-explorer-session";
+import { testHosts } from "@/host-config";
 import { randomHex } from "@/utils/to-hex";
 
 suite("Extension session URLs", () => {
-  for (const hostIndex of [0, 1, 2]) {
+  for (const hostIndex of testHosts) {
     for (const insiders of [true, false]) {
       test(`parses session URLs with hostIndex=${hostIndex} and insiders=${insiders}`, () => {
         const sessionConfig = zAppExplorerSession.parse({

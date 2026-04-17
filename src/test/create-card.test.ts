@@ -20,6 +20,8 @@ import {
   waitFor,
 } from "./helpers/test-utils";
 
+import { testHosts } from "@/host-config";
+
 const log = createDebug("app-explorer:create-card-test");
 
 createDebug.log("==================================================");
@@ -67,7 +69,7 @@ suiteFn("Create Card", function () {
     }
   });
 
-  for (const hostIndex of [1, 2]) {
+  for (const hostIndex of testHosts) {
     test(`On test board host: ${hostIndex}`, async function () {
       this.timeout(1200000);
       invariant(page, "Page should be defined after setup");

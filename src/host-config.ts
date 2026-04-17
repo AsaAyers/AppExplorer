@@ -27,6 +27,10 @@ const hostConfig = [
   },
 ] as const;
 
+export const testHosts = hostConfig
+  .map((config) => config.index)
+  .filter((i) => i > 0);
+
 export const HEALTH_URL = "http://localhost:9042/health";
 
 export type HostIndex = (typeof hostConfig)[number]["index"];

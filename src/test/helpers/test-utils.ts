@@ -6,7 +6,7 @@ import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 import { ExtensionApi } from "../../extension";
-import { HEALTH_URL } from "../../host-config";
+import { HEALTH_URL, type HostIndex } from "../../host-config";
 
 import { colorText } from "./colors";
 import { isCriticalPath, timeline } from "./critical-path-timeline";
@@ -128,7 +128,10 @@ export async function activateAppExplorer() {
   return extension.exports;
 }
 
-export async function startAppExplorerSession(page: Page, hostIndex = 1) {
+export async function startAppExplorerSession(
+  page: Page,
+  hostIndex: HostIndex = 1,
+) {
   await activateAppExplorer();
 
   const sidebar = getSidebar(page);

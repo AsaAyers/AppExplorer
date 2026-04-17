@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# docker build -t asa-copilot . -f Dockerfile.copilot
+# docker build --add-host dev.appexplorer.dev:host-gateway -t asa-copilot . -f Dockerfile.copilot
 
 
 set -ex

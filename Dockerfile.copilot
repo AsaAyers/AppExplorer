@@ -3,13 +3,26 @@ FROM docker/sandbox-templates:copilot AS base
 
 FROM base AS deps
 USER root
-RUN apt update && apt install -y ca-certificates curl gnupg
+RUN apt update && apt install -y ca-certificates curl gnupg openssl
 RUN install -m 0755 -d /etc/apt/keyrings \
 	&& curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
 	&& chmod a+r /etc/apt/keyrings/nodesource.gpg \
 	&& echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
 	&& apt update \
 	&& apt install -y nodejs xwallpaper
+
+# The cloud agent runs behind port forwarding in development, so each host
+# must expose its own self-signed cert before building this image.
+RUN openssl s_client -showcerts \
+	-connect dev.appexplorer.dev:443 \
+	-servername dev.appexplorer.dev \
+	</dev/null 2>/dev/null \
+	| awk '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/ { print }' \
+	> /usr/local/share/ca-certificates/dev.appexplorer.dev.crt \
+	&& test -s /usr/local/share/ca-certificates/dev.appexplorer.dev.crt \
+	&& update-ca-certificates \
+	&& curl --fail --silent --show-error https://dev.appexplorer.dev/ >/dev/null
+ENV NODE_OPTIONS=--use-system-ca
 
 RUN curl -L 'https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64' -o /tmp/code.deb
 RUN apt install -y /tmp/code.deb
@@ -24,7 +37,7 @@ RUN corepack enable yarn
 FROM deps AS runner
 USER agent
 RUN npx playwright install --with-deps chromium
+RUN copilot update
 WORKDIR /home/agent/workspace
 # COPY . .
 # COPY --from=deps /home/agent/workspace/node_modules ./node_modules
-

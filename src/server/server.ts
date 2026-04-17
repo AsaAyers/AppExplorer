@@ -4,6 +4,7 @@ import { Server, type Socket } from "socket.io";
 import * as vscode from "vscode";
 import { z } from "zod";
 
+import { allowedSocketOrigin } from "../allowed-socket-origin";
 import {
   APP_EXPLORER_SESSION_NAMESPACE,
   appExplorerSessionRoles,
@@ -54,7 +55,7 @@ export class MiroServer {
   constructor(httpServer: ReturnType<typeof createServer>) {
     const io = new Server(httpServer, {
       cors: {
-        origin: true,
+        origin: allowedSocketOrigin,
         credentials: true,
       },
     });
