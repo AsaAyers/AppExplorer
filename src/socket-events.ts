@@ -55,10 +55,6 @@ export const zCard = z.function({
   input: [cardEventDataSchema],
   output: z.promise(z.void()),
 });
-export const zLog = z.function({
-  input: [z.array(z.unknown())],
-  output: z.promise(z.void()),
-});
 export const zSessionShutdown = z.function({
   input: [],
   output: z.promise(z.void()),
@@ -182,7 +178,6 @@ export const socketEventMap = {
       selectedCards: zSelectedCards,
       navigateTo: zNavigateTo,
       card: zCard,
-      log: zLog,
     },
   },
   sidebar: {

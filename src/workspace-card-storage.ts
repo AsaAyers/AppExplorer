@@ -202,12 +202,6 @@ export class WorkspaceCardStorage
     return super.disconnectBoard(boardId, false);
   }
 
-  /**
-   * TODO: Remove this function and associated event
-   */
-  handleLogEvent() {
-    //  Events already log through the transport debug path.
-  }
   selectedCards(cards: CardData[]): void {
     this.log("selectedCards()", { cards });
     return super.selectedCards(cards);
