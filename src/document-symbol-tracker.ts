@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { SymbolAnchor, CardData } from "./EventTypes";
+import { SymbolAnchor, CardData } from "./card-data";
 import { getGitHubUrl } from "./get-github-url";
 import { getRelativePath } from "./get-relative-path";
 import { LocationFinder } from "./location-finder";
@@ -17,6 +17,7 @@ export interface SymbolPathChangeEvent {
   uri: vscode.Uri;
   version: number; // TextDocument version at sampling time
   symbols: CardData[]; // Same order as labels
+  force: boolean;
 }
 
 interface SymbolRequest {
@@ -37,8 +38,6 @@ export class DocumentSymbolTracker
   private finder: LocationFinder;
   private disposables: vscode.Disposable[] = [];
   private debounceTimer: NodeJS.Timeout | null = null;
-  private lastPathKey: string | null = null;
-  private lastUriString: string | null = null;
   private debounceMs: number;
   constructor(finder: LocationFinder, debounceMs = 400) {
     super();
@@ -123,14 +122,6 @@ export class DocumentSymbolTracker
   ) {
     const labels = symbols.map((s) => s.label).reverse(); // ensure outer->inner order
     const pathKey = labels.join("→");
-    const uriString = uri?.toString() ?? "";
-    const changed =
-      pathKey !== this.lastPathKey || uriString !== this.lastUriString;
-    if (!changed && !force) {
-      return;
-    }
-    this.lastPathKey = pathKey;
-    this.lastUriString = uriString;
 
     const boardId = "";
     const cards = await Promise.all(
@@ -163,6 +154,7 @@ export class DocumentSymbolTracker
         uri,
         version: version ?? -1,
         symbols: cards,
+        force,
       });
     }
   }

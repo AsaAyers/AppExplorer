@@ -2,7 +2,7 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { CardData } from "./EventTypes";
+import { CardData } from "./card-data";
 import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
 import { getDocumentSymbolTracker } from "./document-symbol-tracker";
@@ -20,6 +20,8 @@ export class WorkspaceCardStorage
   readonly #symbolTracker;
   readonly #symbolTrackerSubscription: vscode.Disposable;
   #session: undefined | AppExplorerSession;
+  #lastCardsAroundCursorKey?: string;
+  #pendingInitialCardsAroundCursor = false;
 
   #handlerContext: Pick<HandlerContext, "locationFinder">;
   constructor(
@@ -35,13 +37,7 @@ export class WorkspaceCardStorage
 
     this.#symbolTrackerSubscription = this.#symbolTracker.event((event) => {
       if (event.type === "symbolsChanged" && this.#eventHandler?.hasSession()) {
-        void this.#eventHandler
-          .emitEncrypted("cardsAroundCursor", event.symbols)
-          .catch((error) => {
-            this.debug("Failed to emit cardsAroundCursor", {
-              error: String(error),
-            });
-          });
+        this.emitCardsAroundCursor(event.symbols, event.force);
       }
     });
   }
@@ -54,9 +50,46 @@ export class WorkspaceCardStorage
     this.socket?.disconnect();
     this.socket?.removeAllListeners();
     this.#session = session;
+    this.#lastCardsAroundCursorKey = undefined;
+    this.#pendingInitialCardsAroundCursor = true;
     const socket = this.createSocket(session);
     this.socket = socket;
     this.attachSocketListeners(socket);
+  }
+
+  private serializeCardsAroundCursor(cards: CardData[]) {
+    return JSON.stringify(
+      cards.map(({ path, symbol, title, codeLink }) => [
+        path,
+        symbol,
+        title,
+        codeLink,
+      ]),
+    );
+  }
+
+  private emitCardsAroundCursor(cards: CardData[], force = false) {
+    if (!this.#eventHandler?.hasSession()) {
+      return;
+    }
+
+    const payloadKey = this.serializeCardsAroundCursor(cards);
+    if (!force && payloadKey === this.#lastCardsAroundCursorKey) {
+      return;
+    }
+
+    this.#lastCardsAroundCursorKey = payloadKey;
+    void this.#eventHandler
+      .emitEncrypted("cardsAroundCursor", cards)
+      .catch((error) => {
+        this.debug("Failed to emit cardsAroundCursor", {
+          error: String(error),
+        });
+      });
+  }
+
+  private requestCurrentCardsAroundCursor() {
+    this.#symbolTracker.fire({ type: "symbolRequest" });
   }
 
   private createSocket(session: AppExplorerSession, connectionTimeout = 10000) {
@@ -123,7 +156,6 @@ export class WorkspaceCardStorage
       const info = await this.#eventHandler.emit("getBoardInfo", "");
       this.connectedBoardSet.add(info.boardId);
       this.boardUpdate(info);
-      this.#symbolTracker.fire({ type: "symbolRequest" });
     } catch (error) {
       this.debug("No board info available on connect", { error });
     }
@@ -140,6 +172,8 @@ export class WorkspaceCardStorage
       await this.#eventHandler.emit("sessionShutdown");
     }
     this.socket?.disconnect();
+    this.#lastCardsAroundCursorKey = undefined;
+    this.#pendingInitialCardsAroundCursor = false;
     this.connectedBoardSet.clear();
     this.clear();
     this.selectedCards([]);
@@ -177,6 +211,10 @@ export class WorkspaceCardStorage
       this.connectedBoardSet.add(board.boardId);
       this.setBoardName(board.boardId, board.name);
       this.setBoardCards(board.boardId, Object.values(board.cards));
+      if (this.#pendingInitialCardsAroundCursor) {
+        this.#pendingInitialCardsAroundCursor = false;
+        this.requestCurrentCardsAroundCursor();
+      }
     }
   }
   async cardUpdate(url: string, card: CardData | null) {

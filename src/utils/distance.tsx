@@ -1,7 +1,7 @@
 "use client";
 import { AppCard } from "@mirohq/websdk-types/stable/features/widgets/appCard";
 
-import { CardData } from "@/EventTypes";
+import { CardData } from "@/card-data";
 
 export const distance = (
   center: { x: number; y: number },

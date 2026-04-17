@@ -119,6 +119,7 @@ That runs the Next.js app on `http://localhost:3000`.
 - **Card metadata**: Miro cards link back to code using metadata such as `path`, `symbol`, and `codeLink`
 - **Socket transport**: real-time updates use Socket.IO, and encrypted transport is handled in the event-handler layer
 - **Host selection**: use host indexes and helper functions instead of scattering raw hostnames
+- **File naming**: tracked source/config files use kebab-case filenames, and the filename should match one of the file's main exports (`some-file.ts` -> `someFile`, `some-class.ts` -> `SomeClass`)
 - **Split startup behavior**: the legacy `9042` asset server starts on activation, but workspace session connection stays lazy
 - **Routing-only relay**: avoid reintroducing server-owned board/workspace/card state
 

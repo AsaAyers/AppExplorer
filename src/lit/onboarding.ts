@@ -1,7 +1,7 @@
 import { css, html } from "lit";
 import { customElement } from "lit/decorators.js";
 
-import { CardData } from "../EventTypes";
+import { CardData } from "../card-data";
 
 import { AppElement } from "./app-element";
 import { mirotoneStyles } from "./mirotone";

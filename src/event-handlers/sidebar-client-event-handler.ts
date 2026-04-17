@@ -1,4 +1,4 @@
-import { CardData } from "../EventTypes";
+import { CardData } from "../card-data";
 
 import { type HandlerMethodMap, SidebarSocket } from "./types";
 

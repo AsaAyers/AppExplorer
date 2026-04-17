@@ -1,9 +1,9 @@
 import { css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { CardData } from "../EventTypes";
-import { isAppCard } from "../miro/isAppCard";
-import { updateCard } from "../miro/updateCard";
+import { CardData } from "../card-data";
+import { isAppCard } from "../miro/is-app-card";
+import { updateCard } from "../miro/update-card";
 import { createDebug } from "../utils/create-debug";
 
 import { AppElement } from "./app-element";

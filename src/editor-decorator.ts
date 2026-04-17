@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { CardData } from "./EventTypes";
+import { CardData } from "./card-data";
 import { HandlerContext } from "./extension";
 import { getRelativePath } from "./get-relative-path";
 import { LocationFinder } from "./location-finder";

@@ -3,7 +3,7 @@ import { css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import { CardData } from "@/EventTypes";
+import { CardData } from "@/card-data";
 import { AppElement } from "@/lit/app-element";
 import { mirotoneStyles } from "@/lit/mirotone";
 import { createDebug } from "@/utils/create-debug";

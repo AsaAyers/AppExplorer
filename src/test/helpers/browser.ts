@@ -11,7 +11,7 @@ import * as vscode from "vscode";
 import { getHostByIndex } from "../../host-config";
 
 import { colorText } from "./colors";
-import { isHeadless, isRecording } from "./isRecording";
+import { isHeadless, isRecording } from "./is-recording";
 import { screenshot, waitFor } from "./test-utils";
 
 export type BrowserPage = {

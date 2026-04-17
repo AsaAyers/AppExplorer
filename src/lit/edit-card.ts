@@ -7,7 +7,7 @@ import { css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import invariant from "tiny-invariant";
 
-import { CardData } from "../EventTypes";
+import { CardData } from "../card-data";
 import { createDebug } from "../utils/create-debug";
 
 import "./app-card";

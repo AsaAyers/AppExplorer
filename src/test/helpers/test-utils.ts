@@ -9,7 +9,7 @@ import { ExtensionApi } from "../../extension";
 import { getHealthUrlByIndex } from "../../host-config";
 
 import { colorText } from "./colors";
-import { isRecording } from "./isRecording";
+import { isRecording } from "./is-recording";
 
 import { createDebug } from "@/utils/create-debug";
 

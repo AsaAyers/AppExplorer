@@ -1,7 +1,7 @@
 import { ContextConsumer } from "@lit/context";
 import { LitElement, ReactiveController, ReactiveControllerHost } from "lit";
 
-import { CardData } from "../EventTypes";
+import { CardData } from "../card-data";
 import { createDebug } from "../utils/create-debug";
 
 import { socketContext } from "./socket-context";

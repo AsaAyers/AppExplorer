@@ -76,7 +76,7 @@ AppExplorer is a VSCode extension designed to assist developers in creating arch
 ## Project-Specific Conventions
 
 - **Card Metadata**: Cards in Miro are linked to code using metadata (`path`, `symbol`, `codeLink`). See `updateCard` in `src/miro.ts`.
-- **Socket Communication**: Real-time updates between Miro and VSCode use `socket.io`. Queries and responses are defined in `EventTypes.ts`.
+- **Socket Communication**: Real-time updates between Miro and VSCode use `socket.io`. Queries and responses are defined in `card-data.ts`.
 - **Commands**: All user-facing actions are registered as VSCode commands in `src/extension.ts`.
 
 ## Integration Points

@@ -2,7 +2,7 @@ import type { AppCard } from "@mirohq/websdk-types/stable/features/widgets/appCa
 import type { CardField } from "@mirohq/websdk-types/stable/features/widgets/card";
 import invariant from "tiny-invariant";
 
-import type { CardData } from "../EventTypes";
+import type { CardData } from "../card-data";
 import { MetaData } from "../miro";
 
 export async function updateCard(

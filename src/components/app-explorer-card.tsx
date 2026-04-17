@@ -3,7 +3,7 @@ import classNames from "classnames";
 import Image from "next/image";
 import React from "react";
 
-import { CardData } from "@/EventTypes";
+import { CardData } from "@/card-data";
 import appExplorerLogo from "@/assets/app-explorer.svg";
 import appcardStatusDisabled from "@/assets/appcard-status-disabled.svg";
 import appcardStatusDisconnected from "@/assets/appcard-status-disconnected.svg";

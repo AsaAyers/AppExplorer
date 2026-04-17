@@ -9,7 +9,7 @@ import {
 import { encryptedEventName } from "../../socket-events";
 import { isEventHandlerOptOutError } from "../../unhandled-event-ack";
 
-import type { CardData } from "@/EventTypes";
+import type { CardData } from "@/card-data";
 import { zAppExplorerSession } from "@/app-explorer-session";
 import type { HandlerMethodMap } from "@/event-handlers/types";
 import { randomHex } from "@/utils/to-hex";

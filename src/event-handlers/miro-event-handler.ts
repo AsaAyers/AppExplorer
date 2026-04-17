@@ -1,10 +1,10 @@
 import { HandlerMethodMap } from "./types";
 
-import type { CardData } from "@/EventTypes";
+import type { CardData } from "@/card-data";
 import { EventHandler } from "@/event-handlers/event-handler";
 import { extractCardData, debug, zoomIntoCards } from "@/miro";
-import { isAppCard } from "@/miro/isAppCard";
-import { notEmpty } from "@/utils/notEmpty";
+import { isAppCard } from "@/miro/is-app-card";
+import { notEmpty } from "@/utils/not-empty";
 
 export class MiroEventHandler extends EventHandler<"miro"> {
   protected readonly selfName = "miro" as const;
