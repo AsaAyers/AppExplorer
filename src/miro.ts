@@ -245,8 +245,9 @@ export type Disposable = {
 
 export function backgroundInit(): Disposable {
   window.name = "app-explorer:background";
-  debug("Miro SDK version:", (globalThis as typeof globalThis & { miro?: unknown }).miro);
-  const handleMessage = (event: MessageEvent<{ type?: string; session?: AppExplorerSession }>) => {
+  const handleMessage = (
+    event: MessageEvent<{ type?: string; session?: AppExplorerSession }>,
+  ) => {
     if (
       event.origin === window.origin &&
       event.data?.type === "attachSession" &&

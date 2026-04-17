@@ -2,9 +2,9 @@
 
 import React from "react";
 
-import type { CardData } from "@/card-data";
-
 import { AppExplorerCard } from "./app-explorer-card";
+
+import type { CardData } from "@/card-data";
 
 type SymbolOption = Pick<CardData, "path" | "symbol">;
 
@@ -63,15 +63,7 @@ export function AppExplorerEditCard({
   );
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem",
-        padding: "1rem",
-      }}
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
       <AppExplorerCard
         cardData={currentCardData}
         className="m-0"
@@ -79,10 +71,11 @@ export function AppExplorerEditCard({
         showStatusButton={false}
       />
 
-      <label style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <label className="flex flex-col gap-2">
         <span>Title</span>
         <input
           autoFocus
+          className="rounded border border-gray-300 px-3 py-2"
           onChange={(event) => {
             updateCardEdits({ title: event.target.value });
           }}
@@ -91,10 +84,11 @@ export function AppExplorerEditCard({
         />
       </label>
 
-      <label style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <span style={{ display: "flex", justifyContent: "space-between" }}>
+      <label className="flex flex-col gap-2">
+        <span className="flex items-center justify-between gap-4">
           <span>Description</span>
           <button
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
             onClick={() => {
               setExpandDescription((value) => !value);
             }}
@@ -104,6 +98,7 @@ export function AppExplorerEditCard({
           </button>
         </span>
         <textarea
+          className="rounded border border-gray-300 px-3 py-2"
           onChange={(event) => {
             updateCardEdits({ description: event.target.value });
           }}
@@ -112,9 +107,10 @@ export function AppExplorerEditCard({
         />
       </label>
 
-      <label style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <label className="flex flex-col gap-2">
         <span>Symbol Path</span>
         <select
+          className="rounded border border-gray-300 px-3 py-2"
           onChange={(event) => {
             const [path, symbol] = event.target.value.split("\n");
             updateCardEdits({ path, symbol });
@@ -129,13 +125,21 @@ export function AppExplorerEditCard({
         </select>
       </label>
 
-      <div
-        style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}
-      >
-        <button disabled={!currentCardData.codeLink} type="button" onClick={jumpToCode}>
+      <div className="flex justify-between gap-4">
+        <button
+          className="rounded border border-gray-300 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!currentCardData.codeLink}
+          type="button"
+          onClick={jumpToCode}
+        >
           Jump to Code
         </button>
-        <button type="submit">Save</button>
+        <button
+          className="rounded bg-black px-4 py-2 text-white hover:bg-gray-800"
+          type="submit"
+        >
+          Save
+        </button>
       </div>
     </form>
   );
