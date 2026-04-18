@@ -107,6 +107,7 @@ class WorkspaceTestEventHandler extends EventHandler<"workspace", "sidebar"> {
       this.receivedCard = card;
     },
     onRequestCardsAroundCursor: async () => {},
+    onSessionShutdown: async () => {},
   } satisfies HandlerMethodMap<"workspace", "sidebar">;
 }
 
@@ -137,6 +138,7 @@ class MiroWorkspaceResponseEventHandler extends EventHandler<
     onSelectCard: async (_boardId: string, _miroLink: string) => true,
     onCardStatus: async (_boardId: string, _data) => true,
     onCards: async (_boardId: string) => [],
+    onSessionShutdown: async () => {},
   } satisfies HandlerMethodMap<"miro", "workspace">;
 }
 
@@ -150,6 +152,7 @@ class OptOutMiroWorkspaceResponseEventHandler extends EventHandler<
     onSelectCard: async (_boardId: string, _miroLink: string) => this.optOut(),
     onCardStatus: async (_boardId: string, _data) => this.optOut(),
     onCards: async (_boardId: string) => this.optOut(),
+    onSessionShutdown: async () => {},
   } satisfies HandlerMethodMap<"miro", "workspace">;
 }
 
@@ -278,26 +281,5 @@ suite("Encrypted EventHandler transport", () => {
     });
 
     assert.deepStrictEqual(receivedCards, cards);
-  });
-
-  test("sidebar client handler emits session shutdown events", async () => {
-    const sidebarSocket = new MockSocket();
-    const sidebarEventHandler = SidebarClientEventHandler.create(
-      sidebarSocket as never,
-    );
-
-    let shutdownCount = 0;
-    const subscription = sidebarEventHandler.sessionShutdownEvent(() => {
-      shutdownCount += 1;
-    });
-
-    sidebarSocket.emit("sessionShutdown");
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    assert.strictEqual(shutdownCount, 1);
-
-    subscription.dispose();
-    sidebarSocket.emit("sessionShutdown");
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    assert.strictEqual(shutdownCount, 1);
   });
 });

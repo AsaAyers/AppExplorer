@@ -28,5 +28,9 @@ export class WorkspaceEventHandler extends EventHandler<"workspace"> {
     onCard: async (event) => {
       return this.storage.card(event);
     },
+    onSessionShutdown: async () => {
+      this.storage.clear();
+      this.socket.disconnect();
+    },
   } satisfies HandlerMethodMap<"workspace">;
 }

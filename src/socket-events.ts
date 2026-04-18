@@ -182,6 +182,7 @@ export const socketEventMap = {
   },
   sidebar: {
     workspace: {
+      sessionShutdown: zSessionShutdown,
       navigateTo: zNavigateTo,
       requestCardsAroundCursor: zRequestCardsAroundCursor,
     },
@@ -192,6 +193,7 @@ export const socketEventMap = {
       sessionShutdown: zSessionShutdown,
     },
     miro: {
+      sessionShutdown: zSessionShutdown,
       getBoardInfo: zGetBoardInfo,
       selectCard: zSelectCard,
       cardStatus: zCardStatus,

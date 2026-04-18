@@ -255,7 +255,7 @@ export abstract class EventHandler<
 
     invariant(
       this.#session,
-      "Session must be attached to encrypt encrypted events",
+      "Session must be attached to encrypt encrypted events: " + eventName,
     );
     const callSocket = schema.implementAsync(
       async (...validatedArgs: unknown[]) => {
@@ -551,7 +551,7 @@ export abstract class EventHandler<
   private async encryptEncryptedEnvelope(eventName: string, args: unknown[]) {
     invariant(
       this.#session,
-      "Session must be attached to encrypt encrypted events",
+      "Session must be attached to encrypt encrypted events: " + eventName,
     );
     return encrypt(
       {
@@ -566,7 +566,7 @@ export abstract class EventHandler<
   private async parseEncryptedEnvelope(payload: unknown) {
     invariant(
       this.#session,
-      "Session must be attached to decrypt encrypted events",
+      "Session must be attached to encrypt encrypted events",
     );
     const encryptedPayload = z.string().parse(unwrapSocketAckValue(payload));
     const decryptedPayload = await decrypt(

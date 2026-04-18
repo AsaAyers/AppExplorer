@@ -278,6 +278,7 @@ export async function attachSession(session: AppExplorerSession) {
   }) as MiroSocket;
   debug = debug.extend(s.id || Math.random().toString(36).substring(2, 15));
   const miroEventHandler = MiroEventHandler.create(s);
+  miroEventHandler.attachSession(session);
 
   const boardId = await miro.board.getInfo().then((info) => info.id);
   const emitBoardUpdate = async () => {
@@ -301,7 +302,7 @@ export async function attachSession(session: AppExplorerSession) {
           return acc;
         }, {}),
     };
-    await miroEventHandler.emit("boardUpdate", board);
+    await miroEventHandler.emitEncrypted("boardUpdate", board);
   };
 
   s.on("connect", () => {
@@ -358,7 +359,7 @@ export async function attachSession(session: AppExplorerSession) {
           });
         }
       }
-      await miroEventHandler.emit("selectedCards", data);
+      await miroEventHandler.emitEncrypted("selectedCards", data);
     } catch (error) {
       debug("AppExplorer: Notifying VSCode of updated selection", error);
     }

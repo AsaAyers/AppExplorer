@@ -73,10 +73,21 @@ export class MiroServer {
       next();
     });
 
+    const allowedEvents = new Set("encryptedEvent");
     sessionNamespace.on("connection", (socket) => {
       const role = roleSchema.parse(socket.data.role);
 
       socket.onAny(async (eventName, ...args) => {
+        if (!allowedEvents.has(eventName)) {
+          debugEvents("(bad_event)", "Blocked disallowed event", {
+            socketId: socket.id,
+            role,
+            eventName,
+          });
+          socket.disconnect(true);
+          return;
+        }
+
         debugEvents("Relaying session event", {
           socketId: socket.id,
           role,

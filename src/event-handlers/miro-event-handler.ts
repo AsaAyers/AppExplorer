@@ -68,7 +68,7 @@ export class MiroEventHandler extends EventHandler<"miro"> {
           await zoomIntoCards([card]);
           miro.board.notifications.showInfo(`Selected card: ${card.title}`);
         } else {
-          await this.emit("card", { url: cardUrl, card: null });
+          await this.emitEncrypted("card", { url: cardUrl, card: null });
           miro.board.notifications.showError(`Card not found ${cardUrl}`);
         }
         return true;
@@ -101,6 +101,12 @@ export class MiroEventHandler extends EventHandler<"miro"> {
         debug("AppExplorer: Error updating card status", error);
       }
       return true;
+    },
+    onSessionShutdown: async () => {
+      miro.board.notifications.showInfo(
+        "Session ended. Disconnecting AppExplorer.",
+      );
+      this.socket.disconnect();
     },
   } satisfies HandlerMethodMap<"miro">;
 }

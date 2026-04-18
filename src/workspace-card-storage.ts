@@ -162,7 +162,7 @@ export class WorkspaceCardStorage
         this.#eventHandler,
         "Event handler should be initialized on connect",
       );
-      const info = await this.#eventHandler.emit("getBoardInfo", "");
+      const info = await this.#eventHandler.emitEncrypted("getBoardInfo", "");
       this.connectedBoardSet.add(info.boardId);
       this.log("(workspace_socket_connect)", "boardId:", info.boardId);
       this.boardUpdate(info);
@@ -337,7 +337,7 @@ export class WorkspaceCardStorage
         }
       }
 
-      await this.#eventHandler?.emit("cardStatus", card.boardId, {
+      await this.#eventHandler?.emitEncrypted("cardStatus", card.boardId, {
         miroLink: card.miroLink,
         status,
         codeLink,
