@@ -6,7 +6,7 @@ import {
   parseSessionUri,
   zAppExplorerSession,
 } from "./app-explorer-session";
-import { getAppHostByIndex, getRelayHostByIndex } from "./host-config";
+import { getHostConfig } from "./host-config";
 import { createDebug } from "./utils/create-debug";
 import { EventEmitter } from "./utils/event-emitter";
 import { WorkspaceCardStorage } from "./workspace-card-storage";
@@ -209,13 +209,16 @@ export class AppExplorerSessionCoordinator
 
     this.#startPromise = (async () => {
       this.#cardStorage.attachSession(session);
+
+      const { appUrl, relayUrl } = getHostConfig(session.hostIndex);
+
       const serverResult = {
         mode: "client" as const,
-        serverUrl: getRelayHostByIndex(session.hostIndex),
+        serverUrl: relayUrl,
       };
       log("(session_start)", {
-        appHost: getAppHostByIndex(session.hostIndex),
-        relayHost: getRelayHostByIndex(session.hostIndex),
+        appHost: appUrl,
+        relayHost: relayUrl,
         hostIndex: session.hostIndex,
         serverUrl: serverResult.serverUrl,
         sessionId: session.sessionId,

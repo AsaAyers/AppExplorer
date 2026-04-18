@@ -1,7 +1,7 @@
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { getHostConfig, getNormalizedHostIndex } from "./host-config";
+import { getHostConfig } from "./host-config";
 
 export const zAppExplorerSession = z.object({
   sessionId: z.string().min(1),
@@ -12,7 +12,7 @@ export const zAppExplorerSession = z.object({
     .nullable()
     .default("0")
     .transform((str) => {
-      return getNormalizedHostIndex(Number(str));
+      return Number(str);
     }),
 });
 

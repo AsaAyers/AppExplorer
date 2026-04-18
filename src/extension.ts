@@ -12,8 +12,6 @@ import { AppExplorerSessionCoordinator } from "./extension-session";
 import { LocationFinder } from "./location-finder";
 import { logger as baseLogger, logger } from "./logger";
 import { MiroServer } from "./server/server";
-import { ServerDiscovery } from "./server-discovery";
-import { ServerLauncher } from "./server-launcher";
 import { StatusBarManager } from "./status-bar-manager";
 import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
 import { createDebug } from "./utils/create-debug";
@@ -51,9 +49,6 @@ export async function activate(
   });
   // Log port configuration for debugging
 
-  const serverLauncher = new ServerLauncher(new ServerDiscovery());
-  context.subscriptions.push(serverLauncher);
-  await serverLauncher.initializeServer();
   const sessionCoordinator = new AppExplorerSessionCoordinator(
     context,
     cardStorage,

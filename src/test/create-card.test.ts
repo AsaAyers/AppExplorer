@@ -22,7 +22,7 @@ import {
   waitFor,
 } from "./helpers/test-utils";
 
-import { getMiroAppName, testHosts, type HostIndex } from "@/host-config";
+import { getHostConfig, testHosts, type HostIndex } from "@/host-config";
 
 const log = createDebug("app-explorer:create-card-test");
 
@@ -30,7 +30,7 @@ createDebug.log("==================================================");
 
 const storageState = "playwright/.auth/user.json";
 const storageStateExists = fs.existsSync(storageState);
-const localAppHealthUrl = "http://localhost:3000/api/health-check";
+const localAppHealthUrl = "http://dev.appexplorer.dev/api/health-check";
 
 const appCardSelector = ".app-card";
 const cardTitleSelector = ".app-card--title";
@@ -47,9 +47,6 @@ suiteFn("Create Card", function () {
   setupTimeline();
   suiteSetup(async function () {
     this.timeout(60000);
-    await fetch("http://localhost:9042/reset", { method: "POST" }).catch(
-      () => null,
-    );
 
     localAppServer = await ensureLocalAppHost();
     browser = await launchBrowser();
@@ -239,7 +236,10 @@ async function openTestBoard(page: Page, hostIndex: HostIndex) {
   await videoDelay("before open");
   await page
     .locator("#CREATION_BAR_ROOT")
-    .getByRole("button", { name: getMiroAppName(hostIndex), exact: true })
+    .getByRole("button", {
+      name: getHostConfig(hostIndex).miroAppName,
+      exact: true,
+    })
     .click();
 
   const sidebar = getSidebar(page);

@@ -6,7 +6,7 @@ import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 import { ExtensionApi } from "../../extension";
-import { LOCAL_RELAY_HEALTH_URL, type HostIndex } from "../../host-config";
+import { type HostIndex } from "../../host-config";
 
 import { colorText } from "./colors";
 import { isCriticalPath, timeline } from "./critical-path-timeline";
@@ -114,27 +114,12 @@ export async function activateAppExplorer() {
     }
   });
 
-  await waitForLegacyRelayHealth();
   return extension.exports;
-}
-
-export async function waitForLegacyRelayHealth() {
-  await waitFor(
-    async () => {
-      const response = await fetch(LOCAL_RELAY_HEALTH_URL);
-      assert.equal(response.status, 200);
-    },
-    {
-      timeout: 15000,
-      interval: 500,
-      message: "AppExplorer server did not start after session launch",
-    },
-  );
 }
 
 export async function startAppExplorerSession(
   page: Page,
-  hostIndex: HostIndex = 1,
+  hostIndex: HostIndex = 3,
 ) {
   await activateAppExplorer();
 

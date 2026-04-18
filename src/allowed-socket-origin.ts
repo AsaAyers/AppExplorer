@@ -1,6 +1,4 @@
 const allowedLocalOrigins = new Set([
-  "http://localhost:9042",
-  "http://localhost:3000",
   "https://appexplorer.dev",
   "https://dev.appexplorer.dev",
 ]);

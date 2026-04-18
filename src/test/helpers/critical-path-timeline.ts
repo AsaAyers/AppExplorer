@@ -213,10 +213,10 @@ export function setupTimeline(): void {
   // Regular `function` declarations are required here (not arrow functions) so
   // that Mocha can inject its `this` context.  The `afterEach` hook uses
   // `this.currentTest` to determine whether the test failed.
-  suiteSetup(function () {
+  setup(function () {
     timeline.reset();
   });
-  suiteTeardown(function () {
+  teardown(function () {
     timeline.printOnFailure(this);
   });
 }

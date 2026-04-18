@@ -8,8 +8,6 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
-import { getAppHostByIndex } from "../../host-config";
-
 import { colorText } from "./colors";
 import {
   isBrowserSpam,
@@ -17,7 +15,7 @@ import {
   timeline,
 } from "./critical-path-timeline";
 import { isHeadless, isRecording } from "./is-recording";
-import { screenshot, waitFor } from "./test-utils";
+import { screenshot } from "./test-utils";
 
 export type BrowserPage = {
   context: BrowserContext;
@@ -140,40 +138,4 @@ export async function closeBrowserContext(
 
     await context.close();
   }
-}
-
-export async function establishBrowserSession() {
-  const page = globalThis.playwrightPage;
-  assert.ok(page, "Page should be available for the test");
-  const host = getAppHostByIndex(1);
-
-  await page.goto(new URL("/test", `${host}/`).toString(), {
-    waitUntil: "domcontentloaded",
-  });
-
-  const shouldUseInsidersProtocol = vscode.env.appName
-    .toLowerCase()
-    .includes("insider");
-  const startSessionButton = shouldUseInsidersProtocol
-    ? page.locator("text=VSCode Insiders")
-    : page.locator("text=Start Session");
-  await startSessionButton.waitFor({ state: "visible" });
-
-  // Make sure the iframe has loaded before clicking the session button.
-  const miroIframe = page.frameLocator("iframe");
-  await miroIframe.locator("text=Miro opens this page").waitFor({
-    state: "visible",
-  });
-
-  // 1) Click the button to start a session.
-  await startSessionButton.click();
-
-  // 2) Wait for the start button to disappear.
-  await waitFor(async () => {
-    const count = await page?.locator("text=Start Session").count();
-    assert.equal(count, 0, "Start Session button should be removed");
-  });
-
-  const sessionConnected = page.locator('span:has-text("Session Connected:")');
-  await sessionConnected.waitFor({ state: "visible" });
 }

@@ -72,7 +72,7 @@ export class SidebarClientEventHandler extends EventHandler<
     },
     onSessionShutdown: async () => {
       this.#latestCardsAroundCursor = undefined;
-      this.#sessionShutdownEmitter.fire();
+      this.#sessionShutdownEmitter.fire(undefined);
     },
     onDisconnect: async () => {
       this.#latestCardsAroundCursor = undefined;

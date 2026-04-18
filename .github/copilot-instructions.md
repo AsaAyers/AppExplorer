@@ -17,8 +17,9 @@ When working in this repo, do not assume everything still runs through `9042`. T
 - `host` is an index, not a hostname string:
   - `0` = production app host and production relay
     - Do not include "host=0" in URLs for production sessions; treat host=0 as the default when the host parameter is omitted
-  - `1` = local development app host on `3000`, but relay still on `9042`
-  - `2` = local development app host on `3000` and relay on `3000`
+  - `1` = local development app host on `9042`, but relay still on `9042`
+  - `2` = local development app host on `9042` and relay on `3000`
+  - `3` = local development app host on `dev.appexplorer.dev` and relay on `dev.appexplorer.dev`
 - Host resolution lives in `src/host-config.ts`
 - Session parsing lives in `src/app-explorer-session.ts`
 - Extension-side coordination lives in `src/extension-session.ts`
