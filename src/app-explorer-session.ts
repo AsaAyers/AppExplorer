@@ -3,25 +3,32 @@ import { z } from "zod";
 
 import { getHostConfig } from "./host-config";
 
-export const zAppExplorerSession = z.object({
-  sessionId: z.string().min(1),
-  key: z.string().min(1),
-  insiders: z.boolean().default(false),
-  hostIndex: z
-    .union([z.string(), z.number()])
-    .nullable()
-    .default("0")
-    .transform((str) => {
-      return Number(str);
-    }),
-});
+export const zAppExplorerSession = z
+  .object({
+    sessionId: z.string().min(1),
+    key: z.string().min(1),
+    insiders: z.boolean().default(false),
+    hostIndex: z
+      .union([z.string(), z.number()])
+      .nullable()
+      .default("0")
+      .transform((str) => {
+        return Number(str);
+      }),
+  })
+  .brand("AppExplorerSession");
 
 export type AppExplorerSession = z.infer<typeof zAppExplorerSession>;
 
 export const getSocketUrl = (session: AppExplorerSession) => {
-  const config = getHostConfig(session.hostIndex);
+  return `/session/${session.sessionId}`;
+};
 
-  return `${config.relayUrl}/session/${session.sessionId}`;
+export const getWorkspaceSocketUrl = (session: AppExplorerSession) => {
+  return new URL(
+    getSocketUrl(session),
+    getHostConfig(session.hostIndex).origin,
+  ).toString();
 };
 
 export const makeSessionUrl = (session: AppExplorerSession) => {
@@ -40,10 +47,6 @@ export const makeSessionUrl = (session: AppExplorerSession) => {
 
 export const parseSessionUri = (url: string): AppExplorerSession => {
   const uri = new URL(url);
-  invariant(
-    uri.host === "asa-ayers.app-explorer",
-    `Unexpected AppExplorer URI host: ${uri.host}`,
-  );
 
   const pathMatch = uri.pathname.match(/^\/session\/([^/]+)$/);
   invariant(
@@ -57,6 +60,7 @@ export const parseSessionUri = (url: string): AppExplorerSession => {
   return zAppExplorerSession.parse({
     sessionId: decodeURIComponent(pathMatch[1]),
     key,
+    insiders: uri.protocol === "vscode-insiders:",
     hostIndex: uri.searchParams.get("host"),
   });
 };

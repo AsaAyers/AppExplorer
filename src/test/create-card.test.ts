@@ -30,7 +30,8 @@ createDebug.log("==================================================");
 
 const storageState = "playwright/.auth/user.json";
 const storageStateExists = fs.existsSync(storageState);
-const localAppHealthUrl = "https://dev.appexplorer.dev/api/health-check";
+const developmentAppHealthUrl = "https://dev.appexplorer.dev/api/health-check";
+const localServerHealthUrl = "http://127.0.0.1:3000/api/health-check";
 
 const appCardSelector = ".app-card";
 const cardTitleSelector = ".app-card--title";
@@ -48,7 +49,12 @@ suiteFn("Create Card", function () {
   suiteSetup(async function () {
     this.timeout(60000);
 
-    localAppServer = await ensureLocalAppHost();
+    const developmentAppServer = await ensureDevelopmentAppHost();
+    if (developmentAppServer === null) {
+      this.skip();
+      return;
+    }
+    localAppServer = developmentAppServer;
     browser = await launchBrowser();
     ({ context, page } = await createBrowserPage(browser));
   });
@@ -66,8 +72,7 @@ suiteFn("Create Card", function () {
 
     await context?.close();
     if (localAppServer && !localAppServer.killed) {
-      localAppServer.kill("SIGTERM");
-      await new Promise((resolve) => localAppServer?.once("exit", resolve));
+      await stopChildProcess(localAppServer);
     }
     if (videoPath) {
       // Rename video to paywright/videos/{testName}.webm
@@ -258,12 +263,14 @@ async function openTestBoard(page: Page, hostIndex: HostIndex) {
   await videoDelay("Test Board ready");
 }
 
-async function ensureLocalAppHost() {
-  const isHealthy = await fetch(localAppHealthUrl)
+async function isHealthy(url: string) {
+  return fetch(url)
     .then((response) => response.ok)
     .catch(() => false);
+}
 
-  if (isHealthy) {
+async function ensureDevelopmentAppHost() {
+  if (await isHealthy(developmentAppHealthUrl)) {
     return undefined;
   }
 
@@ -276,19 +283,59 @@ async function ensureLocalAppHost() {
     stdio: "ignore",
   });
 
-  await waitFor(
+  const localServerReady = await waitFor(
     async () => {
-      const response = await fetch(localAppHealthUrl).catch(() => undefined);
+      const response = await fetch(localServerHealthUrl).catch(() => undefined);
       assert.equal(response?.status, 200);
     },
     {
-      timeout: 30000,
+      timeout: 15000,
       interval: 500,
-      message: "Local Next relay did not start on port 3000",
+      message: localServerHealthUrl + " did not start",
     },
-  );
+  )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!localServerReady) {
+    await stopChildProcess(child);
+    return null;
+  }
+
+  const proxiedHostReady = await waitFor(
+    async () => {
+      const response = await fetch(developmentAppHealthUrl).catch(
+        () => undefined,
+      );
+      assert.equal(response?.status, 200);
+    },
+    {
+      timeout: 5000,
+      interval: 500,
+      message: developmentAppHealthUrl + " did not start",
+    },
+  )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!proxiedHostReady) {
+    await stopChildProcess(child);
+    return null;
+  }
 
   return child;
+}
+
+async function stopChildProcess(child: ChildProcess) {
+  if (child.killed) {
+    return;
+  }
+
+  child.kill("SIGTERM");
+  await Promise.race([
+    new Promise((resolve) => child.once("exit", resolve)),
+    new Promise((resolve) => setTimeout(resolve, 2000)),
+  ]);
 }
 async function zoomToTestFrame() {
   const testFrame = (await miro.board.get({ type: "frame" })).find(

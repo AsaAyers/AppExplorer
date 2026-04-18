@@ -1,17 +1,19 @@
 import invariant from "tiny-invariant";
 
+import { createDebug } from "./utils/create-debug";
+
+const log = createDebug("app-explorer:host-config");
+
 const hostConfig = [
   {
     index: 0,
-    appUrl: "https://appexplorer.dev",
+    origin: "https://appexplorer.dev",
     miroAppName: "AppExplorer",
-    relayUrl: "https://appexplorer.dev",
   },
   {
-    index: 3,
-    appUrl: "https://dev.appexplorer.dev",
+    index: 1,
+    origin: "https://dev.appexplorer.dev",
     miroAppName: "DevAppExplorer",
-    relayUrl: "https://dev.appexplorer.dev",
   },
 ] as const;
 
@@ -25,4 +27,12 @@ export function getHostConfig(hostIndex: number) {
   const config = hostConfig.find((config) => config.index === hostIndex);
   invariant(config, `No host config found for index ${hostIndex}`);
   return config;
+}
+
+export function getIndexFromOrigin(origin: string) {
+  const index = hostConfig.find((config) => config.origin === origin)?.index;
+
+  log(`Determined host index ${index} from origin ${origin}`);
+
+  return index ?? 0;
 }

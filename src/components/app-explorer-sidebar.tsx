@@ -9,9 +9,11 @@ import {
   AppExplorerSession,
   makeSessionUrl,
   parseSessionUri,
+  zAppExplorerSession,
 } from "@/app-explorer-session";
 import type { CardData } from "@/card-data";
 import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
+import { getIndexFromOrigin } from "@/host-config";
 import { isAppCard } from "@/miro/is-app-card";
 import { updateCard } from "@/miro/update-card";
 import { connectSidebarHandler } from "@/sidebar/connect-sidebar-socket";
@@ -25,19 +27,21 @@ function getCaptureSessionLink() {
   ).captureSessionLink;
 }
 
-function makeFreshSession(base: null | AppExplorerSession): AppExplorerSession {
-  return {
-    sessionId: crypto.randomUUID(),
-    key: randomHex(512),
+function makeFreshSession(
+  base: null | Partial<AppExplorerSession> = null,
+): AppExplorerSession {
+  return zAppExplorerSession.parse({
+    sessionId: base?.sessionId ?? crypto.randomUUID(),
+    key: base?.key ?? randomHex(512),
     insiders: base?.insiders ?? false,
-    hostIndex: base?.hostIndex ?? 0,
-  };
+    hostIndex: base?.hostIndex ?? getIndexFromOrigin(location.origin),
+  });
 }
 
 export function AppExplorerSidebar() {
   const [session, setSession] = React.useState<null | AppExplorerSession>(null);
   React.useEffect(() => {
-    setSession(makeFreshSession(null));
+    setSession(makeFreshSession());
   }, []);
   const [activeSession, setActiveSession] = React.useState<
     AppExplorerSession | undefined
@@ -193,7 +197,7 @@ export function AppExplorerSidebar() {
 
       const captureSessionLink = getCaptureSessionLink();
       if (captureSessionLink) {
-        captureSessionLink(makeSessionUrl(nextSession));
+        captureSessionLink(event.currentTarget.href);
         event.preventDefault();
       }
     },

@@ -2,7 +2,10 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
+import {
+  AppExplorerSession,
+  getWorkspaceSocketUrl,
+} from "./app-explorer-session";
 import { CardData } from "./card-data";
 import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
 import { getDocumentSymbolTracker } from "./document-symbol-tracker";
@@ -100,7 +103,7 @@ export class WorkspaceCardStorage
 
   private createSocket(session: AppExplorerSession, connectionTimeout = 10000) {
     this.#session = session;
-    const socket = socketIO(getSocketUrl(this.#session), {
+    const socket = socketIO(getWorkspaceSocketUrl(this.#session), {
       auth: {
         role: "workspace",
       },

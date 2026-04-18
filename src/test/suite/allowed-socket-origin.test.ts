@@ -3,12 +3,12 @@ import * as assert from "node:assert";
 import { isAllowedSocketOrigin } from "@/allowed-socket-origin";
 
 suite("Socket origin allow list", () => {
-  test("forbids local transition origins", () => {
+  test("forbids removed relay origins", () => {
     assert.equal(isAllowedSocketOrigin("http://localhost:9042"), false);
     assert.equal(isAllowedSocketOrigin("http://localhost:3000"), false);
   });
 
-  test("allows production and dev appexplorer domains", () => {
+  test("allows production and proxied dev app origins", () => {
     assert.equal(isAllowedSocketOrigin("https://appexplorer.dev"), true);
     assert.equal(isAllowedSocketOrigin("https://dev.appexplorer.dev"), true);
   });

@@ -1,4 +1,4 @@
-const allowedLocalOrigins = new Set([
+const allowedSocketOrigins = new Set([
   "https://appexplorer.dev",
   "https://dev.appexplorer.dev",
 ]);
@@ -9,7 +9,7 @@ export const isAllowedSocketOrigin = (origin?: string) => {
     return true;
   }
 
-  return allowedLocalOrigins.has(origin);
+  return allowedSocketOrigins.has(origin);
 };
 
 export const allowedSocketOrigin = (

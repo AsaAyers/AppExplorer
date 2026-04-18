@@ -2,24 +2,24 @@
 
 ## Overview
 
-AppExplorer is a VS Code extension and web app that connect Miro boards to source code. The codebase is in the middle of a transport migration:
+AppExplorer is a VS Code extension and web app that connect Miro boards to
+source code.
 
-- the old relay is the local extension-hosted Socket.IO server on `http://localhost:9042`
-- the target architecture is a Next.js-hosted relay on the app host (`https://appexplorer.dev` in production, `http://localhost:3000` in local development)
-- session startup is URI-driven, but the legacy `9042` server still starts on extension activation so browser clients can load the existing HTML assets
+The current transport model is:
 
-When working in this repo, do not assume everything still runs through `9042`. The current code supports multiple host modes during the migration.
+- the Next.js app host and the Socket.IO relay are always the same host
+- browser clients connect to the relay with a relative Socket.IO URL
+- the VS Code extension still needs the session URL host index so it can pick
+  the right absolute host to connect to
 
 ## Current Session Model
 
 - Session URLs use the shape:
   - `vscode://asa-ayers.app-explorer/session/{sessionId}?key={key}&host={index}`
 - `host` is an index, not a hostname string:
-  - `0` = production app host and production relay
+  - `0` = production on `https://appexplorer.dev`
     - Do not include "host=0" in URLs for production sessions; treat host=0 as the default when the host parameter is omitted
-  - `1` = local development app host on `9042`, but relay still on `9042`
-  - `2` = local development app host on `9042` and relay on `3000`
-  - `3` = local development app host on `dev.appexplorer.dev` and relay on `dev.appexplorer.dev`
+  - `1` = development on `https://dev.appexplorer.dev`
 - Host resolution lives in `src/host-config.ts`
 - Session parsing lives in `src/app-explorer-session.ts`
 - Extension-side coordination lives in `src/extension-session.ts`
@@ -30,8 +30,8 @@ Prefer using the host index plus helper functions rather than hardcoding hostnam
 
 1. **VS Code extension**
    - Entry point: `src/extension.ts`
-   - The extension still launches the legacy `9042` server on activation
-   - Session connection remains lazy: the extension waits for a session to start before attempting to connect workspace sockets to boards
+   - Session connection remains lazy: the extension waits for a session to start
+     before attempting to connect workspace sockets to boards
    - Session state is broadcast across windows through `session.json` in `context.globalStorageUri`
    - Includes `AppExplorer: Disconnect Session` to clear the broadcast file and disconnect sibling windows
 
@@ -39,46 +39,39 @@ Prefer using the host index plus helper functions rather than hardcoding hostnam
    - Implemented in `src/extension-session.ts`
    - Parses `vscode://` session URLs
    - Watches the broadcast file
-   - Sets the active host mode on the workspace transport
-   - Starts session-specific transport only after a session begins; it does not own the always-on legacy asset server
+   - Resolves the workspace socket host from the session host index
+   - Starts session-specific transport only after a session begins
 
-3. **Relay servers**
-   - Transitional local relay: `src/server/server.ts`, launched by `src/server-launcher.ts`
-   - Next.js-hosted relay: Socket.IO attached from `src/app/sockets/main.ts` through `src/instrumentation.ts`
-   - The local relay on `9042` is still active for host mode `1`, but the long-term direction is to remove dependence on it
-   - The server is routing-only: it relays session events and does not own workspace, board, or card state
+3. **Relay server**
+   - Socket.IO is attached from `src/app/sockets/main.ts` through
+     `src/instrumentation.ts`
+   - `src/server/server.ts` is routing-only: it relays session events and does
+     not own workspace, board, or card state
 
 4. **Miro integration**
    - Core logic: `src/miro.ts`
    - Uses the Miro Web SDK
-   - Connects to the relay selected by the current host mode
-   - This runs inside the Miro iframe and is expected to make cross-origin websocket requests during the migration
+   - Connects to the current host with a relative Socket.IO namespace URL
 
 5. **Sidebar/frontend**
-   - Static assets in `public/`
-   - Lit-based sidebar socket setup lives in `src/lit/socket-context.ts`
-   - Like the Miro client, it connects using the resolved host from the current migration mode rather than assuming same-origin
+   - Shared React sidebar lives in `src/components/app-explorer-sidebar.tsx`
+   - Sidebar socket setup lives in `src/sidebar/connect-sidebar-socket.ts`
+   - Like the Miro client, it connects with a relative Socket.IO namespace URL
 
 ## Data Flow
 
 - **Session URL** starts a session in one VS Code window
 - **Broadcast file** notifies sibling VS Code windows
-- **Workspace transport** connects to the relay chosen by host mode
-- **Miro and sidebar clients** connect to the corresponding app/relay host
+- **Workspace transport** connects to the host selected by the session URL
+- **Miro and sidebar clients** connect to the current app host
 - **Relay server** forwards events between workspace, Miro, and sidebar clients
 
-## Migration Notes
+## Host Notes
 
-- `9042` is transitional infrastructure, not the desired final architecture
-- Even so, the extension still starts the `9042` server on activation because the browser currently loads HTML assets from it
-- Host mode `1` intentionally splits app host and relay host:
-  - app UI on `3000`
-  - relay on `9042`
-- Host mode `2` is the future local-development shape:
-  - app UI on `3000`
-  - relay on `3000`
-- Cross-origin websocket traffic is expected during this transition; do not “simplify” by dropping the hostname and using only path-based socket URLs unless the relevant migration step explicitly requires it
-- `reset` on `9042` is still test-only legacy behavior to force the extension-hosted relay to restart; it should not be treated as proof that the final architecture still depends on `9042`
+- Use host indexes and helper functions rather than scattering raw hostnames
+- Browser socket clients should keep using relative namespace URLs
+- The VS Code extension should resolve an absolute socket URL from the session
+  host index before connecting
 
 ## Developer Workflows
 
@@ -105,15 +98,18 @@ Notes:
 - `setup-xvfb.sh` is the normal way to run the VS Code test suite headlessly
   - This is called from within record-tests.sh
 - the Create Card test uses a real Miro board and is not parallel-friendly
-- some tests still rely on `9042/reset` and `9042/health` because host mode `1` remains part of the current migration state
 
-### Local app host
+### Development app host
 
 ```bash
-yarn dev
+npm run dev
 ```
 
-That runs the Next.js app on `http://localhost:3000`.
+That runs the Next.js app and relay on `http://localhost:3000`.
+
+In development, traffic is normally accessed through the SSL-terminating proxy
+at `https://dev.appexplorer.dev`, so browser-facing host config should use that
+origin rather than raw localhost.
 
 ## Project-Specific Conventions
 
@@ -121,7 +117,6 @@ That runs the Next.js app on `http://localhost:3000`.
 - **Socket transport**: real-time updates use Socket.IO, and encrypted transport is handled in the event-handler layer
 - **Host selection**: use host indexes and helper functions instead of scattering raw hostnames
 - **File naming**: tracked source/config files use kebab-case filenames, and the filename should match one of the file's main exports (`some-file.ts` -> `someFile`, `some-class.ts` -> `SomeClass`)
-- **Split startup behavior**: the legacy `9042` asset server starts on activation, but workspace session connection stays lazy
 - **Routing-only relay**: avoid reintroducing server-owned board/workspace/card state
 
 ## Important Files
@@ -129,19 +124,20 @@ That runs the Next.js app on `http://localhost:3000`.
 - `src/extension.ts`: extension activation and command registration
 - `src/extension-session.ts`: URI handling, broadcast file sync, session startup
 - `src/app-explorer-session.ts`: session URL parsing
-- `src/host-config.ts`: host-index helpers and relay/app host mapping
-- `src/workspace-card-storage.ts`: workspace socket lifecycle and host switching
-- `src/server-launcher.ts`: legacy local relay lifecycle
+- `src/host-config.ts`: host-index helpers and host mapping
+- `src/workspace-card-storage.ts`: workspace socket lifecycle and host selection
 - `src/server/server.ts`: routing-only Socket.IO relay
 - `src/app/sockets/main.ts`: Next.js-hosted Socket.IO entry
 - `src/miro.ts`: Miro-side transport and board behavior
-- `src/lit/socket-context.ts`: sidebar-side transport
+- `src/sidebar/connect-sidebar-socket.ts`: sidebar-side transport
 
 ## Testing Focus
 
 - End-to-end flows remain the highest-value tests
-- Session startup, host-index parsing, and relay selection are active migration areas and should be kept covered when behavior changes
-- When changing host-mode logic, verify both build behavior and which relay/app host each runtime actually targets
+- Session startup, host-index parsing, and host selection should be kept
+  covered when behavior changes
+- When changing host logic, verify which host the browser and extension each
+  target
 
 ## Logging
 

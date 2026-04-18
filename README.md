@@ -1,119 +1,73 @@
-# AppExplorer Prototype (Archived Open-Source Prototype)
+# AppExplorer
 
-This repository contains the original open-source prototype of AppExplorer.
+AppExplorer connects a Miro board to a VS Code workspace so cards on the board
+can stay linked to real code.
 
-It is no longer the active development repository.
+## Current architecture
 
-## What this prototype is
+AppExplorer now uses a single hosted app server per environment. The web app and
+the Socket.IO relay always live on the same host:
 
-AppExplorer started as a VSCode + Miro prototype for building architecture
-diagrams that stay connected to real code.
+| Host index | Purpose     | Host                          |
+| ---------- | ----------- | ----------------------------- |
+| `0`        | Production  | `https://appexplorer.dev`     |
+| `1`        | Development | `https://dev.appexplorer.dev` |
 
-The core idea is still the same:
+Browser clients connect to the relay with a relative Socket.IO URL. The
+`vscode://` session URL still carries the host index so the VS Code extension
+can resolve the correct absolute host when it opens its workspace socket.
 
-- developers explore a codebase in VSCode
-- meaningful code elements are attached to a diagram
-- the diagram becomes a navigable, high-level view of the system
-- the result can serve as living documentation tied to the implementation
+Session URLs use this shape:
 
-This prototype proved out that workflow.
+`vscode://asa-ayers.app-explorer/session/{sessionId}?key={key}&host={index}`
 
-## Status of this repository
+- Omit `host` for production sessions (`host=0` is the default)
+- Use `host=1` for development sessions on `https://dev.appexplorer.dev`
 
-This repository is now effectively frozen.
+## Main pieces
 
-I am no longer publishing ongoing AppExplorer development here, and future work
-is happening in a private repository.
+- **Next.js app**: serves the web UI and hosts the Socket.IO relay
+- **VS Code extension**: waits for a session URL, then connects the workspace to
+  the selected host
+- **Miro client**: runs inside the Miro iframe and relays board events through
+  the app host
+- **Sidebar UI**: shows cards around the current cursor position and starts
+  VS Code sessions
 
-You are welcome to read this code as a historical prototype, but you should not
-expect this repository to track the current product.
+The relay is routing-only. It forwards session events between workspace, Miro,
+and sidebar clients and does not own board or workspace state.
 
-## Important limitation of the prototype
+## Development
 
-AppExplorer `<= 0.2` was built around a localhost server.
+Start the local app host:
 
-That means the prototype depends on a local development setup and a Miro app
-configured to talk to that local server. In practice, this makes the prototype
-useful for development and experimentation, but not for a hosted team workflow.
+```bash
+npm run dev
+```
 
-It also means non-developer stakeholders, such as PMs, cannot fully interact
-with cards unless the local development environment is running correctly. They
-can view diagrams on the board, but the interactive behavior depends on the
-localhost-based prototype architecture.
+That runs the app and relay together on `http://localhost:3000`.
 
-As AppExplorer moves to a hosted model, that old setup is no longer the path
-forward.
+In development, the Node server still listens on port `3000`, but browsers and
+the VS Code extension should use the SSL-terminating proxy host
+`https://dev.appexplorer.dev`.
 
-## Where AppExplorer is going
+Useful commands:
 
-AppExplorer is being rebuilt as a hosted product with a permanent domain and
-server-backed Miro integration.
+```bash
+npm run typecheck
+npm run build
+. ./setup-xvfb.sh && npm test
+```
 
-That change is necessary to support real team usage instead of requiring every
-workflow to depend on `localhost`.
+`./record-tests.sh` remains the higher-level end-to-end test workflow.
 
-The current direction is a paid Miro app where:
+## Important files
 
-- subscriptions are required to create cards
-- someone on a team needs an active subscription for card details to be opened
-- the product works through hosted infrastructure instead of the original
-  localhost-only prototype
-
-That also means the open-source prototype in this repository will diverge from
-the active product.
-
-## Public behind-the-scenes overview
-
-Even though the active source code is no longer being published here, I am still
-publishing a public Miro board that explains AppExplorer’s codebase at a
-high level.
-
-That board is the best way to understand the product direction without reading
-the private source repository.
-
-**Public board:**  
-[AppExplorer Public Board](https://miro.com/app/board/uXjVL0VAGdA=/?share_link_id=273783644676)
-
-## Should you use this repository?
-
-Use this repository if you want to:
-
-- inspect the original prototype
-- understand the early technical direction
-- see how the VSCode + Miro localhost approach worked
-- compare the prototype against the public board
-
-Do **not** use this repository if you are looking for:
-
-- the current production code
-- the active Miro app
-- hosted onboarding or subscription support
-- a stable path for adoption
-
-## Why leave this repository up?
-
-Because the prototype is still useful as a record of how the idea started.
-
-The open-source version demonstrated the core concept:
-architecture diagrams can be anchored to real code instead of drifting into
-stale documentation.
-
-That idea is continuing, even though the implementation and delivery model are
-changing.
-
-## License
-
-This repository remains available under the license already published here for
-the prototype.
-
-That license applies to this archived prototype repository only. It does not
-grant rights to future private versions of AppExplorer unless explicitly stated
-elsewhere.
-
-## Final note
-
-If you found this repository because you want to understand what AppExplorer is,
-start with https://appexplorer.dev.
-
-This repo is the prototype.
-The active product has moved on.
+- `src/host-config.ts`: host index to origin mapping
+- `src/app-explorer-session.ts`: session URL parsing and socket URL helpers
+- `src/extension-session.ts`: extension-side session coordination
+- `src/workspace-card-storage.ts`: workspace socket lifecycle
+- `src/app/sockets/main.ts`: Next.js Socket.IO bootstrap
+- `src/server/server.ts`: routing-only relay implementation
+- `src/miro.ts`: Miro client integration
+- `src/components/app-explorer-sidebar.tsx`: sidebar session startup UI

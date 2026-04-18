@@ -92,7 +92,7 @@ export class AppExplorerSessionCoordinator
 
   async handleUri(uri: vscode.Uri) {
     const session = parseSessionUri(
-      `vscode://${uri.authority}${uri.path}?${uri.query}`,
+      `${uri.scheme}://${uri.authority}${uri.path}?${uri.query}`,
     );
     await this.writeSessionBroadcast(session);
     await this.startSession(session);
@@ -210,17 +210,10 @@ export class AppExplorerSessionCoordinator
     this.#startPromise = (async () => {
       this.#cardStorage.attachSession(session);
 
-      const { appUrl, relayUrl } = getHostConfig(session.hostIndex);
-
-      const serverResult = {
-        mode: "client" as const,
-        serverUrl: relayUrl,
-      };
+      const { origin } = getHostConfig(session.hostIndex);
       log("(session_start)", {
-        appHost: appUrl,
-        relayHost: relayUrl,
         hostIndex: session.hostIndex,
-        serverUrl: serverResult.serverUrl,
+        hostOrigin: origin,
         sessionId: session.sessionId,
       });
 

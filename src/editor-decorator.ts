@@ -125,7 +125,6 @@ export class EditorDecorator {
 
   decorateEditor = async () => {
     const editor = this.#activeEdtior;
-    debug("Decorating editor", !!editor);
     if (!editor) {
       return;
     }

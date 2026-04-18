@@ -119,7 +119,7 @@ export async function activateAppExplorer() {
 
 export async function startAppExplorerSession(
   page: Page,
-  hostIndex: HostIndex = 3,
+  hostIndex: HostIndex = 1,
 ) {
   await activateAppExplorer();
 
