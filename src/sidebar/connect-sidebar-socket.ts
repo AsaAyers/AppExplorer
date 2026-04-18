@@ -1,10 +1,7 @@
 import { io as socketIO } from "socket.io-client";
 
 import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
-import {
-  SidebarClientEventHandler,
-  SidebarSocketBridge,
-} from "@/event-handlers/sidebar-client-event-handler";
+import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import { SidebarSocket } from "@/event-handlers/types";
 import { getSocketClientOptions } from "@/socket-client-options";
 import { createDebug } from "@/utils/create-debug";
@@ -29,9 +26,8 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
     ...getSocketClientOptions(session),
   });
 
-  const clientEventHandler = SidebarClientEventHandler.create(socket as never);
+  const clientEventHandler = SidebarClientEventHandler.create(socket);
   clientEventHandler.attachSession(session);
-  const bridgedSocket = new SidebarSocketBridge(socket, clientEventHandler);
 
   let connected = false;
   const onConnect = async () => {
@@ -67,5 +63,5 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
     await delay(100);
   }
 
-  return bridgedSocket as unknown as SidebarSocket;
+  return clientEventHandler.toSidebarSocket();
 }

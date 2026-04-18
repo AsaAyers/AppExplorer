@@ -2,10 +2,7 @@ import * as assert from "node:assert";
 import { EventEmitter } from "node:events";
 
 import { EventHandler } from "../../event-handlers/event-handler";
-import {
-  SidebarClientEventHandler,
-  SidebarSocketBridge,
-} from "../../event-handlers/sidebar-client-event-handler";
+import { SidebarClientEventHandler } from "../../event-handlers/sidebar-client-event-handler";
 import { encryptedEventName } from "../../socket-events";
 import { isEventHandlerOptOutError } from "../../unhandled-event-ack";
 
@@ -249,41 +246,35 @@ suite("Encrypted EventHandler transport", () => {
     assert.strictEqual(result, true);
   });
 
-  test("sidebar bridge forwards session shutdown events", async () => {
+  test("sidebar client handler forwards session shutdown events", async () => {
     const sidebarSocket = new MockSocket();
     const sidebarEventHandler = SidebarClientEventHandler.create(
       sidebarSocket as never,
     );
-    const bridge = new SidebarSocketBridge(
-      sidebarSocket as never,
-      sidebarEventHandler,
-    );
+    const bridgedSocket = sidebarEventHandler.toSidebarSocket();
 
     let shutdownCount = 0;
     const onShutdown = () => {
       shutdownCount += 1;
     };
-    bridge.on("sessionShutdown", onShutdown);
+    bridgedSocket.on("sessionShutdown", onShutdown);
 
     sidebarSocket.emit("sessionShutdown");
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.strictEqual(shutdownCount, 1);
 
-    bridge.off("sessionShutdown", onShutdown);
+    bridgedSocket.off("sessionShutdown", onShutdown);
     sidebarSocket.emit("sessionShutdown");
     await new Promise((resolve) => setTimeout(resolve, 0));
     assert.strictEqual(shutdownCount, 1);
   });
 
-  test("sidebar bridge replays the latest cardsAroundCursor to late listeners", async () => {
+  test("sidebar client handler replays the latest cardsAroundCursor to late listeners", async () => {
     const sidebarSocket = new MockSocket();
     const sidebarEventHandler = SidebarClientEventHandler.create(
       sidebarSocket as never,
     );
-    const bridge = new SidebarSocketBridge(
-      sidebarSocket as never,
-      sidebarEventHandler,
-    );
+    const bridgedSocket = sidebarEventHandler.toSidebarSocket();
     const cards: CardData[] = [
       {
         id: "card-1",
@@ -305,7 +296,7 @@ suite("Encrypted EventHandler transport", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     let receivedCards: CardData[] | undefined;
-    bridge.on("cardsAroundCursor", (value) => {
+    bridgedSocket.on("cardsAroundCursor", (value) => {
       receivedCards = value as CardData[];
     });
 
