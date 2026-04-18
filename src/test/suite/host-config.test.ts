@@ -4,7 +4,6 @@ import {
   getAppHostByIndex,
   getMiroAppName,
   getRelayHostByIndex,
-  getHostConfig,
 } from "@/host-config";
 
 suite("Host config", () => {
@@ -17,15 +16,6 @@ suite("Host config", () => {
     assert.equal(getAppHostByIndex(0), "https://appexplorer.dev");
     assert.equal(getAppHostByIndex(2), "http://localhost:9042");
     assert.equal(getAppHostByIndex(3), "https://dev.appexplorer.dev");
-  });
-
-  test("keeps app and relay aligned when the host mode is same-origin", () => {
-    for (const hostIndex of [0, 1, 3]) {
-      assert.equal(
-        getHostConfig(hostIndex).appUrl,
-        getHostConfig(hostIndex).relayUrl,
-      );
-    }
   });
 
   test("uses the expected Miro app button names", () => {

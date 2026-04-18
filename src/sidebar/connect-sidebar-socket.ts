@@ -4,7 +4,6 @@ import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
 import type { CardData } from "@/card-data";
 import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import { SidebarSocket } from "@/event-handlers/types";
-import { getSocketClientOptions } from "@/socket-client-options";
 import { createDebug } from "@/utils/create-debug";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -24,13 +23,21 @@ export async function connectSidebarHandler(session: AppExplorerSession) {
     timeout: connectionTimeout,
     reconnection: false,
     forceNew: false,
-    ...getSocketClientOptions(session),
   });
 
   const clientEventHandler = SidebarClientEventHandler.create(socket);
   clientEventHandler.attachSession(session);
 
+  let timeout = false;
+  delay(connectionTimeout).then(() => {
+    timeout = true;
+  });
   while (!socket.connected) {
+    if (timeout) {
+      throw new Error(
+        `Failed to connect to sidebar socket within ${connectionTimeout}ms`,
+      );
+    }
     await delay(100);
   }
 

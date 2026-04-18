@@ -19,7 +19,6 @@ import { MiroEventHandler } from "./event-handlers/miro-event-handler";
 import { MiroSocket } from "./event-handlers/types";
 import { isAppCard } from "./miro/is-app-card";
 import { updateCard } from "./miro/update-card";
-import { getSocketClientOptions } from "./socket-client-options";
 import { createDebug } from "./utils/create-debug";
 import { notEmpty } from "./utils/not-empty";
 
@@ -276,7 +275,6 @@ export async function attachSession(session: AppExplorerSession) {
     auth: {
       role: "miro",
     },
-    ...getSocketClientOptions(session),
   }) as MiroSocket;
   debug = debug.extend(s.id || Math.random().toString(36).substring(2, 15));
   const miroEventHandler = MiroEventHandler.create(s);

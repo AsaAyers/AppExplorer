@@ -49,7 +49,6 @@ export async function createBrowserPage(
   browser: Browser,
 ): Promise<BrowserPage> {
   const context = await browser.newContext({
-    ignoreHTTPSErrors: true,
     storageState: "playwright/.auth/user.json",
     viewport: { width: 1440, height: 900 },
     recordVideo:
