@@ -82,7 +82,9 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
         cardsAroundCursorListeners
           .get(listener as (cards: CardData[]) => void)
           ?.dispose();
-        cardsAroundCursorListeners.delete(listener as (cards: CardData[]) => void);
+        cardsAroundCursorListeners.delete(
+          listener as (cards: CardData[]) => void,
+        );
         return adaptedSocket;
       }
 

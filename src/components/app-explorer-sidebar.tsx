@@ -102,10 +102,12 @@ export function AppExplorerSidebar() {
       sidebarHandler.socketClient.disconnect();
     };
 
-    const cardsSubscription =
-      sidebarHandler.cardsAroundCursorEvent(handleCardsAroundCursor);
-    const shutdownSubscription =
-      sidebarHandler.sessionShutdownEvent(handleSessionShutdown);
+    const cardsSubscription = sidebarHandler.cardsAroundCursorEvent(
+      handleCardsAroundCursor,
+    );
+    const shutdownSubscription = sidebarHandler.sessionShutdownEvent(
+      handleSessionShutdown,
+    );
 
     return () => {
       cardsSubscription.dispose();
