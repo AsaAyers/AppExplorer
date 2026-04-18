@@ -149,13 +149,20 @@ export async function startAppExplorerSession(
     const session = parseSessionUri(href);
     session.hostIndex = hostIndex;
     const newHref = makeSessionUrl(session);
-    return sessionButton.evaluate(
-      (el, newHref) => el.setAttribute("href", newHref),
-      newHref,
-    );
+    return sessionButton
+      .evaluate((el, nextHref) => {
+        el.setAttribute("href", nextHref);
+        globalThis.captureSessionLink = () => undefined;
+        return nextHref;
+      }, newHref)
+      .then(async (nextHref) => {
+        await sessionButton.click();
+        await vscode.commands.executeCommand(
+          "vscode.open",
+          vscode.Uri.parse(nextHref),
+        );
+      });
   });
-
-  await sessionButton.click();
 }
 
 export function uriForFile(filePath: string) {

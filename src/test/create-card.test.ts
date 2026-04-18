@@ -51,13 +51,14 @@ suiteFn("Create Card", function () {
 
     localAppServer = await ensureLocalAppHost();
     browser = await launchBrowser();
+    ({ context, page } = await createBrowserPage(browser));
   });
 
   setup(async function () {
-    this.timeout(60000);
-    assert.ok(browser, "Browser should be launched in suiteSetup");
     await activateAppExplorer();
-    ({ context, page } = await createBrowserPage(browser));
+    await vscode.commands.executeCommand("app-explorer.disconnectSession");
+    invariant(page, "Page should be defined after suiteSetup");
+    await page.goto("about:blank", { waitUntil: "domcontentloaded" });
   });
 
   suiteTeardown(async function () {
