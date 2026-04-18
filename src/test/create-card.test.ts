@@ -11,6 +11,7 @@ import * as vscode from "vscode";
 import { createDebug } from "../utils/create-debug";
 
 import { launchBrowser, createBrowserPage } from "./helpers/browser";
+import { setupTimeline } from "./helpers/critical-path-timeline";
 import {
   activateAppExplorer,
   getModal,
@@ -43,6 +44,7 @@ suiteFn("Create Card", function () {
   let localAppServer: ChildProcess | undefined;
   void context;
 
+  setupTimeline();
   suiteSetup(async function () {
     this.timeout(60000);
     await fetch("http://localhost:9042/reset", { method: "POST" }).catch(

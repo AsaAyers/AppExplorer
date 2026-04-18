@@ -1,6 +1,7 @@
 import { io as socketIO } from "socket.io-client";
 
 import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
+import type { CardData } from "@/card-data";
 import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import { SidebarSocket } from "@/event-handlers/types";
 import { getSocketClientOptions } from "@/socket-client-options";
@@ -10,7 +11,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const log = createDebug("app-explorer:miro:sidebar");
 
-export async function connectSidebarSocket(session: AppExplorerSession) {
+export async function connectSidebarHandler(session: AppExplorerSession) {
   log("(sidebar_socket_connecting)");
   await delay(100);
 
@@ -21,7 +22,7 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
     },
     transports: ["websocket"],
     timeout: connectionTimeout,
-    reconnection: true,
+    reconnection: false,
     forceNew: false,
     ...getSocketClientOptions(session),
   });
@@ -29,39 +30,72 @@ export async function connectSidebarSocket(session: AppExplorerSession) {
   const clientEventHandler = SidebarClientEventHandler.create(socket);
   clientEventHandler.attachSession(session);
 
-  let connected = false;
-  const onConnect = async () => {
-    log("(sidebar_socket_connect)");
-    connected = true;
-  };
-
-  socket.on("connect", onConnect);
-  socket.on("disconnect", (reason) => {
-    log("(sidebar_socket_disconnect)", reason);
-    if (reason === "transport close") {
-      log("(sidebar_socket_retry)");
-      const i = setInterval(() => {
-        log(
-          "(sidebar_socket_reconnecting)",
-          socket.connected,
-          socket.disconnected,
-          socket.recovered,
-        );
-        if (socket.connected) {
-          clearInterval(i);
-          void onConnect();
-          return;
-        }
-        socket.connect();
-      }, 1000);
-    } else {
-      log("(sidebar_socket_disconnect_permanent)", reason);
-    }
-  });
-
-  while (!connected) {
+  while (!socket.connected) {
     await delay(100);
   }
 
-  return clientEventHandler.toSidebarSocket();
+  socket.on("connect", () => {
+    log("(sidebar_socket_connect)");
+  });
+  socket.on("disconnect", (reason) => {
+    log("(sidebar_socket_disconnect)", reason);
+  });
+
+  return clientEventHandler;
+}
+
+export async function connectSidebarSocket(session: AppExplorerSession) {
+  const clientEventHandler = await connectSidebarHandler(session);
+  const socket = clientEventHandler.socketClient;
+
+  const cardsAroundCursorListeners = new Map<
+    (cards: CardData[]) => void,
+    { dispose(): void }
+  >();
+  const sessionShutdownListeners = new Map<() => void, { dispose(): void }>();
+
+  const adaptedSocket = Object.assign(socket, {
+    on(eventName: string, listener: (...args: unknown[]) => unknown) {
+      if (eventName === "cardsAroundCursor") {
+        const typedListener = listener as (cards: CardData[]) => void;
+        cardsAroundCursorListeners.set(
+          typedListener,
+          clientEventHandler.cardsAroundCursorEvent(typedListener),
+        );
+        return adaptedSocket;
+      }
+
+      if (eventName === "sessionShutdown") {
+        const typedListener = listener as () => void;
+        sessionShutdownListeners.set(
+          typedListener,
+          clientEventHandler.sessionShutdownEvent(typedListener),
+        );
+        return adaptedSocket;
+      }
+
+      socket.on(eventName as never, listener as never);
+      return adaptedSocket;
+    },
+    off(eventName: string, listener: (...args: unknown[]) => unknown) {
+      if (eventName === "cardsAroundCursor") {
+        cardsAroundCursorListeners
+          .get(listener as (cards: CardData[]) => void)
+          ?.dispose();
+        cardsAroundCursorListeners.delete(listener as (cards: CardData[]) => void);
+        return adaptedSocket;
+      }
+
+      if (eventName === "sessionShutdown") {
+        sessionShutdownListeners.get(listener as () => void)?.dispose();
+        sessionShutdownListeners.delete(listener as () => void);
+        return adaptedSocket;
+      }
+
+      socket.off(eventName as never, listener as never);
+      return adaptedSocket;
+    },
+  });
+
+  return adaptedSocket;
 }

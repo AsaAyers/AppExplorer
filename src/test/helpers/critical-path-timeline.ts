@@ -22,6 +22,9 @@
  *   (symbols_changed), (encrypted_send), (encrypted_call).
  */
 
+import assert from "node:assert";
+import fs from "node:fs";
+
 // ---------------------------------------------------------------------------
 // Browser spam patterns – messages matching any of these are suppressed
 // entirely (not printed, not recorded).
@@ -113,21 +116,51 @@ class CriticalPathTimeline {
   }
 
   /** Print all recorded entries unconditionally. */
-  print(): void {
+  print(
+    // eslint-disable-next-line no-console
+    log = console.log.bind(console),
+  ): void {
     if (this.entries.length === 0) {
-      // eslint-disable-next-line no-console
-      console.log("[Timeline] No critical-path events recorded.");
+      log("[Timeline] No critical-path events recorded.");
       return;
     }
-    // eslint-disable-next-line no-console
-    console.log("\n=== Critical-Path Timeline ===");
+    log("\n=== Critical-Path Timeline ===");
     for (const entry of this.entries) {
       const prefix = `[+${entry.relativeMs}ms][${entry.source}]`;
-      // eslint-disable-next-line no-console
-      console.log(`${prefix} ${entry.message}`);
+      log(`${prefix} ${entry.message}`);
     }
-    // eslint-disable-next-line no-console
-    console.log("==============================\n");
+    log("==============================\n");
+  }
+
+  snapshot(name: string) {
+    const filename = `log_snapshot_${name}.txt`.replace(
+      /[^a-zA-Z0-9.-]+/g,
+      "_",
+    );
+
+    if (this.entries.length === 0) {
+      return "[Timeline] No critical-path events recorded.";
+    }
+    let output = "=== Critical-Path Timeline ===";
+    for (const entry of this.entries) {
+      output += `[${entry.source}] ${entry.message}\n`
+        .replace(
+          /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+          "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        )
+        .replace(/\+\d+m?s/g, "+Xms");
+    }
+    if (fs.existsSync(filename)) {
+      const expected = fs.readFileSync(filename, "utf-8");
+      assert.equal(
+        output,
+        expected,
+        `Timeline snapshot does not match expected output in ${filename}`,
+      );
+    } else {
+      fs.writeFileSync(filename, output, { flag: "w" });
+    }
+    return output;
   }
 
   /** Print the timeline only if the current Mocha test has failed.
@@ -180,10 +213,10 @@ export function setupTimeline(): void {
   // Regular `function` declarations are required here (not arrow functions) so
   // that Mocha can inject its `this` context.  The `afterEach` hook uses
   // `this.currentTest` to determine whether the test failed.
-  beforeEach(function () {
+  suiteSetup(function () {
     timeline.reset();
   });
-  afterEach(function () {
+  suiteTeardown(function () {
     timeline.printOnFailure(this);
   });
 }

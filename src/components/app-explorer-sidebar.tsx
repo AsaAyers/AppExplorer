@@ -11,10 +11,10 @@ import {
   parseSessionUri,
 } from "@/app-explorer-session";
 import type { CardData } from "@/card-data";
-import { SidebarSocket } from "@/event-handlers/types";
+import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import { isAppCard } from "@/miro/is-app-card";
 import { updateCard } from "@/miro/update-card";
-import { connectSidebarSocket } from "@/sidebar/connect-sidebar-socket";
+import { connectSidebarHandler } from "@/sidebar/connect-sidebar-socket";
 import { randomHex } from "@/utils/to-hex";
 
 function getCaptureSessionLink() {
@@ -25,28 +25,26 @@ function getCaptureSessionLink() {
   ).captureSessionLink;
 }
 
-function makeFreshSession(base: AppExplorerSession): AppExplorerSession {
+function makeFreshSession(base: null | AppExplorerSession): AppExplorerSession {
   return {
     sessionId: crypto.randomUUID(),
     key: randomHex(512),
-    insiders: base.insiders,
-    hostIndex: base.hostIndex,
+    insiders: base?.insiders ?? false,
+    hostIndex: base?.hostIndex ?? 0,
   };
 }
 
-const initialSession: AppExplorerSession = {
-  sessionId: crypto.randomUUID(),
-  key: randomHex(512),
-  insiders: false,
-  hostIndex: 0,
-};
-
 export function AppExplorerSidebar() {
-  const [session, setSession] = React.useState(initialSession);
+  const [session, setSession] = React.useState<null | AppExplorerSession>(null);
+  React.useEffect(() => {
+    setSession(makeFreshSession(null));
+  }, []);
   const [activeSession, setActiveSession] = React.useState<
     AppExplorerSession | undefined
   >();
-  const [socket, setSocket] = React.useState<SidebarSocket | undefined>();
+  const [sidebarHandler, setSidebarHandler] = React.useState<
+    SidebarClientEventHandler | undefined
+  >();
   const [cardsAroundCursor, setCardsAroundCursor] = React.useState<CardData[]>(
     [],
   );
@@ -59,53 +57,61 @@ export function AppExplorerSidebar() {
     }
 
     const abortController = new AbortController();
-    let connectedSocket: SidebarSocket | undefined;
+    let connectedHandler: SidebarClientEventHandler | undefined;
 
-    void connectSidebarSocket(activeSession).then((nextSocket) => {
+    void connectSidebarHandler(activeSession).then((nextHandler) => {
       if (abortController.signal.aborted) {
-        nextSocket.disconnect();
+        nextHandler.dispose();
+        nextHandler.socketClient.disconnect();
         return;
       }
-      connectedSocket = nextSocket;
-      setSocket((previous) => {
-        previous?.disconnect();
-        return nextSocket;
+      connectedHandler = nextHandler;
+      setSidebarHandler((previous) => {
+        previous?.dispose();
+        previous?.socketClient.disconnect();
+        return nextHandler;
       });
     });
 
     return () => {
       abortController.abort();
-      connectedSocket?.disconnect();
-      setSocket((previous) =>
-        previous === connectedSocket ? undefined : previous,
+      connectedHandler?.dispose();
+      connectedHandler?.socketClient.disconnect();
+      setSidebarHandler((previous) =>
+        previous === connectedHandler ? undefined : previous,
       );
     };
   }, [activeSession]);
 
   React.useEffect(() => {
-    if (!socket) {
+    if (!sidebarHandler) {
       return;
     }
+
+    setCardsAroundCursor(sidebarHandler.latestCardsAroundCursor ?? []);
 
     const handleCardsAroundCursor = (cards: CardData[]) => {
       setCardsAroundCursor(cards);
     };
     const handleSessionShutdown = () => {
       setCardsAroundCursor([]);
-      setSocket(undefined);
+      setSidebarHandler(undefined);
       setActiveSession(undefined);
       setSession((previous) => makeFreshSession(previous));
-      socket.disconnect();
+      sidebarHandler.dispose();
+      sidebarHandler.socketClient.disconnect();
     };
 
-    socket.on("cardsAroundCursor", handleCardsAroundCursor);
-    socket.on("sessionShutdown", handleSessionShutdown);
+    const cardsSubscription =
+      sidebarHandler.cardsAroundCursorEvent(handleCardsAroundCursor);
+    const shutdownSubscription =
+      sidebarHandler.sessionShutdownEvent(handleSessionShutdown);
 
     return () => {
-      socket.off("cardsAroundCursor", handleCardsAroundCursor);
-      socket.off("sessionShutdown", handleSessionShutdown);
+      cardsSubscription.dispose();
+      shutdownSubscription.dispose();
     };
-  }, [socket]);
+  }, [sidebarHandler]);
 
   React.useEffect(() => {
     const handleSelectionUpdate = async () => {
@@ -192,17 +198,16 @@ export function AppExplorerSidebar() {
     [],
   );
 
-  const sessionLink = makeSessionUrl(session);
-  const hasConnectedSession = socket !== undefined;
+  const hasConnectedSession = sidebarHandler !== undefined;
 
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 p-4">
-        {!hasConnectedSession ? (
+        {!hasConnectedSession && session ? (
           <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <a
               className="text-blue-600 underline"
-              href={sessionLink}
+              href={makeSessionUrl(session)}
               onClick={startSession}
             >
               Start VSCode session
@@ -211,9 +216,11 @@ export function AppExplorerSidebar() {
               <input
                 checked={session.insiders}
                 onChange={(event) => {
+                  const insiders = event.target.checked;
                   setSession((previous) => ({
+                    ...makeFreshSession(previous),
                     ...previous,
-                    insiders: event.target.checked,
+                    insiders,
                   }));
                 }}
                 type="checkbox"

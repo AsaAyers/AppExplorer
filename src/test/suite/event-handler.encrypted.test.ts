@@ -246,35 +246,12 @@ suite("Encrypted EventHandler transport", () => {
     assert.strictEqual(result, true);
   });
 
-  test("sidebar client handler forwards session shutdown events", async () => {
-    const sidebarSocket = new MockSocket();
-    const sidebarEventHandler = SidebarClientEventHandler.create(
-      sidebarSocket as never,
-    );
-    const bridgedSocket = sidebarEventHandler.toSidebarSocket();
-
-    let shutdownCount = 0;
-    const onShutdown = () => {
-      shutdownCount += 1;
-    };
-    bridgedSocket.on("sessionShutdown", onShutdown);
-
-    sidebarSocket.emit("sessionShutdown");
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    assert.strictEqual(shutdownCount, 1);
-
-    bridgedSocket.off("sessionShutdown", onShutdown);
-    sidebarSocket.emit("sessionShutdown");
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    assert.strictEqual(shutdownCount, 1);
-  });
-
   test("sidebar client handler replays the latest cardsAroundCursor to late listeners", async () => {
     const sidebarSocket = new MockSocket();
     const sidebarEventHandler = SidebarClientEventHandler.create(
       sidebarSocket as never,
     );
-    const bridgedSocket = sidebarEventHandler.toSidebarSocket();
+
     const cards: CardData[] = [
       {
         id: "card-1",
@@ -296,10 +273,31 @@ suite("Encrypted EventHandler transport", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     let receivedCards: CardData[] | undefined;
-    bridgedSocket.on("cardsAroundCursor", (value) => {
+    sidebarEventHandler.cardsAroundCursorEvent((value) => {
       receivedCards = value as CardData[];
     });
 
     assert.deepStrictEqual(receivedCards, cards);
+  });
+
+  test("sidebar client handler emits session shutdown events", async () => {
+    const sidebarSocket = new MockSocket();
+    const sidebarEventHandler = SidebarClientEventHandler.create(
+      sidebarSocket as never,
+    );
+
+    let shutdownCount = 0;
+    const subscription = sidebarEventHandler.sessionShutdownEvent(() => {
+      shutdownCount += 1;
+    });
+
+    sidebarSocket.emit("sessionShutdown");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.strictEqual(shutdownCount, 1);
+
+    subscription.dispose();
+    sidebarSocket.emit("sessionShutdown");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.strictEqual(shutdownCount, 1);
   });
 });
