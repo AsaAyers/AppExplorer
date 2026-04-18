@@ -6,7 +6,7 @@ import { getRelativePath } from "./get-relative-path";
 import { LocationFinder } from "./location-finder";
 import { createDebug } from "./utils/create-debug";
 import { sha256 } from "./utils/crypto";
-const debug = createDebug("app-explorer:document-symbol-tracker");
+const log = createDebug("app-explorer:document-symbol-tracker");
 
 /**
  * Shape of the event payload when the symbol path under the cursor changes.
@@ -39,6 +39,11 @@ export class DocumentSymbolTracker
   private disposables: vscode.Disposable[] = [];
   private debounceTimer: NodeJS.Timeout | null = null;
   private debounceMs: number;
+  /**
+   * Only track the symbols in editor files (scheme "file") to avoid noise
+   * from outputs, settings, etc.
+   */
+  private activeTextEditor: vscode.TextEditor | null = null;
   constructor(finder: LocationFinder, debounceMs = 400) {
     super();
     this.debounceMs = debounceMs;
@@ -53,7 +58,11 @@ export class DocumentSymbolTracker
     // Text changes (could alter symbol structure / ranges)
     this.disposables.push(
       vscode.workspace.onDidChangeTextDocument((e) => {
-        if (e.document === vscode.window.activeTextEditor?.document) {
+        if (
+          ["file"].includes(e.document.uri.scheme) &&
+          e.document === this.activeTextEditor?.document
+        ) {
+          log("(scheme)", e.document.uri.scheme, e.document.uri.path);
           this.schedule();
         }
       }),
@@ -61,19 +70,24 @@ export class DocumentSymbolTracker
     // Cursor / selection movements (symbol path can change without edits)
     this.disposables.push(
       vscode.window.onDidChangeTextEditorSelection((e) => {
-        if (e.textEditor === vscode.window.activeTextEditor) {
+        if (e.textEditor === this.activeTextEditor) {
           this.schedule(true); // something
         }
       }),
     );
     // Active editor changed
     this.disposables.push(
-      vscode.window.onDidChangeActiveTextEditor(() => this.schedule()),
+      vscode.window.onDidChangeActiveTextEditor(() => {
+        if (vscode.window.activeTextEditor?.document.uri.scheme === "file") {
+          this.activeTextEditor = vscode.window.activeTextEditor;
+          this.schedule();
+        }
+      }),
     );
     // Opened doc (useful if LS warm-up completes only after open)
     this.disposables.push(
       vscode.workspace.onDidOpenTextDocument((doc) => {
-        if (doc === vscode.window.activeTextEditor?.document) {
+        if (doc === this.activeTextEditor?.document) {
           this.schedule();
         }
       }),
@@ -96,9 +110,8 @@ export class DocumentSymbolTracker
 
   private async refresh(force = false) {
     this.debounceTimer = null;
-    const editor = vscode.window.activeTextEditor;
+    const editor = this.activeTextEditor;
     if (!editor) {
-      this.maybeEmit([], null, null, force);
       return;
     }
     const doc = editor.document;
@@ -108,13 +121,13 @@ export class DocumentSymbolTracker
         doc.uri,
         position,
       );
-      this.maybeEmit(symbols, doc.uri, doc.version, force);
+      this.emitSymbols(symbols, doc.uri, doc.version, force);
     } catch (err) {
-      debug("symbol refresh error", err);
+      log("symbol refresh error", err);
     }
   }
 
-  private async maybeEmit(
+  private async emitSymbols(
     symbols: SymbolAnchor[],
     uri: vscode.Uri | null,
     version: number | null,
@@ -148,7 +161,7 @@ export class DocumentSymbolTracker
     );
 
     if (uri) {
-      debug("symbol path change", { pathKey });
+      log("symbol path change", { pathKey, uri: String(uri) });
       this.fire({
         type: "symbolsChanged",
         uri,

@@ -6,7 +6,7 @@ import {
   parseSessionUri,
   zAppExplorerSession,
 } from "./app-explorer-session";
-import { getHostByIndex, getRelayHostByIndex } from "./host-config";
+import { getAppHostByIndex, getRelayHostByIndex } from "./host-config";
 import { createDebug } from "./utils/create-debug";
 import { EventEmitter } from "./utils/event-emitter";
 import { WorkspaceCardStorage } from "./workspace-card-storage";
@@ -214,7 +214,7 @@ export class AppExplorerSessionCoordinator
         serverUrl: getRelayHostByIndex(session.hostIndex),
       };
       log("(session_start)", {
-        appHost: getHostByIndex(session.hostIndex),
+        appHost: getAppHostByIndex(session.hostIndex),
         relayHost: getRelayHostByIndex(session.hostIndex),
         hostIndex: session.hostIndex,
         serverUrl: serverResult.serverUrl,

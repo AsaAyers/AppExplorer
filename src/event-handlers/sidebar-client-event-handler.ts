@@ -4,136 +4,87 @@ import { type HandlerMethodMap, SidebarSocket } from "./types";
 
 import { EventHandler } from "@/event-handlers/event-handler";
 
-type CardsAroundCursorListener = (cards: CardData[]) => void;
-type SessionShutdownListener = () => void;
+class ListenerCollection<T> {
+  #listeners = new Set<(value: T) => void>();
+
+  subscribe(listener: (value: T) => void) {
+    this.#listeners.add(listener);
+    return {
+      dispose: () => {
+        this.#listeners.delete(listener);
+      },
+    };
+  }
+
+  fire(value: T) {
+    for (const listener of this.#listeners) {
+      listener(value);
+    }
+  }
+
+  clear() {
+    this.#listeners.clear();
+  }
+}
 
 export class SidebarClientEventHandler extends EventHandler<
   "sidebar",
   "workspace"
 > {
   protected readonly selfName = "sidebar" as const;
-  #cardsAroundCursorListeners = new Set<CardsAroundCursorListener>();
-  #sessionShutdownListeners = new Set<SessionShutdownListener>();
+  readonly #socket: SidebarSocket;
+  readonly #cardsAroundCursorEmitter = new ListenerCollection<CardData[]>();
+  readonly #sessionShutdownEmitter = new ListenerCollection<void>();
   #latestCardsAroundCursor?: CardData[];
 
-  onCardsAroundCursor(listener: CardsAroundCursorListener) {
-    this.#cardsAroundCursorListeners.add(listener);
-    if (this.#latestCardsAroundCursor) {
-      listener(this.#latestCardsAroundCursor);
-    }
-    return () => {
-      this.#cardsAroundCursorListeners.delete(listener);
+  constructor(socket: SidebarSocket) {
+    super(socket as never);
+    this.#socket = socket;
+  }
+
+  get latestCardsAroundCursor() {
+    return this.#latestCardsAroundCursor;
+  }
+
+  get socketClient() {
+    return this.#socket;
+  }
+
+  get cardsAroundCursorEvent() {
+    return (listener: (cards: CardData[]) => void) => {
+      if (this.#latestCardsAroundCursor) {
+        listener(this.#latestCardsAroundCursor);
+      }
+      return this.#cardsAroundCursorEmitter.subscribe(listener);
     };
   }
 
-  onSessionShutdown(listener: SessionShutdownListener) {
-    this.#sessionShutdownListeners.add(listener);
-    return () => {
-      this.#sessionShutdownListeners.delete(listener);
-    };
+  get sessionShutdownEvent() {
+    return this.#sessionShutdownEmitter.subscribe.bind(
+      this.#sessionShutdownEmitter,
+    );
   }
 
   protected readonly handlerMethods = {
     onCardsAroundCursor: async (cards: CardData[]) => {
       this.#latestCardsAroundCursor = cards;
-      this.#cardsAroundCursorListeners.forEach((listener) => {
-        listener(cards);
-      });
+      this.#cardsAroundCursorEmitter.fire(cards);
     },
     onSessionShutdown: async () => {
       this.#latestCardsAroundCursor = undefined;
-      this.#sessionShutdownListeners.forEach((listener) => {
-        listener();
-      });
+      this.#sessionShutdownEmitter.fire();
     },
-  } satisfies HandlerMethodMap<"sidebar", "workspace">;
-}
+    onDisconnect: async () => {
+      this.#latestCardsAroundCursor = undefined;
+    },
+  } satisfies HandlerMethodMap<"sidebar", "workspace"> & {
+    onConnect?: () => void | Promise<void>;
+    onDisconnect?: (...args: unknown[]) => void | Promise<void>;
+  };
 
-export class SidebarSocketBridge {
-  #cardsAroundCursorListeners = new Map<
-    CardsAroundCursorListener,
-    () => void
-  >();
-  #sessionShutdownListeners = new Map<SessionShutdownListener, () => void>();
-  private readonly socket: SidebarSocket;
-  private readonly eventHandler: SidebarClientEventHandler;
-
-  constructor(socket: SidebarSocket, eventHandler: SidebarClientEventHandler) {
-    this.socket = socket;
-    this.eventHandler = eventHandler;
-  }
-
-  get connected() {
-    return this.socket.connected;
-  }
-
-  get disconnected() {
-    return this.socket.disconnected;
-  }
-
-  get recovered() {
-    return this.socket.recovered;
-  }
-
-  connect() {
-    return this.socket.connect();
-  }
-
-  emit(...args: Parameters<typeof this.socket.emit>) {
-    return (this.socket.emit as (...socketArgs: unknown[]) => unknown)(...args);
-  }
-
-  emitWithAck(...args: Parameters<typeof this.socket.emitWithAck>) {
-    return this.socket.emitWithAck(args[0], ...args.slice(1));
-  }
-
-  on(eventName: string, listener: (...args: unknown[]) => unknown) {
-    if (eventName === "cardsAroundCursor") {
-      this.#cardsAroundCursorListeners.set(
-        listener as CardsAroundCursorListener,
-        this.eventHandler.onCardsAroundCursor(
-          listener as CardsAroundCursorListener,
-        ),
-      );
-      return this;
-    }
-
-    if (eventName === "sessionShutdown") {
-      this.#sessionShutdownListeners.set(
-        listener as SessionShutdownListener,
-        this.eventHandler.onSessionShutdown(
-          listener as SessionShutdownListener,
-        ),
-      );
-      return this;
-    }
-
-    this.socket.on(eventName as any, listener as any);
-    return this;
-  }
-
-  off(eventName: string, listener: (...args: unknown[]) => unknown) {
-    if (eventName === "cardsAroundCursor") {
-      this.#cardsAroundCursorListeners.get(
-        listener as CardsAroundCursorListener,
-      )?.();
-      this.#cardsAroundCursorListeners.delete(
-        listener as CardsAroundCursorListener,
-      );
-      return this;
-    }
-
-    if (eventName === "sessionShutdown") {
-      this.#sessionShutdownListeners.get(
-        listener as SessionShutdownListener,
-      )?.();
-      this.#sessionShutdownListeners.delete(
-        listener as SessionShutdownListener,
-      );
-      return this;
-    }
-
-    this.socket.off(eventName as any, listener as any);
-    return this;
+  override dispose() {
+    this.#cardsAroundCursorEmitter.clear();
+    this.#sessionShutdownEmitter.clear();
+    super.dispose();
   }
 }

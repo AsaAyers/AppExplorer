@@ -6,7 +6,7 @@ import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
 import { ExtensionApi } from "../../extension";
-import { HEALTH_URL, type HostIndex } from "../../host-config";
+import { LOCAL_RELAY_HEALTH_URL, type HostIndex } from "../../host-config";
 
 import { colorText } from "./colors";
 import { isCriticalPath, timeline } from "./critical-path-timeline";
@@ -114,9 +114,14 @@ export async function activateAppExplorer() {
     }
   });
 
+  await waitForLegacyRelayHealth();
+  return extension.exports;
+}
+
+export async function waitForLegacyRelayHealth() {
   await waitFor(
     async () => {
-      const response = await fetch(HEALTH_URL);
+      const response = await fetch(LOCAL_RELAY_HEALTH_URL);
       assert.equal(response.status, 200);
     },
     {
@@ -125,7 +130,6 @@ export async function activateAppExplorer() {
       message: "AppExplorer server did not start after session launch",
     },
   );
-  return extension.exports;
 }
 
 export async function startAppExplorerSession(
@@ -145,13 +149,20 @@ export async function startAppExplorerSession(
     const session = parseSessionUri(href);
     session.hostIndex = hostIndex;
     const newHref = makeSessionUrl(session);
-    return sessionButton.evaluate(
-      (el, newHref) => el.setAttribute("href", newHref),
-      newHref,
-    );
+    return sessionButton
+      .evaluate((el, nextHref) => {
+        el.setAttribute("href", nextHref);
+        globalThis.captureSessionLink = () => undefined;
+        return nextHref;
+      }, newHref)
+      .then(async (nextHref) => {
+        await sessionButton.click();
+        await vscode.commands.executeCommand(
+          "vscode.open",
+          vscode.Uri.parse(nextHref),
+        );
+      });
   });
-
-  await sessionButton.click();
 }
 
 export function uriForFile(filePath: string) {
@@ -168,12 +179,8 @@ export function uriForFile(filePath: string) {
   return exampleUri;
 }
 export function getSidebar(page: Page) {
-  return page.frameLocator(
-    '[data-miro-app-id="3458764531189693223"][data-container-type="library"]',
-  );
+  return page.frameLocator('[data-container-type="library"]:visible');
 }
 export function getModal(page: Page) {
-  return page.frameLocator(
-    '[data-miro-app-id="3458764531189693223"][data-testid="iframe-modal-iframe"]',
-  );
+  return page.frameLocator('[data-testid="iframe-modal-iframe"]:visible');
 }

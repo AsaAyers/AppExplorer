@@ -76,6 +76,13 @@ const eslintConfig = defineConfig([
           },
         },
       ],
+      "no-restricted-syntax": [
+        "off",
+        {
+          selector: "TSAsExpression > TSNeverKeyword",
+          message: "Avoid using 'as never'.",
+        },
+      ],
     },
   },
 ]);

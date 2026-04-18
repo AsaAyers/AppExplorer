@@ -133,6 +133,11 @@ const returnsVoid = (schema: z.ZodFunction): boolean =>
 const unwrapSocketAckValue = (value: unknown) =>
   Array.isArray(value) && value[0] === null ? value[1] : value;
 
+type LifecycleHandlerMethodMap = {
+  onConnect?: SocketLifecycleEvents["connect"];
+  onDisconnect?: SocketLifecycleEvents["disconnect"];
+};
+
 export abstract class EventHandler<
   SelfName extends SocketEntity,
   EventSources extends SocketEntity = Exclude<SocketEntity, SelfName>,
@@ -141,7 +146,8 @@ export abstract class EventHandler<
   protected abstract readonly handlerMethods: HandlerMethodMap<
     SelfName,
     EventSources
-  >;
+  > &
+    LifecycleHandlerMethodMap;
   protected readonly socket: EventHandlerSocket<SelfName, EventSources>;
   log: Debugger;
 
@@ -151,6 +157,10 @@ export abstract class EventHandler<
   constructor(socket: EventHandlerSocket<SelfName, EventSources>) {
     this.socket = socket;
     this.log = createDebug(`app-explorer:event-handler`);
+  }
+
+  get connected() {
+    return this.socket.connected;
   }
 
   attachSession(session: AppExplorerSession) {
@@ -415,8 +425,10 @@ export abstract class EventHandler<
       const schema = (incomingSchemas as Record<string, z.ZodFunction>)[
         eventName as unknown as string
       ];
+      const isLifecycleEvent =
+        eventName === "connect" || eventName === "disconnect";
       invariant(
-        schema instanceof z.ZodFunction,
+        schema instanceof z.ZodFunction || isLifecycleEvent,
         `No schema found for event ${String(eventName)}`,
       );
       const asyncHandler = handler as unknown as (
@@ -424,6 +436,10 @@ export abstract class EventHandler<
       ) => Promise<unknown>;
 
       const callbackHandler = async (...args: any[]) => {
+        if (!(schema instanceof z.ZodFunction)) {
+          await asyncHandler(...args);
+          return;
+        }
         let callback = null;
         if (!returnsVoid(schema)) {
           callback = args.pop();
@@ -438,6 +454,9 @@ export abstract class EventHandler<
       };
 
       const encryptedHandler = async (...args: unknown[]) => {
+        if (!(schema instanceof z.ZodFunction)) {
+          return;
+        }
         let callback: ((...callbackArgs: unknown[]) => void) | undefined;
         const maybeCallback = args.at(-1);
         if (typeof maybeCallback === "function") {
@@ -471,7 +490,9 @@ export abstract class EventHandler<
       };
 
       this.on(eventName, callbackHandler as any);
-      this.on(encryptedEventName as any, encryptedHandler as any);
+      if (schema instanceof z.ZodFunction) {
+        this.on(encryptedEventName as any, encryptedHandler as any);
+      }
     }
   }
 

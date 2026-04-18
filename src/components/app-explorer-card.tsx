@@ -24,12 +24,14 @@ export function AppExplorerCard({
   hideTags = false,
   miroDraggable = false,
   connectSelectedCards = false,
+  showStatusButton = true,
 }: {
   className?: string;
   cardData: CardData;
   hideTags?: boolean;
   miroDraggable?: boolean;
   connectSelectedCards?: boolean;
+  showStatusButton?: boolean;
 }) {
   const codeLogo = React.useMemo(() => {
     if (cardData.codeLink) {
@@ -124,26 +126,28 @@ export function AppExplorerCard({
         </div>
 
         <div className="absolute right-0 top-0">
-          <button
-            disabled={!cardData.miroLink}
-            onClick={async () => {
-              const boardId = (await miro.board.getInfo()).id;
-              await miro.board.ui.openModal({
-                url: `/card/${boardId}/${cardData.id}`,
-                data: cardData,
-                width: 400,
-              });
-            }}
-            className="text-white bg-gray-500 hover:bg-black rounded-xl p-1 m-1"
-          >
-            <Image
-              className="invert"
-              src={iconMap[cardData.status]}
-              alt=""
-              width="16"
-              height="16"
-            />
-          </button>
+          {showStatusButton ? (
+            <button
+              disabled={!cardData.miroLink}
+              onClick={async () => {
+                const boardId = (await miro.board.getInfo()).id;
+                await miro.board.ui.openModal({
+                  url: `/card/${boardId}/${cardData.id}`,
+                  data: cardData,
+                  width: 400,
+                });
+              }}
+              className="text-white bg-gray-500 hover:bg-black rounded-xl p-1 m-1"
+            >
+              <Image
+                className="invert"
+                src={iconMap[cardData.status]}
+                alt=""
+                width="16"
+                height="16"
+              />
+            </button>
+          ) : null}
 
           {cardData.codeLink && codeLogo ? (
             <a

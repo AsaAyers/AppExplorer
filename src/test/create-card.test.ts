@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import assert from "node:assert";
+import { ChildProcess, spawn } from "node:child_process";
 import fs from "node:fs";
 
 import { suite } from "mocha";
@@ -10,6 +11,7 @@ import * as vscode from "vscode";
 import { createDebug } from "../utils/create-debug";
 
 import { launchBrowser, createBrowserPage } from "./helpers/browser";
+import { setupTimeline } from "./helpers/critical-path-timeline";
 import {
   activateAppExplorer,
   getModal,
@@ -20,7 +22,7 @@ import {
   waitFor,
 } from "./helpers/test-utils";
 
-import { testHosts } from "@/host-config";
+import { getMiroAppName, testHosts, type HostIndex } from "@/host-config";
 
 const log = createDebug("app-explorer:create-card-test");
 
@@ -28,8 +30,9 @@ createDebug.log("==================================================");
 
 const storageState = "playwright/.auth/user.json";
 const storageStateExists = fs.existsSync(storageState);
+const localAppHealthUrl = "http://localhost:3000/api/health-check";
 
-const appCardSelector = "app-card";
+const appCardSelector = ".app-card";
 const cardTitleSelector = ".app-card--title";
 const suiteFn =
   storageStateExists && !process.env.SKIP_E2E ? suite : suite.skip;
@@ -38,22 +41,26 @@ suiteFn("Create Card", function () {
   let browser: Browser | undefined;
   let context: BrowserContext | undefined;
   let page: Page | undefined;
+  let localAppServer: ChildProcess | undefined;
   void context;
 
+  setupTimeline();
   suiteSetup(async function () {
-    this.timeout(12000);
+    this.timeout(60000);
     await fetch("http://localhost:9042/reset", { method: "POST" }).catch(
       () => null,
     );
 
+    localAppServer = await ensureLocalAppHost();
     browser = await launchBrowser();
+    ({ context, page } = await createBrowserPage(browser));
   });
 
   setup(async function () {
-    this.timeout(60000);
-    assert.ok(browser, "Browser should be launched in suiteSetup");
     await activateAppExplorer();
-    ({ context, page } = await createBrowserPage(browser));
+    await vscode.commands.executeCommand("app-explorer.disconnectSession");
+    invariant(page, "Page should be defined after suiteSetup");
+    await page.goto("about:blank", { waitUntil: "domcontentloaded" });
   });
 
   suiteTeardown(async function () {
@@ -61,6 +68,10 @@ suiteFn("Create Card", function () {
     await videoDelay("teardown delay", 2);
 
     await context?.close();
+    if (localAppServer && !localAppServer.killed) {
+      localAppServer.kill("SIGTERM");
+      await new Promise((resolve) => localAppServer?.once("exit", resolve));
+    }
     if (videoPath) {
       // Rename video to paywright/videos/{testName}.webm
       const newVideoPath = `videos/CreateCard.webm`;
@@ -73,7 +84,7 @@ suiteFn("Create Card", function () {
     test(`On test board host: ${hostIndex}`, async function () {
       this.timeout(1200000);
       invariant(page, "Page should be defined after setup");
-      await openTestBoard(page);
+      await openTestBoard(page, hostIndex);
       await startAppExplorerSession(page, hostIndex);
       await videoDelay("test start", 5);
 
@@ -103,9 +114,16 @@ suiteFn("Create Card", function () {
 
       // Step 2: Wait for 3-deep card stack: UserProfile, UserProfile/constructor, UserProfile/constructor/sessionId
       const sidebar = getSidebar(page);
-      await waitFor(async () => {
-        assert.equal(await sidebar.locator(appCardSelector).count(), 3);
-      });
+      await waitFor(
+        async () => {
+          assert.equal(await sidebar.locator(appCardSelector).count(), 3);
+        },
+        {
+          timeout: 10000,
+          interval: 500,
+          message: "Expected the sidebar symbol stack to contain 3 cards",
+        },
+      );
       await videoDelay("3 cards");
 
       await sidebar
@@ -211,7 +229,7 @@ suiteFn("Create Card", function () {
 const testFrameUrl =
   "https://miro.com/app/board/uXjVGjhWRk8=/?moveToWidget=3458764667378076158&cot=14";
 
-async function openTestBoard(page: Page) {
+async function openTestBoard(page: Page, hostIndex: HostIndex) {
   await page.goto(testFrameUrl, {
     waitUntil: "domcontentloaded",
   });
@@ -221,7 +239,7 @@ async function openTestBoard(page: Page) {
   await videoDelay("before open");
   await page
     .locator("#CREATION_BAR_ROOT")
-    .getByRole("button", { name: "AppExplorer" })
+    .getByRole("button", { name: getMiroAppName(hostIndex), exact: true })
     .click();
 
   const sidebar = getSidebar(page);
@@ -238,6 +256,39 @@ async function openTestBoard(page: Page) {
   await page.evaluate(cleanFrame);
 
   await videoDelay("Test Board ready");
+}
+
+async function ensureLocalAppHost() {
+  const isHealthy = await fetch(localAppHealthUrl)
+    .then((response) => response.ok)
+    .catch(() => false);
+
+  if (isHealthy) {
+    return undefined;
+  }
+
+  const child = spawn("npm", ["start"], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      PORT: "3000",
+    },
+    stdio: "ignore",
+  });
+
+  await waitFor(
+    async () => {
+      const response = await fetch(localAppHealthUrl).catch(() => undefined);
+      assert.equal(response?.status, 200);
+    },
+    {
+      timeout: 30000,
+      interval: 500,
+      message: "Local Next relay did not start on port 3000",
+    },
+  );
+
+  return child;
 }
 async function zoomToTestFrame() {
   const testFrame = (await miro.board.get({ type: "frame" })).find(
@@ -349,6 +400,7 @@ async function getAppExplorerCodeLensTitles(documentUri: vscode.Uri) {
         title?.startsWith("$(app-explorer) ") ?? false,
     )
     .map((title) => title.replace("$(app-explorer) ", ""))
+    .filter((title, index, titles) => titles.indexOf(title) === index)
     .sort();
 }
 

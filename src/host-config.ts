@@ -7,21 +7,29 @@ const debug = createDebug("app-explorer:session-url");
 const hostConfig = [
   {
     index: 0,
+    appUrl: "https://appexplorer.dev",
+    miroAppName: "AppExplorer",
     relayUrl: "https://appexplorer.dev",
     launchesRelay: true,
   },
   {
     index: 1,
+    appUrl: "http://localhost:9042",
+    miroAppName: "AppExplorer",
     relayUrl: "http://localhost:9042",
     launchesRelay: true,
   },
   {
     index: 2,
+    appUrl: "http://localhost:9042",
+    miroAppName: "AppExplorer",
     relayUrl: "http://localhost:3000",
     launchesRelay: true,
   },
   {
     index: 3,
+    appUrl: "https://dev.appexplorer.dev",
+    miroAppName: "DevAppExplorer",
     relayUrl: "https://dev.appexplorer.dev",
     launchesRelay: true,
   },
@@ -31,7 +39,7 @@ export const testHosts = hostConfig
   .map((config) => config.index)
   .filter((i) => i > 0);
 
-export const HEALTH_URL = "http://localhost:9042/health";
+export const LOCAL_RELAY_HEALTH_URL = "http://localhost:9042/health";
 
 export type HostIndex = (typeof hostConfig)[number]["index"];
 
@@ -56,11 +64,14 @@ export function getHostConfig(hostIndex: number) {
   return config;
 }
 
-export const getHostByIndex = (hostIndex: number) =>
-  getHostConfig(hostIndex).relayUrl;
+export const getAppHostByIndex = (hostIndex: number) =>
+  getHostConfig(hostIndex).appUrl;
 
 export const getRelayHostByIndex = (hostIndex: number) =>
   getHostConfig(hostIndex).relayUrl;
+
+export const getMiroAppName = (hostIndex: number) =>
+  getHostConfig(hostIndex).miroAppName;
 
 export const launchesLocalRelayByIndex = (hostIndex: number) =>
   getHostConfig(hostIndex).launchesRelay;
