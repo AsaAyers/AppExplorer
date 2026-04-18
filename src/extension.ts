@@ -3,19 +3,19 @@ import path from "node:path";
 
 import * as vscode from "vscode";
 
-import { AppExplorerLens } from "./app-explorer-lens";
-import { MemoryAdapter } from "./card-storage";
-import { makeNavigationHandler } from "./commands/navigate";
-import { registerUpdateCommand } from "./commands/update-extension";
-import { EditorDecorator } from "./editor-decorator";
-import { AppExplorerSessionCoordinator } from "./extension-session";
-import { LocationFinder } from "./location-finder";
-import { logger as baseLogger, logger } from "./logger";
-import { MiroServer } from "./server/server";
-import { StatusBarManager } from "./status-bar-manager";
-import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
-import { createDebug } from "./utils/create-debug";
-import { WorkspaceCardStorage } from "./workspace-card-storage";
+import { AppExplorerLens } from "@/app-explorer-lens";
+import { MemoryAdapter } from "@/card-storage";
+import { makeNavigationHandler } from "@/commands/navigate";
+import { registerUpdateCommand } from "@/commands/update-extension";
+import { EditorDecorator } from "@/editor-decorator";
+import { AppExplorerSessionCoordinator } from "@/extension-session";
+import { LocationFinder } from "@/location-finder";
+import { logger as baseLogger, logger } from "@/logger";
+import { MiroServer } from "@/server/server";
+import { StatusBarManager } from "@/status-bar-manager";
+import { listenToAllEvents } from "@/test/helpers/listen-to-all-events";
+import { createDebug } from "@/utils/create-debug";
+import { WorkspaceCardStorage } from "@/workspace-card-storage";
 const debug = createDebug("app-explorer:extension");
 export type HandlerContext = {
   cardStorage: WorkspaceCardStorage;

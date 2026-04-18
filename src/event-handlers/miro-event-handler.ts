@@ -1,7 +1,7 @@
-import { HandlerMethodMap } from "./types";
 
 import type { CardData } from "@/card-data";
 import { EventHandler } from "@/event-handlers/event-handler";
+import { HandlerMethodMap } from "@/event-handlers/types";
 import { extractCardData, debug, zoomIntoCards } from "@/miro";
 import { isAppCard } from "@/miro/is-app-card";
 import { notEmpty } from "@/utils/not-empty";

@@ -5,14 +5,12 @@ import { Page } from "playwright";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { ExtensionApi } from "../../extension";
-import { type HostIndex } from "../../host-config";
-
-import { colorText } from "./colors";
-import { isCriticalPath, timeline } from "./critical-path-timeline";
-import { isRecording } from "./is-recording";
-
 import { makeSessionUrl, parseSessionUri } from "@/app-explorer-session";
+import { ExtensionApi } from "@/extension";
+import { type HostIndex } from "@/host-config";
+import { colorText } from "@/test/helpers/colors";
+import { isCriticalPath, timeline } from "@/test/helpers/critical-path-timeline";
+import { isRecording } from "@/test/helpers/is-recording";
 import { createDebug } from "@/utils/create-debug";
 
 const debug = createDebug("app-explorer:test-utils");

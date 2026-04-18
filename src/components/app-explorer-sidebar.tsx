@@ -2,9 +2,6 @@
 
 import React from "react";
 
-import { AppExplorerCard } from "./app-explorer-card";
-import { AppExplorerOnboarding } from "./app-explorer-onboarding";
-
 import {
   AppExplorerSession,
   makeSessionUrl,
@@ -12,6 +9,8 @@ import {
   zAppExplorerSession,
 } from "@/app-explorer-session";
 import type { CardData } from "@/card-data";
+import { AppExplorerCard } from "@/components/app-explorer-card";
+import { AppExplorerOnboarding } from "@/components/app-explorer-onboarding";
 import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import { getIndexFromOrigin } from "@/host-config";
 import { isAppCard } from "@/miro/is-app-card";

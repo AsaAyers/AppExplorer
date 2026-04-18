@@ -4,19 +4,19 @@ import { Server, type Socket } from "socket.io";
 import * as vscode from "vscode";
 import { z } from "zod";
 
-import { allowedSocketOrigin } from "../allowed-socket-origin";
+import { allowedSocketOrigin } from "@/allowed-socket-origin";
 import {
   APP_EXPLORER_SESSION_NAMESPACE,
   appExplorerSessionRoles,
   type AppExplorerSessionRole,
-} from "../session-transport";
+} from "@/session-transport";
 import {
   encryptedEventName,
   socketEventMap,
   type SocketEntity,
-} from "../socket-events";
-import { isEventHandlerOptOutError } from "../unhandled-event-ack";
-import { createDebug } from "../utils/create-debug";
+} from "@/socket-events";
+import { isEventHandlerOptOutError } from "@/unhandled-event-ack";
+import { createDebug } from "@/utils/create-debug";
 
 const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");

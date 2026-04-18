@@ -8,10 +8,9 @@ import { Browser, BrowserContext, Page } from "playwright";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { createDebug } from "../utils/create-debug";
-
-import { launchBrowser, createBrowserPage } from "./helpers/browser";
-import { setupTimeline } from "./helpers/critical-path-timeline";
+import { getHostConfig, testHosts, type HostIndex } from "@/host-config";
+import { launchBrowser, createBrowserPage } from "@/test/helpers/browser";
+import { setupTimeline } from "@/test/helpers/critical-path-timeline";
 import {
   activateAppExplorer,
   getModal,
@@ -20,9 +19,8 @@ import {
   uriForFile,
   videoDelay,
   waitFor,
-} from "./helpers/test-utils";
-
-import { getHostConfig, testHosts, type HostIndex } from "@/host-config";
+} from "@/test/helpers/test-utils";
+import { createDebug } from "@/utils/create-debug";
 
 const log = createDebug("app-explorer:create-card-test");
 

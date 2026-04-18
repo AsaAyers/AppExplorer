@@ -12,15 +12,15 @@ import type {
 import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
-import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
-import { type CardData } from "./card-data";
-import { BoardInfo } from "./card-storage";
-import { MiroEventHandler } from "./event-handlers/miro-event-handler";
-import { MiroSocket } from "./event-handlers/types";
-import { isAppCard } from "./miro/is-app-card";
-import { updateCard } from "./miro/update-card";
-import { createDebug } from "./utils/create-debug";
-import { notEmpty } from "./utils/not-empty";
+import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
+import { type CardData } from "@/card-data";
+import { BoardInfo } from "@/card-storage";
+import { MiroEventHandler } from "@/event-handlers/miro-event-handler";
+import { MiroSocket } from "@/event-handlers/types";
+import { isAppCard } from "@/miro/is-app-card";
+import { updateCard } from "@/miro/update-card";
+import { createDebug } from "@/utils/create-debug";
+import { notEmpty } from "@/utils/not-empty";
 
 createDebug.enable("*");
 export let debug = createDebug("app-explorer:miro");

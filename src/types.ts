@@ -1,4 +1,4 @@
-import { CardData } from "./card-data";
+import { CardData } from "@/card-data";
 
 export type CurrentBoardInfo = {
   boardId: string;

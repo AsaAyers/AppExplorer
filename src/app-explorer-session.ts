@@ -1,7 +1,7 @@
 import invariant from "tiny-invariant";
 import { z } from "zod";
 
-import { getHostConfig } from "./host-config";
+import { getHostConfig } from "@/host-config";
 
 export const zAppExplorerSession = z
   .object({

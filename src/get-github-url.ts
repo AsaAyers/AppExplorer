@@ -2,8 +2,8 @@ import * as path from "node:path";
 
 import * as vscode from "vscode";
 
-import { getRelativePath } from "./get-relative-path";
-import { GitUtils, DefaultGitUtils } from "./git-utils";
+import { getRelativePath } from "@/get-relative-path";
+import { GitUtils, DefaultGitUtils } from "@/git-utils";
 
 export async function getGitHubUrl(
   locationLink: vscode.LocationLink,

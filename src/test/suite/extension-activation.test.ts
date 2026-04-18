@@ -2,7 +2,7 @@ import * as assert from "node:assert";
 
 import * as vscode from "vscode";
 
-import { createDebug } from "../../utils/create-debug";
+import { createDebug } from "@/utils/create-debug";
 const debug = createDebug("app-explorer:test:extension-activation");
 
 /**

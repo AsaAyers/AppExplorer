@@ -5,14 +5,14 @@ import * as vscode from "vscode";
 import {
   AppExplorerSession,
   getWorkspaceSocketUrl,
-} from "./app-explorer-session";
-import { CardData } from "./card-data";
-import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
-import { getDocumentSymbolTracker } from "./document-symbol-tracker";
-import { WorkspaceSocket } from "./event-handlers/types";
-import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
-import { HandlerContext, selectRangeInEditor } from "./extension";
-import { getGitHubUrl } from "./get-github-url";
+} from "@/app-explorer-session";
+import { CardData } from "@/card-data";
+import { BoardInfo, CardStorage, StorageAdapter } from "@/card-storage";
+import { getDocumentSymbolTracker } from "@/document-symbol-tracker";
+import { WorkspaceSocket } from "@/event-handlers/types";
+import { WorkspaceEventHandler } from "@/event-handlers/workspace-event-handler";
+import { HandlerContext, selectRangeInEditor } from "@/extension";
+import { getGitHubUrl } from "@/get-github-url";
 
 export class WorkspaceCardStorage
   extends CardStorage

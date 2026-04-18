@@ -8,14 +8,14 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
-import { colorText } from "./colors";
+import { colorText } from "@/test/helpers/colors";
 import {
   isBrowserSpam,
   isCriticalPath,
   timeline,
-} from "./critical-path-timeline";
-import { isHeadless, isRecording } from "./is-recording";
-import { screenshot } from "./test-utils";
+} from "@/test/helpers/critical-path-timeline";
+import { isHeadless, isRecording } from "@/test/helpers/is-recording";
+import { screenshot } from "@/test/helpers/test-utils";
 
 export type BrowserPage = {
   context: BrowserContext;

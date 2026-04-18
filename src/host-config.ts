@@ -1,6 +1,6 @@
 import invariant from "tiny-invariant";
 
-import { createDebug } from "./utils/create-debug";
+import { createDebug } from "@/utils/create-debug";
 
 const log = createDebug("app-explorer:host-config");
 

@@ -3,12 +3,12 @@ import { EventEmitter } from "node:events";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { CardData } from "./card-data";
-import { SymbolPathChangeEvent } from "./document-symbol-tracker";
-import { MiroServerSocket } from "./event-handlers/types";
-import { listenToAllEvents } from "./test/helpers/listen-to-all-events";
-import { createDebug } from "./utils/create-debug";
-import { notEmpty } from "./utils/not-empty";
+import { CardData } from "@/card-data";
+import { SymbolPathChangeEvent } from "@/document-symbol-tracker";
+import { MiroServerSocket } from "@/event-handlers/types";
+import { listenToAllEvents } from "@/test/helpers/listen-to-all-events";
+import { createDebug } from "@/utils/create-debug";
+import { notEmpty } from "@/utils/not-empty";
 // Storage adapter interface to abstract persistence layer
 export interface StorageAdapter {
   get<T>(key: string): T | undefined;

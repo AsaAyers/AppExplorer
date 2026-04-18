@@ -1,9 +1,9 @@
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { HandlerContext } from "./extension";
-import { getRelativePath } from "./get-relative-path";
-import { createDebug } from "./utils/create-debug";
+import { HandlerContext } from "@/extension";
+import { getRelativePath } from "@/get-relative-path";
+import { createDebug } from "@/utils/create-debug";
 const debug = createDebug("app-explorer:lens");
 
 export class AppExplorerLens implements vscode.CodeLensProvider {

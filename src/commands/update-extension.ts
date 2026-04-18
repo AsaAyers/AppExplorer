@@ -4,7 +4,7 @@ import * as path from "node:path";
 
 import * as vscode from "vscode";
 
-import { createDebug } from "../utils/create-debug";
+import { createDebug } from "@/utils/create-debug";
 let outputChannel: vscode.OutputChannel;
 const debug = createDebug("app-explorer:update-extension");
 

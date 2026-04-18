@@ -5,11 +5,11 @@ import {
   type AppExplorerSession,
   parseSessionUri,
   zAppExplorerSession,
-} from "./app-explorer-session";
-import { getHostConfig } from "./host-config";
-import { createDebug } from "./utils/create-debug";
-import { EventEmitter } from "./utils/event-emitter";
-import { WorkspaceCardStorage } from "./workspace-card-storage";
+} from "@/app-explorer-session";
+import { getHostConfig } from "@/host-config";
+import { createDebug } from "@/utils/create-debug";
+import { EventEmitter } from "@/utils/event-emitter";
+import { WorkspaceCardStorage } from "@/workspace-card-storage";
 
 const log = createDebug("app-explorer:extension-session");
 

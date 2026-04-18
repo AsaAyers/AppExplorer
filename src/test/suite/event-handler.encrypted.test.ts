@@ -1,14 +1,13 @@
 import * as assert from "node:assert";
 import { EventEmitter } from "node:events";
 
-import { EventHandler } from "../../event-handlers/event-handler";
-import { SidebarClientEventHandler } from "../../event-handlers/sidebar-client-event-handler";
-import { encryptedEventName } from "../../socket-events";
-import { isEventHandlerOptOutError } from "../../unhandled-event-ack";
-
 import { zAppExplorerSession } from "@/app-explorer-session";
 import type { CardData } from "@/card-data";
+import { EventHandler } from "@/event-handlers/event-handler";
+import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import type { HandlerMethodMap } from "@/event-handlers/types";
+import { encryptedEventName } from "@/socket-events";
+import { isEventHandlerOptOutError } from "@/unhandled-event-ack";
 import { randomHex } from "@/utils/to-hex";
 
 class MockSocket extends EventEmitter {
