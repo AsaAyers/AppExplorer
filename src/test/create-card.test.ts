@@ -30,7 +30,7 @@ createDebug.log("==================================================");
 
 const storageState = "playwright/.auth/user.json";
 const storageStateExists = fs.existsSync(storageState);
-const localAppHealthUrl = "http://dev.appexplorer.dev/api/health-check";
+const localAppHealthUrl = "https://dev.appexplorer.dev/api/health-check";
 
 const appCardSelector = ".app-card";
 const cardTitleSelector = ".app-card--title";
@@ -267,7 +267,7 @@ async function ensureLocalAppHost() {
     return undefined;
   }
 
-  const child = spawn("npm", ["start"], {
+  const child = spawn("npm", ["dev"], {
     cwd: process.cwd(),
     env: {
       ...process.env,
