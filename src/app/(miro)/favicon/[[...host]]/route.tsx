@@ -3,6 +3,8 @@ import invariant from "tiny-invariant";
 
 import { getOrigin } from "@/utils/get-origin";
 
+const allowList = ["github.com"];
+
 export async function GET(
   req: NextRequest,
   ctx: RouteContext<"/favicon/[[...host]]">,
@@ -10,9 +12,10 @@ export async function GET(
   const host = (await ctx.params).host?.[0];
 
   invariant(typeof host === "string", "Invalid host");
-  invariant(host !== "", "Invalid host");
+  invariant(allowList.includes(host), "Invalid host");
 
   const url = new URL(`favicon.ico`, await getOrigin(req));
+  url.protocol = "https:";
   url.host = host;
 
   const response = await fetch(url, {
