@@ -321,7 +321,10 @@ export async function attachSession(session: AppExplorerSession) {
       for (const item of event.items) {
         if (isAppCard(item)) {
           const miroLink = `https://miro.com/app/board/${boardId}/?moveToWidget=${item.id}`;
-          await miroEventHandler.emit("card", { url: miroLink, card: null });
+          await miroEventHandler.emitEncrypted("card", {
+            url: miroLink,
+            card: null,
+          });
           await miro.board.notifications.showInfo("Deleting card in VSCode");
         }
       }
@@ -336,7 +339,7 @@ export async function attachSession(session: AppExplorerSession) {
     const card = event.items.find(isAppCard);
     if (card) {
       const cardData = await extractCardData(card);
-      await miroEventHandler.emit("card", {
+      await miroEventHandler.emitEncrypted("card", {
         url: cardData?.miroLink || "",
         card: cardData,
       });
@@ -353,7 +356,7 @@ export async function attachSession(session: AppExplorerSession) {
 
       if (data.length > 0) {
         for (const card of data) {
-          await miroEventHandler.emit("card", {
+          await miroEventHandler.emitEncrypted("card", {
             url: card.miroLink!,
             card,
           });

@@ -25,6 +25,8 @@
 import assert from "node:assert";
 import fs from "node:fs";
 
+import createDebug from "debug";
+
 // ---------------------------------------------------------------------------
 // Browser spam patterns – messages matching any of these are suppressed
 // entirely (not printed, not recorded).
@@ -51,6 +53,7 @@ export const BROWSER_SPAM_PATTERNS: RegExp[] = [
 // matching log call in the source code.
 // ---------------------------------------------------------------------------
 const CRITICAL_PATH_TOKENS: string[] = [
+  "(test)",
   // Extension session lifecycle
   "(session_start)",
   // Workspace socket lifecycle
@@ -83,7 +86,7 @@ const CRITICAL_PATH_TOKENS: string[] = [
 // ---------------------------------------------------------------------------
 export type TimelineEntry = {
   relativeMs: number;
-  source: "browser" | "extension";
+  source: "browser" | "extension" | "tests";
   type: "error" | "log";
   message: string;
 };
@@ -103,7 +106,7 @@ class CriticalPathTimeline {
 
   /** Record a critical-path event. */
   record(
-    source: "browser" | "extension",
+    source: "browser" | "extension" | "tests",
     type: "error" | "log",
     message: string,
   ): void {
@@ -219,4 +222,13 @@ export function setupTimeline(): void {
   teardown(function () {
     timeline.printOnFailure(this);
   });
+
+  const l = createDebug.log;
+
+  createDebug.log = (tag: any, ...args: any[]) => {
+    if (typeof tag === "string" && isCriticalPath(tag)) {
+      timeline.record("tests", "log", [tag, ...args].join(" "));
+    }
+    return l(tag, ...args);
+  };
 }

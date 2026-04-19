@@ -73,7 +73,7 @@ export class MiroServer {
       next();
     });
 
-    const allowedEvents = new Set([encryptedEventName]);
+    const allowedEvents = new Set([encryptedEventName, "sessionShutdown"]);
     sessionNamespace.on("connection", (socket) => {
       const role = roleSchema.parse(socket.data.role);
 
@@ -121,6 +121,12 @@ export class MiroServer {
               eventName,
               error,
             });
+          }
+        }
+
+        if (eventName === "sessionShutdown") {
+          for (const recipient of recipients) {
+            recipient.disconnect(true);
           }
         }
 

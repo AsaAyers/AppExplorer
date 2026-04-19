@@ -81,6 +81,62 @@ suiteFn("Create Card", function () {
   });
 
   for (const hostIndex of testHosts) {
+    test(`Miro card events update VSCode lenses on host: ${hostIndex}`, async function () {
+      this.timeout(1200000);
+      invariant(page, "Page should be defined after setup");
+      await openTestBoard(page, hostIndex);
+      await startAppExplorerSession(page, hostIndex);
+      await videoDelay("plaintext card relay test start", 5);
+
+      const helpersURI = uriForFile("src/utils/helpers.ts");
+      const helpersDoc = await vscode.workspace.openTextDocument(helpersURI);
+      const helpersEditor = await vscode.window.showTextDocument(helpersDoc, {
+        preview: false,
+      });
+
+      log("(test)", "Selecting isValidEmail in helpers.ts");
+      const isValidEmailIndex = helpersDoc
+        .getText()
+        .indexOf("export function isValidEmail");
+      assert.notStrictEqual(
+        isValidEmailIndex,
+        -1,
+        'Expected "isValidEmail" in helpers.ts',
+      );
+      const isValidEmailPosition = helpersDoc.positionAt(isValidEmailIndex);
+      helpersEditor.selection = new vscode.Selection(
+        isValidEmailPosition,
+        isValidEmailPosition,
+      );
+      await videoDelay("selected isValidEmail", 2);
+
+      await waitForAppExplorerCodeLenses(helpersURI, []);
+
+      const pageWidthInPixels = await page.evaluate(() => window.innerWidth);
+      const pageHeightInPixels = await page.evaluate(() => window.innerHeight);
+      const targetXY = [
+        pageWidthInPixels * 0.55,
+        pageHeightInPixels * 0.3,
+      ] as const;
+
+      const title = "isValidEmail";
+
+      log("(test)", "Dragging card to board");
+      await dragCardToBoard(page, /isValidEmail$/, targetXY);
+      await getModal(page).getByLabel("Title").waitFor({ state: "visible" });
+      await getModal(page).getByLabel("Title").fill(title);
+
+      await waitForAppExplorerCodeLenses(helpersURI, ["isValidEmail"]);
+
+      log("(test)", "Rename card");
+      await getModal(page).getByRole("button", { name: "Save" }).click();
+      await waitForAppExplorerCodeLenses(helpersURI, [title]);
+
+      log("(test)", "Remove card");
+      await removeMiroCardByTitle(page, title);
+      await waitForAppExplorerCodeLenses(helpersURI, []);
+    });
+
     test(`On test board host: ${hostIndex}`, async function () {
       this.timeout(1200000);
       invariant(page, "Page should be defined after setup");

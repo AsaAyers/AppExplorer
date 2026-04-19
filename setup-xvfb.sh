@@ -108,7 +108,7 @@ recordTests() {
   mkdir -p videos
   rm videos/vscode.mp4
   recordVideo "videos/vscode.mp4"
-  npm test
+  npm test -- "$@"
   stopVideo
 }
 
