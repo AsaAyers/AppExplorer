@@ -45,9 +45,14 @@ declare global {
 
 export async function createBrowserPage(
   browser: Browser,
+  {
+    storageState = "playwright/.auth/user.json",
+  }: {
+    storageState?: string;
+  } = {},
 ): Promise<BrowserPage> {
   const context = await browser.newContext({
-    storageState: "playwright/.auth/user.json",
+    ...(storageState ? { storageState } : {}),
     viewport: { width: 1440, height: 900 },
     recordVideo:
       isRecording && isHeadless

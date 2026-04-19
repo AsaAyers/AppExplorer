@@ -5,7 +5,6 @@ import React from "react";
 import type { CardData } from "@/card-data";
 import { AppExplorerCard } from "@/components/app-explorer-card";
 
-
 type SymbolOption = Pick<CardData, "path" | "symbol">;
 
 function getSymbolOptions(

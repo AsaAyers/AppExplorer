@@ -9,7 +9,10 @@ import { makeSessionUrl, parseSessionUri } from "@/app-explorer-session";
 import { ExtensionApi } from "@/extension";
 import { type HostIndex } from "@/host-config";
 import { colorText } from "@/test/helpers/colors";
-import { isCriticalPath, timeline } from "@/test/helpers/critical-path-timeline";
+import {
+  isCriticalPath,
+  timeline,
+} from "@/test/helpers/critical-path-timeline";
 import { isRecording } from "@/test/helpers/is-recording";
 import { createDebug } from "@/utils/create-debug";
 

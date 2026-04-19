@@ -5,12 +5,14 @@ import { isAllowedSocketOrigin } from "@/allowed-socket-origin";
 suite("Socket origin allow list", () => {
   test("forbids removed relay origins", () => {
     assert.equal(isAllowedSocketOrigin("http://localhost:9042"), false);
-    assert.equal(isAllowedSocketOrigin("http://localhost:3000"), false);
+    assert.equal(isAllowedSocketOrigin("http://localhost:9042/reset"), false);
   });
 
-  test("allows production and proxied dev app origins", () => {
+  test("allows production, proxied dev, and local test app origins", () => {
     assert.equal(isAllowedSocketOrigin("https://appexplorer.dev"), true);
     assert.equal(isAllowedSocketOrigin("https://dev.appexplorer.dev"), true);
+    assert.equal(isAllowedSocketOrigin("http://localhost:3000"), true);
+    assert.equal(isAllowedSocketOrigin("http://127.0.0.1:3000"), true);
   });
 
   test("allows node clients without an origin header", () => {

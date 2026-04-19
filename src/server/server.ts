@@ -73,7 +73,7 @@ export class MiroServer {
       next();
     });
 
-    const allowedEvents = new Set("encryptedEvent");
+    const allowedEvents = new Set([encryptedEventName]);
     sessionNamespace.on("connection", (socket) => {
       const role = roleSchema.parse(socket.data.role);
 

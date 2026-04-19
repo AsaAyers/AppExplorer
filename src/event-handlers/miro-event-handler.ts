@@ -1,4 +1,3 @@
-
 import type { CardData } from "@/card-data";
 import { EventHandler } from "@/event-handlers/event-handler";
 import { HandlerMethodMap } from "@/event-handlers/types";

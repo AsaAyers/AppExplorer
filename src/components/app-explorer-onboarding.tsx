@@ -3,7 +3,6 @@
 import type { CardData } from "@/card-data";
 import { AppExplorerCard } from "@/components/app-explorer-card";
 
-
 const exampleCard: CardData = {
   id: "example-card",
   x: 0,

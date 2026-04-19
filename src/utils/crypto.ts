@@ -2,7 +2,6 @@ import { addMinutes } from "date-fns";
 import * as jose from "jose";
 import { SignJWT, jwtVerify } from "jose";
 
-
 import { createDebug } from "@/utils/create-debug";
 import { getSessionKey } from "@/utils/keys";
 import { EncryptablePayload, SessionPayload } from "@/utils/session";
