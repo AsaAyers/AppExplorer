@@ -17,6 +17,7 @@ import {
 } from "@/socket-events";
 import { isEventHandlerOptOutError } from "@/unhandled-event-ack";
 import { createDebug } from "@/utils/create-debug";
+import { eventMetrics, sessionMetrics } from "@/utils/metrics";
 
 const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");
@@ -76,7 +77,12 @@ export class MiroServer {
     const allowedEvents = new Set([encryptedEventName, "sessionShutdown"]);
     sessionNamespace.on("connection", (socket) => {
       const role = roleSchema.parse(socket.data.role);
+      const namespace = socket.nsp.name;
+      sessionMetrics.onSocketConnected(namespace);
 
+      socket.once("disconnect", () => {
+        sessionMetrics.onSocketDisconnected(namespace);
+      });
       socket.onAny(async (eventName, ...args) => {
         if (!allowedEvents.has(eventName)) {
           debugEvents("(bad_event)", "Blocked disallowed event", {
@@ -88,6 +94,7 @@ export class MiroServer {
           return;
         }
 
+        eventMetrics.onEncryptedEventForwarded();
         debugEvents("Relaying session event", {
           socketId: socket.id,
           role,

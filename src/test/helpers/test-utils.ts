@@ -1,4 +1,5 @@
 import * as assert from "node:assert";
+import fs from "node:fs";
 
 import baseDebug from "debug";
 import { Page } from "playwright";
@@ -169,4 +170,11 @@ export function getSidebar(page: Page) {
 }
 export function getModal(page: Page) {
   return page.frameLocator('[data-testid="iframe-modal-iframe"]:visible');
+}
+export async function saveVideo(page: Page | undefined, newVideoPath: string) {
+  const videoPath = await page?.video()?.path();
+  if (videoPath) {
+    // Rename video to paywright/videos/{testName}.webm
+    await fs.promises.rename(videoPath, newVideoPath);
+  }
 }

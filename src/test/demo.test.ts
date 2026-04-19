@@ -1,10 +1,10 @@
 import assert from "node:assert";
 import { ChildProcess, spawn } from "node:child_process";
 
-import { Browser, BrowserContext, JSHandle, Page } from "playwright";
+import { Browser, BrowserContext, Page } from "playwright";
 
 import { launchBrowser, createBrowserPage } from "@/test/helpers/browser";
-import { setupTimeline } from "@/test/helpers/critical-path-timeline";
+import { setupTimeline, timeline } from "@/test/helpers/critical-path-timeline";
 import { videoDelay, waitFor } from "@/test/helpers/test-utils";
 
 const appUrl = "http://127.0.0.1:3100";
@@ -16,19 +16,20 @@ suite("Demo walkthrough", function () {
   let page: Page | undefined;
   let localAppServer: ChildProcess | undefined;
 
-  setupTimeline();
-
   suiteSetup(async function () {
     this.timeout(120000);
 
     localAppServer = await ensureLocalAppHost();
-    browser = await launchBrowser();
-    ({ context, page } = await createBrowserPage(browser, {
+    browser = await launchBrowser({});
+    ({ context, page } = await createBrowserPage(browser, "demo-test", {
       storageState: undefined,
     }));
   });
 
   suiteTeardown(async function () {
+    assert.ok(page, "Expected Playwright page to be initialized");
+    await page.screencast.stop();
+    timeline.print();
     await context?.close();
     await browser?.close();
     if (localAppServer) {
@@ -36,10 +37,12 @@ suite("Demo walkthrough", function () {
     }
   });
 
+  setupTimeline();
   test("completes the interactive tutorial from the home page", async function () {
     this.timeout(120000);
     assert.ok(page, "Expected Playwright page to be initialized");
     const demoPage = page;
+    await page.screencast.showChapter("Demo walkthrough");
 
     await demoPage.addInitScript(() => {
       const globalWithMiro = globalThis as typeof globalThis & {
@@ -73,6 +76,7 @@ suite("Demo walkthrough", function () {
     await demoPage.getByRole("heading", { name: "Tutorial" }).waitFor();
 
     await dragCardToBoard(demoPage, "saveDoc", 900, 300);
+
     await expectTaskCompleted(demoPage, "Add any card to board");
     await expectTaskCompleted(demoPage, "Add saveDoc card to board");
     await waitFor(async () => {
@@ -84,6 +88,7 @@ suite("Demo walkthrough", function () {
     await waitFor(async () => {
       assert.equal(await demoPage.locator("#MockBoard .app-card").count(), 2);
     });
+
     const disconnectedEmitCardId = await getBoardCard(
       demoPage,
       "emit",
@@ -100,6 +105,7 @@ suite("Demo walkthrough", function () {
       "Select a card to navigate between files",
     );
 
+    await page.screencast.showChapter("Attach Cards");
     await demoPage
       .getByLabel("Attach new cards to selected card")
       .check({ force: true });
@@ -192,7 +198,12 @@ async function expectTaskCompleted(page: Page, taskLabel: string) {
 function getDemoCard(page: Page, cardTitle: string) {
   return page
     .locator("#demo-cards .app-card")
-    .filter({ hasText: cardTitle })
+
+    .filter({
+      hasText: cardTitle,
+      has: page.locator(".app-card--title").filter({ hasText: cardTitle }),
+    })
+
     .first();
 }
 
@@ -250,31 +261,22 @@ async function dragCardToBoard(
   clientX: number,
   clientY: number,
 ) {
-  const dataTransfer = await createDataTransfer(page);
+  await page.screencast.showChapter(`New Card: ${cardTitle}`, {
+    description: `Drag ${cardTitle} card to board at (${clientX}, ${clientY})`,
+  });
   const card = getDemoCard(page, cardTitle);
   await card.waitFor();
-  const box = await card.boundingBox();
-  assert.ok(box, `Expected ${cardTitle} sidebar card to be visible`);
-
-  await card.dispatchEvent("dragstart", {
-    dataTransfer,
-    clientX: box.x + box.width / 2,
-    clientY: box.y + box.height / 2,
-  });
-
   const board = page.locator("#MockBoard");
-  await board.dispatchEvent("dragover", {
-    dataTransfer,
-    clientX,
-    clientY,
+  const boardBox = await board.boundingBox();
+  assert.ok(boardBox, "Expected demo board to be visible");
+  await card.dragTo(board, {
+    steps: 50,
+    timeout: 10000,
+    targetPosition: {
+      x: clientX - boardBox.x,
+      y: clientY - boardBox.y,
+    },
   });
-  await board.dispatchEvent("drop", {
-    dataTransfer,
-    clientX,
-    clientY,
-  });
-  await card.dispatchEvent("dragend", { dataTransfer });
-  await dataTransfer.dispose();
 }
 
 async function moveBoardCard(
@@ -283,32 +285,16 @@ async function moveBoardCard(
   clientX: number,
   clientY: number,
 ) {
-  const dataTransfer = await createDataTransfer(page);
   const card = getBoardCard(page, cardTitle);
-  const box = await card.boundingBox();
-  assert.ok(box, `Expected ${cardTitle} board card to be visible`);
-
-  await card.dispatchEvent("dragstart", {
-    dataTransfer,
-    clientX: box.x + box.width / 2,
-    clientY: box.y + box.height / 2,
-  });
-
   const board = page.locator("#MockBoard");
-  await board.dispatchEvent("dragover", {
-    dataTransfer,
-    clientX,
-    clientY,
+  const boardBox = await board.boundingBox();
+  assert.ok(boardBox, "Expected demo board to be visible");
+  await card.dragTo(board, {
+    steps: 50,
+    timeout: 10000,
+    targetPosition: {
+      x: clientX - boardBox.x,
+      y: clientY - boardBox.y,
+    },
   });
-  await board.dispatchEvent("drop", {
-    dataTransfer,
-    clientX,
-    clientY,
-  });
-  await card.dispatchEvent("dragend", { dataTransfer });
-  await dataTransfer.dispose();
-}
-
-async function createDataTransfer(page: Page): Promise<JSHandle<DataTransfer>> {
-  return page.evaluateHandle(() => new DataTransfer());
 }

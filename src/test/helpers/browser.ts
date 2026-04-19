@@ -15,7 +15,6 @@ import {
   timeline,
 } from "@/test/helpers/critical-path-timeline";
 import { isHeadless, isRecording } from "@/test/helpers/is-recording";
-import { screenshot } from "@/test/helpers/test-utils";
 
 export type BrowserPage = {
   context: BrowserContext;
@@ -24,10 +23,12 @@ export type BrowserPage = {
 
 export async function launchBrowser({
   headless = isHeadless,
+  slowMo = isHeadless ? 0 : 100,
 }: {
   headless?: boolean;
+  slowMo?: number;
 } = {}) {
-  return chromium.launch({ headless, slowMo: headless ? 0 : 50 });
+  return chromium.launch({ headless, slowMo });
 }
 
 let blockSessionLink = false;
@@ -45,6 +46,7 @@ declare global {
 
 export async function createBrowserPage(
   browser: Browser,
+  videoName: string,
   {
     storageState = "playwright/.auth/user.json",
   }: {
@@ -98,6 +100,17 @@ export async function createBrowserPage(
   ]);
 
   const page = await context.newPage();
+
+  if (isRecording && isHeadless) {
+    await page.screencast.start({
+      path: `videos/${videoName}.webm`,
+      annotate: {
+        position: "bottom-right",
+      },
+    });
+    await page.screencast.showActions({});
+  }
+
   globalThis.playwrightPage = page;
   blockSessionLinkCapture(false);
 
@@ -123,24 +136,4 @@ export async function createBrowserPage(
   });
 
   return { context, page };
-}
-
-export async function closeBrowser(browser: Browser | undefined) {
-  if (browser) {
-    await browser.close();
-  }
-}
-
-export async function closeBrowserContext(
-  mochaContext: Mocha.Context,
-  context: BrowserContext | undefined,
-) {
-  if (context) {
-    const didPass = mochaContext.currentTest?.state === "passed";
-    if (!didPass) {
-      await screenshot(`${mochaContext.currentTest?.title}_FAIL.png`);
-    }
-
-    await context.close();
-  }
 }
