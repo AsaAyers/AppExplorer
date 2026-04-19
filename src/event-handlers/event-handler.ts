@@ -564,7 +564,7 @@ export abstract class EventHandler<
   private async parseEncryptedEnvelope(payload: unknown) {
     invariant(
       this.#session,
-      "Session must be attached to encrypt encrypted events",
+      "Session must be attached to decrypt encrypted events",
     );
     const encryptedPayload = z.string().parse(unwrapSocketAckValue(payload));
     const decryptedPayload = await decrypt(

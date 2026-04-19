@@ -13,7 +13,8 @@ export const zAppExplorerSession = z
       .nullable()
       .default("0")
       .transform((str) => {
-        return Number(str);
+        const n = Number(str);
+        return isNaN(n) ? 0 : n;
       }),
   })
   .brand("AppExplorerSession");

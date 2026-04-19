@@ -2,11 +2,11 @@
 import classNames from "classnames";
 import React, { DragEventHandler } from "react";
 
-import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
 import { useDemoSessionTransport } from "@/app/(website)/demo/demo-session";
+import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
 import { TaskList, useTasks } from "@/app/(website)/demo/tasks";
-import { AppExplorerCard } from "@/components/app-explorer-card";
 import { type CardData } from "@/card-data";
+import { AppExplorerCard } from "@/components/app-explorer-card";
 import { createDebug } from "@/utils/create-debug";
 
 const log = createDebug("app-explorer:demo:board");

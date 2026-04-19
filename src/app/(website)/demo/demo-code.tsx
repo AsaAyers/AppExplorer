@@ -146,7 +146,7 @@ export function DemoCodeImpl({
   }, [cardsAroundCursor, emitCardsAroundCursor, path, symbols]);
 
   React.useEffect(() => {
-    if (selectionPosition.start) {
+    if (selectionPosition.start != null) {
       dispatch({ type: "selectionStart", value: selectionPosition.start });
     }
   }, [dispatch, selectionPosition.start]);
@@ -181,7 +181,7 @@ export function DemoCodeImpl({
       });
       log({ searchPath }, symbol.card.path);
     }
-  }, [path, router, searchPath, selected, symbols]);
+  }, [lastSelectedCardId, path, router, searchPath, selected, symbols]);
 
   // Build a nested symbol tree so each symbol gets a single wrapper span.
   type SymbolNode = {
@@ -296,7 +296,7 @@ export function DemoCodeImpl({
           );
           inner.push(
             <span key={`symbol-name-${node.title}`} className="symbol">
-              {renderTextWithSelection(symbolNameText, node.symbolEnd)}
+              {renderTextWithSelection(symbolNameText, node.symbolStart)}
             </span>,
           );
           childCursor = symbolNameEnd;
@@ -354,7 +354,7 @@ export function DemoCodeImpl({
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (state.selectionStart) {
+    if (state.selectionStart != null) {
       const offset = getOffsetFromPoint(e.clientX, e.clientY);
 
       updateState({
@@ -366,7 +366,7 @@ export function DemoCodeImpl({
   const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
     // fallback: caret from point
     log("handleMouseUp");
-    if (state.selectionStart) {
+    if (state.selectionStart != null) {
       const sel = window.getSelection();
       if (sel && sel.rangeCount > 0) {
         try {

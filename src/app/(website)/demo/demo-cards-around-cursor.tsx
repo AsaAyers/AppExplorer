@@ -3,8 +3,8 @@ import classNames from "classnames";
 import { useSearchParams } from "next/navigation";
 import React from "react";
 
-import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
 import { useDemoSessionTransport } from "@/app/(website)/demo/demo-session";
+import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
 import { demoTextFiles } from "@/app/(website)/demo/demo-text-files";
 import { useLastTaskHelper } from "@/app/(website)/demo/tasks";
 import { AppExplorerCard } from "@/components/app-explorer-card";

@@ -4,22 +4,22 @@ import React from "react";
 import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
+import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
+import { useDemoSession } from "@/app/(website)/demo/useDemoSession";
 import {
   type AppExplorerSession,
   getSocketUrl,
   zAppExplorerSession,
 } from "@/app-explorer-session";
 import { type CardData } from "@/card-data";
-import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
-import { useDemoSession } from "@/app/(website)/demo/useDemoSession";
 import { EventHandler } from "@/event-handlers/event-handler";
 import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
-import { connectSidebarHandler } from "@/sidebar/connect-sidebar-socket";
 import {
   type HandlerMethodMap,
   type WorkspaceSocket,
 } from "@/event-handlers/types";
 import { getIndexFromOrigin } from "@/host-config";
+import { connectSidebarHandler } from "@/sidebar/connect-sidebar-socket";
 import { createDebug } from "@/utils/create-debug";
 
 const log = createDebug("app-explorer:demo:session");

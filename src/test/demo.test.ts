@@ -1,12 +1,11 @@
-/* eslint-disable no-console */
 import assert from "node:assert";
 import { ChildProcess, spawn } from "node:child_process";
 
 import { Browser, BrowserContext, JSHandle, Page } from "playwright";
 
-import { launchBrowser, createBrowserPage } from "./helpers/browser";
-import { setupTimeline } from "./helpers/critical-path-timeline";
-import { videoDelay, waitFor } from "./helpers/test-utils";
+import { launchBrowser, createBrowserPage } from "@/test/helpers/browser";
+import { setupTimeline } from "@/test/helpers/critical-path-timeline";
+import { videoDelay, waitFor } from "@/test/helpers/test-utils";
 
 const appUrl = "http://127.0.0.1:3100";
 const healthUrl = `${appUrl}/api/health-check`;
