@@ -1,7 +1,6 @@
 import { io as socketIO } from "socket.io-client";
 
 import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
-import type { CardData } from "@/card-data";
 import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import { SidebarSocket } from "@/event-handlers/types";
 import { createDebug } from "@/utils/create-debug";
@@ -49,62 +48,4 @@ export async function connectSidebarHandler(session: AppExplorerSession) {
   });
 
   return clientEventHandler;
-}
-
-export async function connectSidebarSocket(session: AppExplorerSession) {
-  const clientEventHandler = await connectSidebarHandler(session);
-  const socket = clientEventHandler.socketClient;
-
-  const cardsAroundCursorListeners = new Map<
-    (cards: CardData[]) => void,
-    { dispose(): void }
-  >();
-  const sessionShutdownListeners = new Map<() => void, { dispose(): void }>();
-
-  const adaptedSocket = Object.assign(socket, {
-    on(eventName: string, listener: (...args: unknown[]) => unknown) {
-      if (eventName === "cardsAroundCursor") {
-        const typedListener = listener as (cards: CardData[]) => void;
-        cardsAroundCursorListeners.set(
-          typedListener,
-          clientEventHandler.cardsAroundCursorEvent(typedListener),
-        );
-        return adaptedSocket;
-      }
-
-      if (eventName === "sessionShutdown") {
-        const typedListener = listener as () => void;
-        sessionShutdownListeners.set(
-          typedListener,
-          clientEventHandler.sessionShutdownEvent(typedListener),
-        );
-        return adaptedSocket;
-      }
-
-      socket.on(eventName as never, listener as never);
-      return adaptedSocket;
-    },
-    off(eventName: string, listener: (...args: unknown[]) => unknown) {
-      if (eventName === "cardsAroundCursor") {
-        cardsAroundCursorListeners
-          .get(listener as (cards: CardData[]) => void)
-          ?.dispose();
-        cardsAroundCursorListeners.delete(
-          listener as (cards: CardData[]) => void,
-        );
-        return adaptedSocket;
-      }
-
-      if (eventName === "sessionShutdown") {
-        sessionShutdownListeners.get(listener as () => void)?.dispose();
-        sessionShutdownListeners.delete(listener as () => void);
-        return adaptedSocket;
-      }
-
-      socket.off(eventName as never, listener as never);
-      return adaptedSocket;
-    },
-  });
-
-  return adaptedSocket;
 }

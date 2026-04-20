@@ -15,6 +15,10 @@ export default function MiroLayout({
 }>) {
   return (
     <>
+      <link
+        rel="stylesheet"
+        href="https://unpkg.com/mirotone@5.0.0/dist/styles.css"
+      ></link>
       <Script
         src="https://miro.com/app/static/sdk/v2/miro.js"
         strategy="beforeInteractive"

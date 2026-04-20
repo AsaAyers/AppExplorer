@@ -12,15 +12,15 @@ import type {
 import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
-import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
-import { type CardData } from "./card-data";
-import { BoardInfo } from "./card-storage";
-import { MiroEventHandler } from "./event-handlers/miro-event-handler";
-import { MiroSocket } from "./event-handlers/types";
-import { isAppCard } from "./miro/is-app-card";
-import { updateCard } from "./miro/update-card";
-import { createDebug } from "./utils/create-debug";
-import { notEmpty } from "./utils/not-empty";
+import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
+import { type CardData } from "@/card-data";
+import { BoardInfo } from "@/card-storage";
+import { MiroEventHandler } from "@/event-handlers/miro-event-handler";
+import { MiroSocket } from "@/event-handlers/types";
+import { isAppCard } from "@/miro/is-app-card";
+import { updateCard } from "@/miro/update-card";
+import { createDebug } from "@/utils/create-debug";
+import { notEmpty } from "@/utils/not-empty";
 
 createDebug.enable("*");
 export let debug = createDebug("app-explorer:miro");
@@ -278,6 +278,7 @@ export async function attachSession(session: AppExplorerSession) {
   }) as MiroSocket;
   debug = debug.extend(s.id || Math.random().toString(36).substring(2, 15));
   const miroEventHandler = MiroEventHandler.create(s);
+  miroEventHandler.attachSession(session);
 
   const boardId = await miro.board.getInfo().then((info) => info.id);
   const emitBoardUpdate = async () => {
@@ -301,7 +302,7 @@ export async function attachSession(session: AppExplorerSession) {
           return acc;
         }, {}),
     };
-    await miroEventHandler.emit("boardUpdate", board);
+    await miroEventHandler.emitEncrypted("boardUpdate", board);
   };
 
   s.on("connect", () => {
@@ -320,7 +321,10 @@ export async function attachSession(session: AppExplorerSession) {
       for (const item of event.items) {
         if (isAppCard(item)) {
           const miroLink = `https://miro.com/app/board/${boardId}/?moveToWidget=${item.id}`;
-          await miroEventHandler.emit("card", { url: miroLink, card: null });
+          await miroEventHandler.emitEncrypted("card", {
+            url: miroLink,
+            card: null,
+          });
           await miro.board.notifications.showInfo("Deleting card in VSCode");
         }
       }
@@ -335,7 +339,7 @@ export async function attachSession(session: AppExplorerSession) {
     const card = event.items.find(isAppCard);
     if (card) {
       const cardData = await extractCardData(card);
-      await miroEventHandler.emit("card", {
+      await miroEventHandler.emitEncrypted("card", {
         url: cardData?.miroLink || "",
         card: cardData,
       });
@@ -352,13 +356,13 @@ export async function attachSession(session: AppExplorerSession) {
 
       if (data.length > 0) {
         for (const card of data) {
-          await miroEventHandler.emit("card", {
+          await miroEventHandler.emitEncrypted("card", {
             url: card.miroLink!,
             card,
           });
         }
       }
-      await miroEventHandler.emit("selectedCards", data);
+      await miroEventHandler.emitEncrypted("selectedCards", data);
     } catch (error) {
       debug("AppExplorer: Notifying VSCode of updated selection", error);
     }

@@ -8,28 +8,29 @@ import {
 } from "playwright";
 import * as vscode from "vscode";
 
-import { getAppHostByIndex } from "../../host-config";
-
-import { colorText } from "./colors";
+import { colorText } from "@/test/helpers/colors";
 import {
   isBrowserSpam,
   isCriticalPath,
   timeline,
-} from "./critical-path-timeline";
-import { isHeadless, isRecording } from "./is-recording";
-import { screenshot, waitFor } from "./test-utils";
+} from "@/test/helpers/critical-path-timeline";
+import { isHeadless, isRecording } from "@/test/helpers/is-recording";
 
 export type BrowserPage = {
   context: BrowserContext;
   page: Page;
 };
 
+const testDebugValue = process.env.DEBUG || "app-explorer:*";
+
 export async function launchBrowser({
   headless = isHeadless,
+  slowMo = isHeadless ? 0 : 100,
 }: {
   headless?: boolean;
+  slowMo?: number;
 } = {}) {
-  return chromium.launch({ headless, slowMo: headless ? 0 : 50 });
+  return chromium.launch({ headless, slowMo });
 }
 
 let blockSessionLink = false;
@@ -47,17 +48,16 @@ declare global {
 
 export async function createBrowserPage(
   browser: Browser,
+  videoName: string,
+  {
+    storageState = "playwright/.auth/user.json",
+  }: {
+    storageState?: string;
+  } = {},
 ): Promise<BrowserPage> {
   const context = await browser.newContext({
-    storageState: "playwright/.auth/user.json",
+    ...(storageState ? { storageState } : {}),
     viewport: { width: 1440, height: 900 },
-    recordVideo:
-      isRecording && isHeadless
-        ? {
-            dir: "playwright/videos",
-            showActions: {},
-          }
-        : undefined,
   });
 
   context.on("console", (msg) => {
@@ -95,11 +95,21 @@ export async function createBrowserPage(
   ]);
 
   const page = await context.newPage();
+
+  if (isRecording && isHeadless) {
+    await page.screencast.start({
+      path: `videos/${videoName}.webm`,
+      annotate: {
+        position: "bottom-right",
+      },
+    });
+    await page.screencast.showActions({});
+  }
+
   globalThis.playwrightPage = page;
   blockSessionLinkCapture(false);
 
-  const debugValue = process.env.DEBUG || "";
-  await page.exposeBinding("getDebugNamespace", () => debugValue);
+  await page.exposeBinding("getDebugNamespace", () => testDebugValue);
 
   // Inject a global captureSessionLink function so the real Next app can hand
   // the extension its vscode:// session URL.
@@ -120,60 +130,4 @@ export async function createBrowserPage(
   });
 
   return { context, page };
-}
-
-export async function closeBrowser(browser: Browser | undefined) {
-  if (browser) {
-    await browser.close();
-  }
-}
-
-export async function closeBrowserContext(
-  mochaContext: Mocha.Context,
-  context: BrowserContext | undefined,
-) {
-  if (context) {
-    const didPass = mochaContext.currentTest?.state === "passed";
-    if (!didPass) {
-      await screenshot(`${mochaContext.currentTest?.title}_FAIL.png`);
-    }
-
-    await context.close();
-  }
-}
-
-export async function establishBrowserSession() {
-  const page = globalThis.playwrightPage;
-  assert.ok(page, "Page should be available for the test");
-  const host = getAppHostByIndex(1);
-
-  await page.goto(new URL("/test", `${host}/`).toString(), {
-    waitUntil: "domcontentloaded",
-  });
-
-  const shouldUseInsidersProtocol = vscode.env.appName
-    .toLowerCase()
-    .includes("insider");
-  const startSessionButton = shouldUseInsidersProtocol
-    ? page.locator("text=VSCode Insiders")
-    : page.locator("text=Start Session");
-  await startSessionButton.waitFor({ state: "visible" });
-
-  // Make sure the iframe has loaded before clicking the session button.
-  const miroIframe = page.frameLocator("iframe");
-  await miroIframe.locator("text=Miro opens this page").waitFor({
-    state: "visible",
-  });
-
-  // 1) Click the button to start a session.
-  await startSessionButton.click();
-
-  // 2) Wait for the start button to disappear.
-  await waitFor(async () => {
-    const count = await page?.locator("text=Start Session").count();
-    assert.equal(count, 0, "Start Session button should be removed");
-  });
-
-  const sessionConnected = page.locator('span:has-text("Session Connected:")');
-  await sessionConnected.waitFor({ state: "visible" });
 }

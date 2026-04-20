@@ -2,14 +2,17 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { AppExplorerSession, getSocketUrl } from "./app-explorer-session";
-import { CardData } from "./card-data";
-import { BoardInfo, CardStorage, StorageAdapter } from "./card-storage";
-import { getDocumentSymbolTracker } from "./document-symbol-tracker";
-import { WorkspaceSocket } from "./event-handlers/types";
-import { WorkspaceEventHandler } from "./event-handlers/workspace-event-handler";
-import { HandlerContext, selectRangeInEditor } from "./extension";
-import { getGitHubUrl } from "./get-github-url";
+import {
+  AppExplorerSession,
+  getWorkspaceSocketUrl,
+} from "@/app-explorer-session";
+import { CardData } from "@/card-data";
+import { BoardInfo, CardStorage, StorageAdapter } from "@/card-storage";
+import { getDocumentSymbolTracker } from "@/document-symbol-tracker";
+import { WorkspaceSocket } from "@/event-handlers/types";
+import { WorkspaceEventHandler } from "@/event-handlers/workspace-event-handler";
+import { HandlerContext, selectRangeInEditor } from "@/extension";
+import { getGitHubUrl } from "@/get-github-url";
 
 export class WorkspaceCardStorage
   extends CardStorage
@@ -100,7 +103,7 @@ export class WorkspaceCardStorage
 
   private createSocket(session: AppExplorerSession, connectionTimeout = 10000) {
     this.#session = session;
-    const socket = socketIO(getSocketUrl(this.#session), {
+    const socket = socketIO(getWorkspaceSocketUrl(this.#session), {
       auth: {
         role: "workspace",
       },
@@ -159,7 +162,7 @@ export class WorkspaceCardStorage
         this.#eventHandler,
         "Event handler should be initialized on connect",
       );
-      const info = await this.#eventHandler.emit("getBoardInfo", "");
+      const info = await this.#eventHandler.emitEncrypted("getBoardInfo", "");
       this.connectedBoardSet.add(info.boardId);
       this.log("(workspace_socket_connect)", "boardId:", info.boardId);
       this.boardUpdate(info);
@@ -334,7 +337,7 @@ export class WorkspaceCardStorage
         }
       }
 
-      await this.#eventHandler?.emit("cardStatus", card.boardId, {
+      await this.#eventHandler?.emitEncrypted("cardStatus", card.boardId, {
         miroLink: card.miroLink,
         status,
         codeLink,

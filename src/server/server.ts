@@ -4,19 +4,20 @@ import { Server, type Socket } from "socket.io";
 import * as vscode from "vscode";
 import { z } from "zod";
 
-import { allowedSocketOrigin } from "../allowed-socket-origin";
+import { allowedSocketOrigin } from "@/allowed-socket-origin";
 import {
   APP_EXPLORER_SESSION_NAMESPACE,
   appExplorerSessionRoles,
   type AppExplorerSessionRole,
-} from "../session-transport";
+} from "@/session-transport";
 import {
   encryptedEventName,
   socketEventMap,
   type SocketEntity,
-} from "../socket-events";
-import { isEventHandlerOptOutError } from "../unhandled-event-ack";
-import { createDebug } from "../utils/create-debug";
+} from "@/socket-events";
+import { isEventHandlerOptOutError } from "@/unhandled-event-ack";
+import { createDebug } from "@/utils/create-debug";
+import { eventMetrics, sessionMetrics } from "@/utils/metrics";
 
 const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");
@@ -73,10 +74,27 @@ export class MiroServer {
       next();
     });
 
+    const allowedEvents = new Set([encryptedEventName, "sessionShutdown"]);
     sessionNamespace.on("connection", (socket) => {
       const role = roleSchema.parse(socket.data.role);
+      const namespace = socket.nsp.name;
+      sessionMetrics.onSocketConnected(namespace);
 
+      socket.once("disconnect", () => {
+        sessionMetrics.onSocketDisconnected(namespace);
+      });
       socket.onAny(async (eventName, ...args) => {
+        if (!allowedEvents.has(eventName)) {
+          debugEvents("(bad_event)", "Blocked disallowed event", {
+            socketId: socket.id,
+            role,
+            eventName,
+          });
+          socket.disconnect(true);
+          return;
+        }
+
+        eventMetrics.onEventForwarded();
         debugEvents("Relaying session event", {
           socketId: socket.id,
           role,
@@ -110,6 +128,12 @@ export class MiroServer {
               eventName,
               error,
             });
+          }
+        }
+
+        if (eventName === "sessionShutdown") {
+          for (const recipient of recipients) {
+            recipient.disconnect(true);
           }
         }
 

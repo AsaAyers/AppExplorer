@@ -3,7 +3,7 @@ import { formatWithOptions } from "node:util";
 import baseDebug from "debug";
 import * as vscode from "vscode";
 
-import { createDebug } from "./utils/create-debug";
+import { createDebug } from "@/utils/create-debug";
 
 baseDebug.inspectOpts ??= {};
 baseDebug.inspectOpts.hideDate = true;

@@ -5,11 +5,11 @@ import {
   type AppExplorerSession,
   parseSessionUri,
   zAppExplorerSession,
-} from "./app-explorer-session";
-import { getAppHostByIndex, getRelayHostByIndex } from "./host-config";
-import { createDebug } from "./utils/create-debug";
-import { EventEmitter } from "./utils/event-emitter";
-import { WorkspaceCardStorage } from "./workspace-card-storage";
+} from "@/app-explorer-session";
+import { getHostConfig } from "@/host-config";
+import { createDebug } from "@/utils/create-debug";
+import { EventEmitter } from "@/utils/event-emitter";
+import { WorkspaceCardStorage } from "@/workspace-card-storage";
 
 const log = createDebug("app-explorer:extension-session");
 
@@ -92,7 +92,7 @@ export class AppExplorerSessionCoordinator
 
   async handleUri(uri: vscode.Uri) {
     const session = parseSessionUri(
-      `vscode://${uri.authority}${uri.path}?${uri.query}`,
+      `${uri.scheme}://${uri.authority}${uri.path}?${uri.query}`,
     );
     await this.writeSessionBroadcast(session);
     await this.startSession(session);
@@ -209,15 +209,11 @@ export class AppExplorerSessionCoordinator
 
     this.#startPromise = (async () => {
       this.#cardStorage.attachSession(session);
-      const serverResult = {
-        mode: "client" as const,
-        serverUrl: getRelayHostByIndex(session.hostIndex),
-      };
+
+      const { origin } = getHostConfig(session.hostIndex);
       log("(session_start)", {
-        appHost: getAppHostByIndex(session.hostIndex),
-        relayHost: getRelayHostByIndex(session.hostIndex),
         hostIndex: session.hostIndex,
-        serverUrl: serverResult.serverUrl,
+        hostOrigin: origin,
         sessionId: session.sessionId,
       });
 

@@ -5,19 +5,7 @@ import invariant from "tiny-invariant";
 import { Disposable } from "vscode";
 import { z } from "zod";
 
-import {
-  encryptedEventName,
-  SocketEntity,
-  socketEntities,
-  socketEventMap,
-  zEncryptedEvent,
-} from "../socket-events";
-import {
-  EventHandlerOptOutError,
-  serializeEventHandlerError,
-} from "../unhandled-event-ack";
-import { decrypt, encrypt } from "../utils/crypto";
-
+import { AppExplorerSession } from "@/app-explorer-session";
 import type {
   InboundSchemaMap,
   OutboundSchemaMap,
@@ -30,10 +18,20 @@ import type {
   SocketListener,
   IncomingSchemaMap,
   EventNameFromHandlerMethodName,
-} from "./types";
-
-import { AppExplorerSession } from "@/app-explorer-session";
+} from "@/event-handlers/types";
+import {
+  encryptedEventName,
+  SocketEntity,
+  socketEntities,
+  socketEventMap,
+  zEncryptedEvent,
+} from "@/socket-events";
+import {
+  EventHandlerOptOutError,
+  serializeEventHandlerError,
+} from "@/unhandled-event-ack";
 import { createDebug } from "@/utils/create-debug";
+import { decrypt, encrypt } from "@/utils/crypto";
 import { fromHex } from "@/utils/to-hex";
 
 const isClientSocket = <T>(
@@ -255,7 +253,7 @@ export abstract class EventHandler<
 
     invariant(
       this.#session,
-      "Session must be attached to encrypt encrypted events",
+      "Session must be attached to encrypt encrypted events: " + eventName,
     );
     const callSocket = schema.implementAsync(
       async (...validatedArgs: unknown[]) => {
@@ -551,7 +549,7 @@ export abstract class EventHandler<
   private async encryptEncryptedEnvelope(eventName: string, args: unknown[]) {
     invariant(
       this.#session,
-      "Session must be attached to encrypt encrypted events",
+      "Session must be attached to encrypt encrypted events: " + eventName,
     );
     return encrypt(
       {

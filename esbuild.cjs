@@ -71,24 +71,6 @@ async function main() {
       external: ["vscode"],
     }),
   );
-  context.push(
-    await esbuild.context({
-      ...baseConfig,
-      entryPoints: ["src/miro.ts"],
-      format: "esm",
-      platform: "browser",
-      outfile: "public/miro.js",
-    }),
-  );
-  context.push(
-    await esbuild.context({
-      ...baseConfig,
-      entryPoints: ["src/lit.ts"],
-      format: "esm",
-      platform: "browser",
-      outfile: "public/lit.js",
-    }),
-  );
 
   const entryPoints = findTestFiles(testDir);
   await rimraf(testsOut);

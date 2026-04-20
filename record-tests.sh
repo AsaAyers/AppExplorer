@@ -1,10 +1,9 @@
 #!/bin/bash
 
-set -x
+# set -x
 
-export HEADLESS=0
+
 source ./setup-xvfb.sh
-
-recordTests
+DEBUG='app-explorer:*' recordTests "$@"
 extractScreenshots
 

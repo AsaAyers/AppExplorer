@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { CardData } from "./card-data";
-import { BoardInfo } from "./card-storage";
-import { PrettyPrint } from "./utils/pretty-print";
+import { CardData } from "@/card-data";
+import { BoardInfo } from "@/card-storage";
+import { PrettyPrint } from "@/utils/pretty-print";
 
 export const socketEntities = [
   "server",
@@ -182,6 +182,7 @@ export const socketEventMap = {
   },
   sidebar: {
     workspace: {
+      sessionShutdown: zSessionShutdown,
       navigateTo: zNavigateTo,
       requestCardsAroundCursor: zRequestCardsAroundCursor,
     },
@@ -192,6 +193,7 @@ export const socketEventMap = {
       sessionShutdown: zSessionShutdown,
     },
     miro: {
+      sessionShutdown: zSessionShutdown,
       getBoardInfo: zGetBoardInfo,
       selectCard: zSelectCard,
       cardStatus: zCardStatus,

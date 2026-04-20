@@ -25,6 +25,8 @@
 import assert from "node:assert";
 import fs from "node:fs";
 
+import createDebug from "debug";
+
 // ---------------------------------------------------------------------------
 // Browser spam patterns – messages matching any of these are suppressed
 // entirely (not printed, not recorded).
@@ -50,41 +52,45 @@ export const BROWSER_SPAM_PATTERNS: RegExp[] = [
 // Every token corresponds to a deliberate marker added at the start of the
 // matching log call in the source code.
 // ---------------------------------------------------------------------------
-const CRITICAL_PATH_TOKENS: string[] = [
-  // Extension session lifecycle
-  "(session_start)",
-  // Workspace socket lifecycle
-  "(workspace_socket_connect)",
-  "(workspace_socket_disconnect)",
-  "(workspace_socket_error)",
-  "(workspace_socket_retry)",
-  "(workspace_socket_reconnecting)",
-  "(workspace_socket_reconnect)",
-  // Sidebar socket lifecycle
-  "(sidebar_socket_connecting)",
-  "(sidebar_socket_connect)",
-  "(sidebar_socket_disconnect)",
-  "(sidebar_socket_disconnect_permanent)",
-  "(sidebar_socket_retry)",
-  "(sidebar_socket_reconnecting)",
-  // Board events
-  "(board_update)",
-  // Cards-around-cursor
-  "(cards_around_cursor_subscribe)",
-  "(cards_around_cursor_send)",
-  "(symbols_changed)",
-  // Encrypted transport
-  "(encrypted_send)",
-  "(encrypted_call)",
-];
+const CRITICAL_PATH_TOKENS: string[] =
+  process.env.NODE_ENV === "test"
+    ? [
+        "(test)",
+        // Extension session lifecycle
+        "(session_start)",
+        // Workspace socket lifecycle
+        "(workspace_socket_connect)",
+        "(workspace_socket_disconnect)",
+        "(workspace_socket_error)",
+        "(workspace_socket_retry)",
+        "(workspace_socket_reconnecting)",
+        "(workspace_socket_reconnect)",
+        // Sidebar socket lifecycle
+        "(sidebar_socket_connecting)",
+        "(sidebar_socket_connect)",
+        "(sidebar_socket_disconnect)",
+        "(sidebar_socket_disconnect_permanent)",
+        "(sidebar_socket_retry)",
+        "(sidebar_socket_reconnecting)",
+        // Board events
+        "(board_update)",
+        // Cards-around-cursor
+        "(cards_around_cursor_subscribe)",
+        "(cards_around_cursor_send)",
+        "(symbols_changed)",
+        // Encrypted transport
+        "(encrypted_send)",
+        "(encrypted_call)",
+      ]
+    : [];
 
 // ---------------------------------------------------------------------------
 // Timeline entry type
 // ---------------------------------------------------------------------------
 export type TimelineEntry = {
   relativeMs: number;
-  source: "browser" | "extension";
-  type: "error" | "log";
+  source: "browser" | "extension" | "tests";
+  type: "error" | "log" | "verbose";
   message: string;
 };
 
@@ -103,8 +109,8 @@ class CriticalPathTimeline {
 
   /** Record a critical-path event. */
   record(
-    source: "browser" | "extension",
-    type: "error" | "log",
+    source: TimelineEntry["source"],
+    type: TimelineEntry["type"],
     message: string,
   ): void {
     this.entries.push({
@@ -120,6 +126,7 @@ class CriticalPathTimeline {
     // eslint-disable-next-line no-console
     log = console.log.bind(console),
   ): void {
+    log("==============================\n");
     if (this.entries.length === 0) {
       log("[Timeline] No critical-path events recorded.");
       return;
@@ -213,10 +220,19 @@ export function setupTimeline(): void {
   // Regular `function` declarations are required here (not arrow functions) so
   // that Mocha can inject its `this` context.  The `afterEach` hook uses
   // `this.currentTest` to determine whether the test failed.
-  suiteSetup(function () {
+  setup(function () {
     timeline.reset();
   });
-  suiteTeardown(function () {
+  teardown(function () {
     timeline.printOnFailure(this);
   });
+
+  const l = createDebug.log;
+
+  createDebug.log = (tag: any, ...args: any[]) => {
+    if (typeof tag === "string" && isCriticalPath(tag)) {
+      timeline.record("tests", "log", [tag, ...args].join(" "));
+    }
+    return l(tag, ...args);
+  };
 }

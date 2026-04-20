@@ -1,8 +1,6 @@
-import { CardData } from "../card-data";
-
-import { type HandlerMethodMap, SidebarSocket } from "./types";
-
+import { CardData } from "@/card-data";
 import { EventHandler } from "@/event-handlers/event-handler";
+import { type HandlerMethodMap, SidebarSocket } from "@/event-handlers/types";
 
 class ListenerCollection<T> {
   #listeners = new Set<(value: T) => void>();
@@ -72,7 +70,7 @@ export class SidebarClientEventHandler extends EventHandler<
     },
     onSessionShutdown: async () => {
       this.#latestCardsAroundCursor = undefined;
-      this.#sessionShutdownEmitter.fire();
+      this.#sessionShutdownEmitter.fire(undefined);
     },
     onDisconnect: async () => {
       this.#latestCardsAroundCursor = undefined;

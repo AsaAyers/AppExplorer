@@ -1,6 +1,5 @@
-import { WorkspaceSocket, HandlerMethodMap } from "./types";
-
 import { EventHandler } from "@/event-handlers/event-handler";
+import { WorkspaceSocket, HandlerMethodMap } from "@/event-handlers/types";
 import { WorkspaceCardStorage } from "@/workspace-card-storage";
 
 export class WorkspaceEventHandler extends EventHandler<"workspace"> {
@@ -27,6 +26,10 @@ export class WorkspaceEventHandler extends EventHandler<"workspace"> {
     },
     onCard: async (event) => {
       return this.storage.card(event);
+    },
+    onSessionShutdown: async () => {
+      this.storage.clear();
+      this.socket.disconnect();
     },
   } satisfies HandlerMethodMap<"workspace">;
 }

@@ -1,21 +1,24 @@
 import * as assert from "node:assert";
+import fs from "node:fs";
 
 import baseDebug from "debug";
 import { Page } from "playwright";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { ExtensionApi } from "../../extension";
-import { LOCAL_RELAY_HEALTH_URL, type HostIndex } from "../../host-config";
-
-import { colorText } from "./colors";
-import { isCriticalPath, timeline } from "./critical-path-timeline";
-import { isRecording } from "./is-recording";
-
 import { makeSessionUrl, parseSessionUri } from "@/app-explorer-session";
+import { ExtensionApi } from "@/extension";
+import { type HostIndex } from "@/host-config";
+import { colorText } from "@/test/helpers/colors";
+import {
+  isCriticalPath,
+  timeline,
+} from "@/test/helpers/critical-path-timeline";
+import { isRecording } from "@/test/helpers/is-recording";
 import { createDebug } from "@/utils/create-debug";
 
 const debug = createDebug("app-explorer:test-utils");
+const testDebugValue = process.env.DEBUG || "app-explorer:*";
 
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -101,11 +104,9 @@ export async function activateAppExplorer() {
   if (extension && !extension.isActive) {
     await extension.activate();
   }
-  const debugValue = process.env.DEBUG || "";
-
-  baseDebug.enable(debugValue);
-  baseDebug.log(`Activated extension with DEBUG=${debugValue}`);
-  extension.exports.__watchOutput(debugValue, (line) => {
+  baseDebug.enable(testDebugValue);
+  baseDebug.log(`Activated extension with DEBUG=${testDebugValue}`);
+  extension.exports.__watchOutput(testDebugValue, (line) => {
     // eslint-disable-next-line no-console
     console.log(colorText("extensionLog", "[Extension Log]"), line);
     // Record critical-path extension log lines to the per-test timeline.
@@ -114,22 +115,7 @@ export async function activateAppExplorer() {
     }
   });
 
-  await waitForLegacyRelayHealth();
   return extension.exports;
-}
-
-export async function waitForLegacyRelayHealth() {
-  await waitFor(
-    async () => {
-      const response = await fetch(LOCAL_RELAY_HEALTH_URL);
-      assert.equal(response.status, 200);
-    },
-    {
-      timeout: 15000,
-      interval: 500,
-      message: "AppExplorer server did not start after session launch",
-    },
-  );
 }
 
 export async function startAppExplorerSession(
@@ -183,4 +169,11 @@ export function getSidebar(page: Page) {
 }
 export function getModal(page: Page) {
   return page.frameLocator('[data-testid="iframe-modal-iframe"]:visible');
+}
+export async function saveVideo(page: Page | undefined, newVideoPath: string) {
+  const videoPath = await page?.video()?.path();
+  if (videoPath) {
+    // Rename video to paywright/videos/{testName}.webm
+    await fs.promises.rename(videoPath, newVideoPath);
+  }
 }

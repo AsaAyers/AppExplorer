@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 
-import { SymbolAnchor, CardData } from "./card-data";
-import { getGitHubUrl } from "./get-github-url";
-import { getRelativePath } from "./get-relative-path";
-import { LocationFinder } from "./location-finder";
-import { createDebug } from "./utils/create-debug";
-import { sha256 } from "./utils/crypto";
+import { SymbolAnchor, CardData } from "@/card-data";
+import { getGitHubUrl } from "@/get-github-url";
+import { getRelativePath } from "@/get-relative-path";
+import { LocationFinder } from "@/location-finder";
+import { createDebug } from "@/utils/create-debug";
+import { sha256 } from "@/utils/crypto";
 const log = createDebug("app-explorer:document-symbol-tracker");
 
 /**

@@ -8,10 +8,9 @@ import { Browser, BrowserContext, Page } from "playwright";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
-import { createDebug } from "../utils/create-debug";
-
-import { launchBrowser, createBrowserPage } from "./helpers/browser";
-import { setupTimeline } from "./helpers/critical-path-timeline";
+import { getHostConfig, testHosts, type HostIndex } from "@/host-config";
+import { launchBrowser, createBrowserPage } from "@/test/helpers/browser";
+import { setupTimeline } from "@/test/helpers/critical-path-timeline";
 import {
   activateAppExplorer,
   getModal,
@@ -20,17 +19,15 @@ import {
   uriForFile,
   videoDelay,
   waitFor,
-} from "./helpers/test-utils";
+} from "@/test/helpers/test-utils";
+import { createDebug } from "@/utils/create-debug";
 
-import { getMiroAppName, testHosts, type HostIndex } from "@/host-config";
-
-const log = createDebug("app-explorer:create-card-test");
-
-createDebug.log("==================================================");
+export const log = createDebug("app-explorer:create-card-test");
 
 const storageState = "playwright/.auth/user.json";
 const storageStateExists = fs.existsSync(storageState);
-const localAppHealthUrl = "http://localhost:3000/api/health-check";
+const developmentAppHealthUrl = "https://dev.appexplorer.dev/api/health-check";
+const localServerHealthUrl = "http://127.0.0.1:3000/api/health-check";
 
 const appCardSelector = ".app-card";
 const cardTitleSelector = ".app-card--title";
@@ -47,13 +44,15 @@ suiteFn("Create Card", function () {
   setupTimeline();
   suiteSetup(async function () {
     this.timeout(60000);
-    await fetch("http://localhost:9042/reset", { method: "POST" }).catch(
-      () => null,
-    );
 
-    localAppServer = await ensureLocalAppHost();
+    const developmentAppServer = await ensureDevelopmentAppHost();
+    if (developmentAppServer === null) {
+      this.skip();
+      return;
+    }
+    localAppServer = developmentAppServer;
     browser = await launchBrowser();
-    ({ context, page } = await createBrowserPage(browser));
+    ({ context, page } = await createBrowserPage(browser, "Create Card"));
   });
 
   setup(async function () {
@@ -64,26 +63,85 @@ suiteFn("Create Card", function () {
   });
 
   suiteTeardown(async function () {
-    const videoPath = await page?.video()?.path();
+    if (page) {
+      await page.screencast.stop();
+    }
     await videoDelay("teardown delay", 2);
 
     await context?.close();
     if (localAppServer && !localAppServer.killed) {
-      localAppServer.kill("SIGTERM");
-      await new Promise((resolve) => localAppServer?.once("exit", resolve));
-    }
-    if (videoPath) {
-      // Rename video to paywright/videos/{testName}.webm
-      const newVideoPath = `videos/CreateCard.webm`;
-      await fs.promises.rename(videoPath, newVideoPath);
-      log(`Saved video to ${newVideoPath}`);
+      await stopChildProcess(localAppServer);
     }
   });
 
   for (const hostIndex of testHosts) {
-    test(`On test board host: ${hostIndex}`, async function () {
+    test("Creating and deleting a board card updates code lenses in VS Code", async function () {
       this.timeout(1200000);
       invariant(page, "Page should be defined after setup");
+      await page.screencast.showChapter("Create a card from code", {
+        description:
+          "Choose a symbol in VS Code, add it to the board, and watch AppExplorer add and remove the matching CodeLens in the editor.",
+      });
+      await openTestBoard(page, hostIndex);
+      await startAppExplorerSession(page, hostIndex);
+      await videoDelay("plaintext card relay test start", 5);
+
+      const helpersURI = uriForFile("src/utils/helpers.ts");
+      const helpersDoc = await vscode.workspace.openTextDocument(helpersURI);
+      const helpersEditor = await vscode.window.showTextDocument(helpersDoc, {
+        preview: false,
+      });
+
+      log("(test)", "Selecting isValidEmail in helpers.ts");
+      const isValidEmailIndex = helpersDoc
+        .getText()
+        .indexOf("export function isValidEmail");
+      assert.notStrictEqual(
+        isValidEmailIndex,
+        -1,
+        'Expected "isValidEmail" in helpers.ts',
+      );
+      const isValidEmailPosition = helpersDoc.positionAt(isValidEmailIndex);
+      helpersEditor.selection = new vscode.Selection(
+        isValidEmailPosition,
+        isValidEmailPosition,
+      );
+      await videoDelay("selected isValidEmail", 2);
+
+      await waitForAppExplorerCodeLenses(helpersURI, []);
+
+      const pageWidthInPixels = await page.evaluate(() => window.innerWidth);
+      const pageHeightInPixels = await page.evaluate(() => window.innerHeight);
+      const targetXY = [
+        pageWidthInPixels * 0.55,
+        pageHeightInPixels * 0.3,
+      ] as const;
+
+      const title = "isValidEmail";
+
+      log("(test)", "Dragging card to board");
+      await dragCardToBoard(page, /isValidEmail$/, targetXY);
+      await getModal(page).getByLabel("Title").waitFor({ state: "visible" });
+      await getModal(page).getByLabel("Title").fill(title);
+
+      await waitForAppExplorerCodeLenses(helpersURI, ["isValidEmail"]);
+
+      log("(test)", "Rename card");
+      await getModal(page).getByRole("button", { name: "Save" }).click();
+      await waitForAppExplorerCodeLenses(helpersURI, [title]);
+
+      log("(test)", "Remove card");
+      await removeMiroCardByTitle(page, title);
+      await waitForAppExplorerCodeLenses(helpersURI, []);
+    });
+
+    test("Builds a connected board from code and navigates through it", async function () {
+      this.timeout(1200000);
+      invariant(page, "Page should be defined after setup");
+      await page.screencast.showChapter("Build an architecture board", {
+        description:
+          "Create several cards from code, connect them on the board, and verify that board actions navigate back to the right code.",
+      });
       await openTestBoard(page, hostIndex);
       await startAppExplorerSession(page, hostIndex);
       await videoDelay("test start", 5);
@@ -132,14 +190,22 @@ suiteFn("Create Card", function () {
         .getByText(/sessionId$/)
         .waitFor({ state: "visible" });
 
-      // Step 3: Arrange the 3 stack cards vertically on canvas, starting with UserProfile at the top
-      const pageWidthInPixels = await page.evaluate(() => window.innerWidth);
-      const pageHeightInPixels = await page.evaluate(() => window.innerHeight);
+      const { scale, viewport, testFrame } =
+        await page.evaluate(zoomToTestFrame);
 
-      const centerX = pageWidthInPixels * 0.5;
-      const topY = pageHeightInPixels * 0.2;
-      const horizontalGap = pageWidthInPixels * 0.1;
-      const verticalGap = pageHeightInPixels * 0.12;
+      const frameTarget = {
+        x: testFrame.x,
+        y: testFrame.y - testFrame.height / 2,
+      };
+      const cornerScreenCoordinates = {
+        x: (frameTarget.x - viewport.x) * scale,
+        y: (frameTarget.y - viewport.y) * scale,
+      };
+
+      const centerX = cornerScreenCoordinates.x;
+      const topY = cornerScreenCoordinates.y;
+      const horizontalGap = 500 * scale;
+      const verticalGap = 250 * scale;
 
       const userProfileXY = [centerX, topY] as const;
       const sessionXY = [centerX, topY + verticalGap * 2] as const;
@@ -239,7 +305,10 @@ async function openTestBoard(page: Page, hostIndex: HostIndex) {
   await videoDelay("before open");
   await page
     .locator("#CREATION_BAR_ROOT")
-    .getByRole("button", { name: getMiroAppName(hostIndex), exact: true })
+    .getByRole("button", {
+      name: getHostConfig(hostIndex).miroAppName,
+      exact: true,
+    })
     .click();
 
   const sidebar = getSidebar(page);
@@ -258,16 +327,18 @@ async function openTestBoard(page: Page, hostIndex: HostIndex) {
   await videoDelay("Test Board ready");
 }
 
-async function ensureLocalAppHost() {
-  const isHealthy = await fetch(localAppHealthUrl)
+async function isHealthy(url: string) {
+  return fetch(url)
     .then((response) => response.ok)
     .catch(() => false);
+}
 
-  if (isHealthy) {
+async function ensureDevelopmentAppHost() {
+  if (await isHealthy(developmentAppHealthUrl)) {
     return undefined;
   }
 
-  const child = spawn("npm", ["start"], {
+  const child = spawn("npm", ["dev"], {
     cwd: process.cwd(),
     env: {
       ...process.env,
@@ -276,19 +347,59 @@ async function ensureLocalAppHost() {
     stdio: "ignore",
   });
 
-  await waitFor(
+  const localServerReady = await waitFor(
     async () => {
-      const response = await fetch(localAppHealthUrl).catch(() => undefined);
+      const response = await fetch(localServerHealthUrl).catch(() => undefined);
       assert.equal(response?.status, 200);
     },
     {
-      timeout: 30000,
+      timeout: 15000,
       interval: 500,
-      message: "Local Next relay did not start on port 3000",
+      message: localServerHealthUrl + " did not start",
     },
-  );
+  )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!localServerReady) {
+    await stopChildProcess(child);
+    return null;
+  }
+
+  const proxiedHostReady = await waitFor(
+    async () => {
+      const response = await fetch(developmentAppHealthUrl).catch(
+        () => undefined,
+      );
+      assert.equal(response?.status, 200);
+    },
+    {
+      timeout: 5000,
+      interval: 500,
+      message: developmentAppHealthUrl + " did not start",
+    },
+  )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!proxiedHostReady) {
+    await stopChildProcess(child);
+    return null;
+  }
 
   return child;
+}
+
+async function stopChildProcess(child: ChildProcess) {
+  if (child.killed) {
+    return;
+  }
+
+  child.kill("SIGTERM");
+  await Promise.race([
+    new Promise((resolve) => child.once("exit", resolve)),
+    new Promise((resolve) => setTimeout(resolve, 2000)),
+  ]);
 }
 async function zoomToTestFrame() {
   const testFrame = (await miro.board.get({ type: "frame" })).find(
@@ -297,7 +408,20 @@ async function zoomToTestFrame() {
   if (!testFrame) {
     throw new Error("Missing Automated Test Frame");
   }
-  miro.board.viewport.zoomTo(testFrame);
+  await miro.board.viewport.zoomTo(testFrame);
+  const viewport = await miro.board.viewport.get();
+  const scale = await miro.board.viewport.getZoom();
+
+  return {
+    scale,
+    viewport,
+    testFrame: {
+      x: testFrame.x,
+      y: testFrame.y,
+      width: testFrame.width,
+      height: testFrame.height,
+    },
+  };
 }
 
 async function cleanFrame() {
@@ -342,6 +466,9 @@ async function dragCardToBoard(
   name: string | RegExp,
   [x, y]: readonly [number, number],
 ) {
+  await page.screencast.showChapter(`Add ${String(name)} to the board`, {
+    description: `Drag the ${String(name)} symbol from the AppExplorer sidebar onto the board.`,
+  });
   // Wait for generateId card to appear in sidebar (helpers.ts is now active)
   const card = await waitFor(
     async () => {
@@ -359,6 +486,20 @@ async function dragCardToBoard(
   });
   const canvas = page.locator("#main-canvas");
   await page.evaluate(zoomToTestFrame);
+  const isXYOnCanvas = await canvas.evaluate(
+    (canvas, { x, y }) => {
+      const rect = canvas.getBoundingClientRect();
+      return (
+        x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+      );
+    },
+    { x, y },
+  );
+
+  if (!isXYOnCanvas) {
+    throw new Error(`Target position (${x}, ${y}) is outside of the canvas`);
+  }
+
   await card.dragTo(canvas, {
     steps: 50,
     timeout: 10000,
@@ -371,6 +512,9 @@ async function dragCardToBoard(
 }
 
 async function removeMiroCardByTitle(page: Page, title: string | RegExp) {
+  await page.screencast.showChapter(`Remove ${String(title)} from the board`, {
+    description: `Delete the ${String(title)} card from the board and confirm the editor updates to match.`,
+  });
   await page.evaluate(async (title: string | RegExp) => {
     const cards = await miro.board.get({ type: "app_card" });
     const card = cards.find((c) =>
@@ -426,6 +570,17 @@ async function selectMiroCardByTitle(
   page: Page,
   title: null | string | RegExp,
 ) {
+  await page.screencast.showChapter(
+    title === null
+      ? "Clear the current board selection"
+      : `Select ${String(title)} on the board`,
+    {
+      description:
+        title === null
+          ? "Deselect the current board card so the next card can be added on its own."
+          : `Focus the ${String(title)} card on the board so the test can continue from that card.`,
+    },
+  );
   await page.evaluate(async (title: null | string | RegExp) => {
     if (title === null) {
       miro.board.deselect();

@@ -1,7 +1,6 @@
-import { HandlerMethodMap } from "./types";
-
 import type { CardData } from "@/card-data";
 import { EventHandler } from "@/event-handlers/event-handler";
+import { HandlerMethodMap } from "@/event-handlers/types";
 import { extractCardData, debug, zoomIntoCards } from "@/miro";
 import { isAppCard } from "@/miro/is-app-card";
 import { notEmpty } from "@/utils/not-empty";
@@ -68,7 +67,7 @@ export class MiroEventHandler extends EventHandler<"miro"> {
           await zoomIntoCards([card]);
           miro.board.notifications.showInfo(`Selected card: ${card.title}`);
         } else {
-          await this.emit("card", { url: cardUrl, card: null });
+          await this.emitEncrypted("card", { url: cardUrl, card: null });
           miro.board.notifications.showError(`Card not found ${cardUrl}`);
         }
         return true;
@@ -101,6 +100,12 @@ export class MiroEventHandler extends EventHandler<"miro"> {
         debug("AppExplorer: Error updating card status", error);
       }
       return true;
+    },
+    onSessionShutdown: async () => {
+      miro.board.notifications.showInfo(
+        "Session ended. Disconnecting AppExplorer.",
+      );
+      this.socket.disconnect();
     },
   } satisfies HandlerMethodMap<"miro">;
 }

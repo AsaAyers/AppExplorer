@@ -1,0 +1,29 @@
+import json
+import time
+from pathlib import Path
+
+OUT = Path("outbox.log")
+
+
+def handle_saved(data):
+    doc_id = data.get("id")
+    size = data.get("bytes")
+    print(f"py: saved {doc_id} ({size})")
+
+def loop():
+    pos = 0
+    while True:
+        if not OUT.exists():
+            time.sleep(0.2)
+            continue
+        txt = OUT.read_text()
+        lines = txt.splitlines()
+        for line in lines[pos:]:
+            evt = json.loads(line)
+            if evt["name"] == "doc.saved":
+                handle_saved(evt["data"])
+        pos = len(lines)
+        time.sleep(0.2)
+
+if __name__ == "__main__":
+    loop()

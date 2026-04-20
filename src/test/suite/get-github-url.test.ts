@@ -2,10 +2,9 @@ import * as assert from "node:assert";
 
 import * as vscode from "vscode";
 
-import { getGitHubUrl } from "../../get-github-url";
-import { GitUtils } from "../../git-utils";
-
-import { uriForFile } from "./test-utils";
+import { getGitHubUrl } from "@/get-github-url";
+import { GitUtils } from "@/git-utils";
+import { uriForFile } from "@/test/suite/test-utils";
 
 class MockGitUtils implements GitUtils {
   async getCurrentHash(): Promise<string | null> {

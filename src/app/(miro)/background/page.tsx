@@ -1,4 +1,4 @@
-import { BackgroundBoot } from "./background-boot";
+import { BackgroundBoot } from "@/app/(miro)/background/background-boot";
 
 export default function BackgroundPage() {
   return (

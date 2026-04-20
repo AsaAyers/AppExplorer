@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 
-import type { HandlerContext } from "../extension";
-import { getGitHubUrl } from "../get-github-url";
-import { createDebug } from "../utils/create-debug";
+import type { HandlerContext } from "@/extension";
+import { getGitHubUrl } from "@/get-github-url";
+import { createDebug } from "@/utils/create-debug";
 const debug = createDebug("app-explorer:navigate");
 
 export const makeNavigationHandler = (context: HandlerContext) => {

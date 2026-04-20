@@ -1,9 +1,22 @@
-const allowedLocalOrigins = new Set([
-  "http://localhost:9042",
-  "http://localhost:3000",
+const allowedSocketOrigins = new Set([
   "https://appexplorer.dev",
   "https://dev.appexplorer.dev",
 ]);
+const allowedLoopbackPorts = new Set(["3000", "3100"]);
+
+const isLoopbackOrigin = (origin: string) => {
+  try {
+    const parsedOrigin = new URL(origin);
+    return (
+      parsedOrigin.protocol === "http:" &&
+      allowedLoopbackPorts.has(parsedOrigin.port) &&
+      (parsedOrigin.hostname === "localhost" ||
+        parsedOrigin.hostname === "127.0.0.1")
+    );
+  } catch {
+    return false;
+  }
+};
 
 export const isAllowedSocketOrigin = (origin?: string) => {
   // Node-based clients like the VS Code extension do not send an Origin header.
@@ -11,7 +24,7 @@ export const isAllowedSocketOrigin = (origin?: string) => {
     return true;
   }
 
-  return allowedLocalOrigins.has(origin);
+  return allowedSocketOrigins.has(origin) || isLoopbackOrigin(origin);
 };
 
 export const allowedSocketOrigin = (
