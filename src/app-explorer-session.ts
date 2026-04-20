@@ -5,7 +5,9 @@ import { getHostConfig } from "@/host-config";
 
 export const zAppExplorerSession = z
   .object({
-    sessionId: z.string().min(1),
+    sessionId: z
+      .string()
+      .regex(/^[a-f0-9]{32}$/i, "Session ID must be 32 hex characters"),
     key: z.string().min(1),
     insiders: z.boolean().default(false),
     hostIndex: z

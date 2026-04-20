@@ -1,7 +1,7 @@
 import { Counter, Gauge, Registry, collectDefaultMetrics } from "prom-client";
 
 type ActiveSessionCountProvider = () => number;
-const SESSION_NAMESPACE_REGEX = /^\/session\/([a-f0-9-]{36})$/i;
+const SESSION_NAMESPACE_REGEX = /^\/session\/([a-f0-9]{32})$/i;
 
 const getSessionIdFromNamespace = (namespace: string) => {
   return SESSION_NAMESPACE_REGEX.exec(namespace)?.[1] ?? null;
