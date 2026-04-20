@@ -33,7 +33,7 @@ export const getWorkspaceSocketUrl = (session: AppExplorerSession) => {
 };
 
 export const makeSessionUrl = (session: AppExplorerSession) => {
-  const url = new URL("vscode://asa-ayers.app-explorer/session/");
+  const url = new URL("vscode://AsaAyers.app-explorer/session/");
   url.pathname += encodeURIComponent(session.sessionId);
   url.searchParams.set("key", session.key);
   if (session.hostIndex > 0) {

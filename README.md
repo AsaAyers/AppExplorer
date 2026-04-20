@@ -19,7 +19,7 @@ can resolve the correct absolute host when it opens its workspace socket.
 
 Session URLs use this shape:
 
-`vscode://asa-ayers.app-explorer/session/{sessionId}?key={key}&host={index}`
+`vscode://AsaAyers.app-explorer/session/{sessionId}?key={key}&host={index}`
 
 - Omit `host` for production sessions (`host=0` is the default)
 - Use `host=1` for development sessions on `https://dev.appexplorer.dev`

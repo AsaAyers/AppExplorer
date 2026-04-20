@@ -15,7 +15,7 @@ The current transport model is:
 ## Current Session Model
 
 - Session URLs use the shape:
-  - `vscode://asa-ayers.app-explorer/session/{sessionId}?key={key}&host={index}`
+  - `vscode://AsaAyers.app-explorer/session/{sessionId}?key={key}&host={index}`
 - `host` is an index, not a hostname string:
   - `0` = production on `https://appexplorer.dev`
     - Do not include "host=0" in URLs for production sessions; treat host=0 as the default when the host parameter is omitted

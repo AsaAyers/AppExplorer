@@ -15,7 +15,7 @@ suite("Extension Activation Tests", () => {
     debug("Testing extension activation...");
 
     // Get the extension
-    const extension = vscode.extensions.getExtension("asa-ayers.app-explorer");
+    const extension = vscode.extensions.getExtension("AsaAyers.app-explorer");
     debug("Extension found:", !!extension);
     debug("Extension active:", extension?.isActive);
 

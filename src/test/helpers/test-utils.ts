@@ -98,7 +98,7 @@ export async function videoDelay(label: string, multiplier = 1) {
 export async function activateAppExplorer() {
   // Ensure extension is activated
   const extension = vscode.extensions.getExtension<ExtensionApi>(
-    "asa-ayers.app-explorer",
+    "AsaAyers.app-explorer",
   );
   assert.ok(extension, "Extension should be found");
   if (extension && !extension.isActive) {
