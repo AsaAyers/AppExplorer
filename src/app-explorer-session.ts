@@ -5,9 +5,7 @@ import { getHostConfig } from "@/host-config";
 
 export const zAppExplorerSession = z
   .object({
-    sessionId: z
-      .string()
-      .uuid("Session ID must be a valid UUID"),
+    sessionId: z.string().uuid("Session ID must be a valid UUID"),
     key: z.string().min(1),
     insiders: z.boolean().default(false),
     hostIndex: z
