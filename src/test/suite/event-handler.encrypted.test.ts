@@ -160,7 +160,7 @@ suite("Encrypted EventHandler transport", () => {
     const senderSocket = new MockSocket();
     const receiverSocket = new MockSocket();
     const session = zAppExplorerSession.parse({
-      sessionId: randomHex(128),
+      sessionId: crypto.randomUUID(),
       hostIndex: 0,
       key: randomHex(512),
       insiders: false,
@@ -207,7 +207,7 @@ suite("Encrypted EventHandler transport", () => {
     responderSocket.peer = requesterSocket;
 
     const session = zAppExplorerSession.parse({
-      sessionId: randomHex(128),
+      sessionId: crypto.randomUUID(),
       hostIndex: 0,
       key: randomHex(512),
       insiders: false,

@@ -94,7 +94,7 @@ export class MiroServer {
           return;
         }
 
-        eventMetrics.onEncryptedEventForwarded();
+        eventMetrics.onEventForwarded();
         debugEvents("Relaying session event", {
           socketId: socket.id,
           role,

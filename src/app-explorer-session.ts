@@ -7,7 +7,7 @@ export const zAppExplorerSession = z
   .object({
     sessionId: z
       .string()
-      .regex(/^[a-f0-9]{32}$/i, "Session ID must be 32 hex characters"),
+      .uuid("Session ID must be a valid UUID"),
     key: z.string().min(1),
     insiders: z.boolean().default(false),
     hostIndex: z

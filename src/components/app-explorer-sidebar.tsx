@@ -30,7 +30,7 @@ function makeFreshSession(
   base: null | Partial<AppExplorerSession> = null,
 ): AppExplorerSession {
   return zAppExplorerSession.parse({
-    sessionId: base?.sessionId ?? randomHex(128),
+    sessionId: base?.sessionId ?? crypto.randomUUID(),
     key: base?.key ?? randomHex(512),
     insiders: base?.insiders ?? false,
     hostIndex: base?.hostIndex ?? getIndexFromOrigin(location.origin),

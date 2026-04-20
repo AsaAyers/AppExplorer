@@ -1,7 +1,8 @@
 import { Counter, Gauge, Registry, collectDefaultMetrics } from "prom-client";
 
 type ActiveSessionCountProvider = () => number;
-const SESSION_NAMESPACE_REGEX = /^\/session\/([a-f0-9]{32})$/i;
+const SESSION_NAMESPACE_REGEX =
+  /^\/session\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 const getSessionIdFromNamespace = (namespace: string) => {
   return SESSION_NAMESPACE_REGEX.exec(namespace)?.[1] ?? null;
@@ -14,7 +15,7 @@ type SessionCounters = {
 };
 
 type EventCounters = {
-  encryptedEventsForwardedCounter: Counter;
+  eventsForwardedCounter: Counter;
   encryptedEventsReceivedCounter: Counter;
   encryptedEventsRejectedCounter: Counter;
 };
@@ -65,9 +66,9 @@ const createMetricsState = (): MetricsState => {
     registers: [register],
   });
 
-  const encryptedEventsForwardedCounter = new Counter({
-    name: `${METRICS_PREFIX}encrypted_events_forwarded_total`,
-    help: "Total encrypted events successfully forwarded to destination role.",
+  const eventsForwardedCounter = new Counter({
+    name: `${METRICS_PREFIX}events_forwarded_total`,
+    help: "Total events successfully forwarded to destination role.",
     registers: [register],
   });
 
@@ -86,7 +87,7 @@ const createMetricsState = (): MetricsState => {
 
   return {
     activeSessionGauge,
-    encryptedEventsForwardedCounter,
+    eventsForwardedCounter,
     encryptedEventsReceivedCounter,
     encryptedEventsRejectedCounter,
     register,
@@ -150,8 +151,8 @@ export const sessionMetrics = {
 };
 
 export const eventMetrics = {
-  onEncryptedEventForwarded() {
-    getMetricsState().encryptedEventsForwardedCounter.inc();
+  onEventForwarded() {
+    getMetricsState().eventsForwardedCounter.inc();
   },
   onEncryptedEventReceived() {
     getMetricsState().encryptedEventsReceivedCounter.inc();

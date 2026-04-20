@@ -3,12 +3,13 @@ import React from "react";
 
 import { randomHex } from "@/utils/to-hex";
 
-const SESSION_ID_REGEX = /^[a-f0-9]{32}$/i;
+const SESSION_ID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function useDemoSession() {
   return React.useState(() => {
     const initialValue = {
-      sessionId: randomHex(128),
+      sessionId: crypto.randomUUID(),
       sessionHexKey: randomHex(512),
     };
     if (typeof window === "undefined") {

@@ -13,7 +13,7 @@ suite("Extension session URLs", () => {
     for (const insiders of [true, false]) {
       test(`parses session URLs with hostIndex=${hostIndex} and insiders=${insiders}`, () => {
         const sessionConfig = zAppExplorerSession.parse({
-          sessionId: randomHex(128),
+          sessionId: crypto.randomUUID(),
           key: randomHex(512),
           insiders,
           hostIndex,
@@ -28,7 +28,7 @@ suite("Extension session URLs", () => {
 
   test("omits the host query parameter for production sessions", () => {
     const sessionConfig = zAppExplorerSession.parse({
-      sessionId: randomHex(128),
+      sessionId: crypto.randomUUID(),
       key: randomHex(512),
       hostIndex: 0,
     });
