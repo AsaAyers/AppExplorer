@@ -5,9 +5,15 @@ import { Browser, BrowserContext, Page } from "playwright";
 
 import { launchBrowser, createBrowserPage } from "@/test/helpers/browser";
 import { setupTimeline, timeline } from "@/test/helpers/critical-path-timeline";
-import { videoDelay, waitFor } from "@/test/helpers/test-utils";
+import {
+  activateAppExplorer,
+  videoDelay,
+  waitFor,
+} from "@/test/helpers/test-utils";
+import { createDebug } from "@/utils/create-debug";
 
-const appUrl = "http://127.0.0.1:3100";
+const log = createDebug("app-explorer:demo-test");
+const appUrl = "https://dev.appexplorer.dev";
 const healthUrl = `${appUrl}/api/health-check`;
 
 suite("Demo walkthrough", function () {
@@ -24,6 +30,7 @@ suite("Demo walkthrough", function () {
     ({ context, page } = await createBrowserPage(browser, "demo-test", {
       storageState: undefined,
     }));
+    await activateAppExplorer();
   });
 
   suiteTeardown(async function () {
@@ -74,6 +81,7 @@ suite("Demo walkthrough", function () {
     await videoDelay("demo page load", 2);
 
     await demoPage.getByRole("heading", { name: "Tutorial" }).waitFor();
+    await waitForDemoCodeReady(demoPage);
 
     await dragCardToBoard(demoPage, "saveDoc", 900, 300);
 
@@ -141,14 +149,13 @@ async function ensureLocalAppHost() {
     return undefined;
   }
 
-  const child = spawn("node", ["server.js"], {
+  const child = spawn("npm", ["dev"], {
     cwd: process.cwd(),
     env: {
       ...process.env,
       ASSET_PREFIX: "",
       DEBUG: "*app-explorer:*",
       NODE_ENV: "production",
-      PORT: "3100",
     },
     stdio: "ignore",
   });
@@ -253,6 +260,65 @@ async function openDemoFile(page: Page, fileName: string) {
     .getByRole("link", { name: fileName, exact: true });
   await fileTab.click();
   await page.waitForURL(new RegExp(`path=${fileName.replace(".", "\\.")}`));
+  await waitForDemoCodeReady(page);
+}
+
+async function waitForDemoCodeReady(page: Page) {
+  await waitFor(
+    async () => {
+      const code = page.locator(".demo-code");
+      const activeTab = page.locator(".tab-active").first();
+      const symbols = code.locator(".symbol");
+      const screenTooSmall = page.getByRole("heading", {
+        name: "Screen Too Small",
+      });
+
+      const diagnostics = {
+        codeVisible: await code.isVisible().catch(() => false),
+        screenTooSmallVisible: await screenTooSmall
+          .isVisible()
+          .catch(() => false),
+        activeTabVisible: await activeTab.isVisible().catch(() => false),
+        activeTab:
+          ((await activeTab.textContent().catch(() => null)) ?? "").trim() ||
+          null,
+        symbolCount: await symbols.count(),
+        firstSymbolVisible: await symbols
+          .first()
+          .isVisible()
+          .catch(() => false),
+        codeTextLength: (
+          (await code.textContent().catch(() => null)) ?? ""
+        ).trim().length,
+      };
+
+      assert.ok(
+        !diagnostics.screenTooSmallVisible,
+        `Demo small-screen fallback is visible: ${JSON.stringify(diagnostics)}`,
+      );
+      assert.ok(
+        diagnostics.codeVisible,
+        `Demo code pane not visible: ${JSON.stringify(diagnostics)}`,
+      );
+      assert.ok(
+        diagnostics.activeTabVisible,
+        `Demo file tabs not visible: ${JSON.stringify(diagnostics)}`,
+      );
+      assert.ok(
+        diagnostics.codeTextLength > 0,
+        `Demo code is empty: ${JSON.stringify(diagnostics)}`,
+      );
+      assert.ok(
+        diagnostics.symbolCount > 0 && diagnostics.firstSymbolVisible,
+        `Demo symbols not rendered: ${JSON.stringify(diagnostics)}`,
+      );
+    },
+    {
+      timeout: 10000,
+      interval: 250,
+      message: "Demo code pane did not render",
+    },
+  );
 }
 
 async function dragCardToBoard(

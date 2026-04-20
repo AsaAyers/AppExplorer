@@ -21,6 +21,8 @@ export type BrowserPage = {
   page: Page;
 };
 
+const testDebugValue = process.env.DEBUG || "app-explorer:*";
+
 export async function launchBrowser({
   headless = isHeadless,
   slowMo = isHeadless ? 0 : 100,
@@ -56,13 +58,6 @@ export async function createBrowserPage(
   const context = await browser.newContext({
     ...(storageState ? { storageState } : {}),
     viewport: { width: 1440, height: 900 },
-    recordVideo:
-      isRecording && isHeadless
-        ? {
-            dir: "playwright/videos",
-            showActions: {},
-          }
-        : undefined,
   });
 
   context.on("console", (msg) => {
@@ -114,8 +109,7 @@ export async function createBrowserPage(
   globalThis.playwrightPage = page;
   blockSessionLinkCapture(false);
 
-  const debugValue = process.env.DEBUG || "";
-  await page.exposeBinding("getDebugNamespace", () => debugValue);
+  await page.exposeBinding("getDebugNamespace", () => testDebugValue);
 
   // Inject a global captureSessionLink function so the real Next app can hand
   // the extension its vscode:// session URL.

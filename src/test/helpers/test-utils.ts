@@ -18,6 +18,7 @@ import { isRecording } from "@/test/helpers/is-recording";
 import { createDebug } from "@/utils/create-debug";
 
 const debug = createDebug("app-explorer:test-utils");
+const testDebugValue = process.env.DEBUG || "app-explorer:*";
 
 export const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -103,11 +104,9 @@ export async function activateAppExplorer() {
   if (extension && !extension.isActive) {
     await extension.activate();
   }
-  const debugValue = process.env.DEBUG || "";
-
-  baseDebug.enable(debugValue);
-  baseDebug.log(`Activated extension with DEBUG=${debugValue}`);
-  extension.exports.__watchOutput(debugValue, (line) => {
+  baseDebug.enable(testDebugValue);
+  baseDebug.log(`Activated extension with DEBUG=${testDebugValue}`);
+  extension.exports.__watchOutput(testDebugValue, (line) => {
     // eslint-disable-next-line no-console
     console.log(colorText("extensionLog", "[Extension Log]"), line);
     // Record critical-path extension log lines to the per-test timeline.

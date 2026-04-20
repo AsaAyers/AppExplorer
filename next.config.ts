@@ -45,14 +45,6 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     rules: {
-      "*.pub": {
-        loaders: [
-          {
-            loader: "raw-loader",
-          },
-        ],
-        as: "*.js",
-      },
       "*.txt": {
         loaders: [
           {

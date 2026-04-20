@@ -1,6 +1,7 @@
-import Image from "next/image";
-
-import screenshot from "@/app/(website)/demo/screenshot.png";
+const demoVideoUrl = new URL(
+  "../../../demo-test.webm",
+  import.meta.url,
+).toString();
 
 export function ScreenTooSmall() {
   return (
@@ -12,9 +13,13 @@ export function ScreenTooSmall() {
           represent VSCode, the AppExplorer sidebar inside Miro, and a simple
           board.
         </p>
-        <Image
-          src={screenshot}
-          alt="Screenshot of the demo"
+        <video
+          src={demoVideoUrl}
+          controls
+          autoPlay
+          loop
+          muted
+          className="rounded-lg shadow-lg"
           width={600}
           height={400}
         />
