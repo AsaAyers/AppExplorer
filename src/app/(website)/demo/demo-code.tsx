@@ -54,7 +54,7 @@ export function DemoCodeImpl({
       const caretPosition = doc.caretPositionFromPoint?.(x, y);
       const caretRange = caretPosition
         ? null
-        : doc.caretRangeFromPoint?.(x, y) ?? null;
+        : (doc.caretRangeFromPoint?.(x, y) ?? null);
       const position = caretPosition
         ? caretPosition
         : caretRange
