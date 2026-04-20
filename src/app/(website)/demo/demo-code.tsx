@@ -43,7 +43,26 @@ export function DemoCodeImpl({
     (x: number, y: number): number => {
       if (!containerRef.current) return 0;
 
-      const position = document.caretPositionFromPoint(x, y);
+      const doc = document as Document & {
+        caretPositionFromPoint?: (
+          x: number,
+          y: number,
+        ) => { offsetNode: Node; offset: number } | null;
+        caretRangeFromPoint?: (x: number, y: number) => Range | null;
+      };
+
+      const caretPosition = doc.caretPositionFromPoint?.(x, y);
+      const caretRange = caretPosition
+        ? null
+        : doc.caretRangeFromPoint?.(x, y) ?? null;
+      const position = caretPosition
+        ? caretPosition
+        : caretRange
+          ? {
+              offsetNode: caretRange.startContainer,
+              offset: caretRange.startOffset,
+            }
+          : null;
       if (!position) return 0;
 
       // Use Range API to reliably measure offset from container start

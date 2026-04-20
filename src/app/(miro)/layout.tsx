@@ -17,7 +17,7 @@ export default function MiroLayout({
     <>
       <link
         rel="stylesheet"
-        href="https://unpkg.com/mirotone@^5/dist/styles.css"
+        href="https://unpkg.com/mirotone@5.0.0/dist/styles.css"
       ></link>
       <Script
         src="https://miro.com/app/static/sdk/v2/miro.js"
