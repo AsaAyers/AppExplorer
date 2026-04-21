@@ -16,8 +16,12 @@ export function useIsInMiroIframe() {
   );
 
   React.useEffect(() => {
-    setIsInMiroIframe(!isParentSameOrigin());
-  }, []);
+    if (isInMiroIframe === null) {
+      setTimeout(() => {
+        setIsInMiroIframe(!isParentSameOrigin());
+      });
+    }
+  }, [isInMiroIframe]);
 
   return isInMiroIframe;
 }

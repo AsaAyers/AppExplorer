@@ -69,29 +69,31 @@ export class MiroServer {
     const roleSchema = z.enum(appExplorerSessionRoles);
 
     sessionNamespace.use((socket, next) => {
-      const sessionToken = getSessionTokenFromNamespace(socket.nsp.name);
-      if (!sessionToken) {
-        next(new Error("Invalid AppExplorer session namespace"));
-        return;
-      }
+      void (async () => {
+        const sessionToken = getSessionTokenFromNamespace(socket.nsp.name);
+        if (!sessionToken) {
+          next(new Error("Invalid AppExplorer session namespace"));
+          return;
+        }
 
-      try {
-        decryptUuidToken(sessionToken, getSessionSecretString());
-      } catch {
-        next(new Error("Invalid AppExplorer session token"));
-        socket.disconnect(true);
-        return;
-      }
+        try {
+          await decryptUuidToken(sessionToken, getSessionSecretString());
+        } catch {
+          next(new Error("Invalid AppExplorer session token"));
+          socket.disconnect(true);
+          return;
+        }
 
-      const role = roleSchema.safeParse(socket.handshake.auth?.role);
-      if (!role.success) {
-        next(new Error("Invalid AppExplorer session role"));
-        return;
-      }
+        const role = roleSchema.safeParse(socket.handshake.auth?.role);
+        if (!role.success) {
+          next(new Error("Invalid AppExplorer session role"));
+          return;
+        }
 
-      socket.data.sessionToken = sessionToken;
-      socket.data.role = role.data;
-      next();
+        socket.data.sessionToken = sessionToken;
+        socket.data.role = role.data;
+        next();
+      })().catch(next);
     });
 
     const allowedEvents = new Set([encryptedEventName, "sessionShutdown"]);

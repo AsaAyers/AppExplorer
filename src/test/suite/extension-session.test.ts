@@ -12,9 +12,9 @@ import { randomHex } from "@/utils/to-hex";
 suite("Extension session URLs", () => {
   for (const hostIndex of testHosts) {
     for (const insiders of [true, false]) {
-      test(`parses session URLs with hostIndex=${hostIndex} and insiders=${insiders}`, () => {
+      test(`parses session URLs with hostIndex=${hostIndex} and insiders=${insiders}`, async () => {
         const sessionConfig = zAppExplorerSession.parse({
-          sessionToken: makeSessionToken(),
+          sessionToken: await makeSessionToken(),
           key: randomHex(512),
           insiders,
           hostIndex,
@@ -27,9 +27,9 @@ suite("Extension session URLs", () => {
     }
   }
 
-  test("omits the host query parameter for production sessions", () => {
+  test("omits the host query parameter for production sessions", async () => {
     const sessionConfig = zAppExplorerSession.parse({
-      sessionToken: makeSessionToken(),
+      sessionToken: await makeSessionToken(),
       key: randomHex(512),
       hostIndex: 0,
     });
