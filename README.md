@@ -1,73 +1,65 @@
 # AppExplorer
 
-AppExplorer connects a Miro board to a VS Code workspace so cards on the board
-can stay linked to real code.
+AppExplorer connects **VS Code** and **Miro** so your architecture diagrams can
+stay linked to the code they describe.
 
-## Current architecture
+Instead of drawing a diagram once and letting it drift out of date, you can map
+real functions, classes, and code regions to cards on a board, then use the
+board to navigate back to the implementation.
 
-AppExplorer now uses a single hosted app server per environment. The web app and
-the Socket.IO relay always live on the same host:
+## What AppExplorer helps you do
 
-| Host index | Purpose     | Host                          |
-| ---------- | ----------- | ----------------------------- |
-| `0`        | Production  | `https://appexplorer.dev`     |
-| `1`        | Development | `https://dev.appexplorer.dev` |
+- Turn code into **board cards linked to real symbols**
+- Build diagrams by **walking the codebase**
+- Click cards in Miro and **jump back to code in VS Code**
+- Keep architecture notes, arrows, screenshots, and context **around real code
+  references**
 
-Browser clients connect to the relay with a relative Socket.IO URL. The
-`vscode://` session URL still carries the host index so the VS Code extension
-can resolve the correct absolute host when it opens its workspace socket.
+AppExplorer does **not** auto-generate architecture diagrams for you. It helps
+you build one gradually, using the code you decide is worth mapping.
 
-Session URLs use this shape:
+## How it works
 
-`vscode://AsaAyers.app-explorer/session/{sessionId}?key={key}&host={index}`
+0. Install Miro app and VSCode extension
+1. Open a codebase in VS Code.
+2. Open AppExplorer in Miro and choose **Start VSCode session**.
+3. Move your cursor inside a function, class, or other symbol.
+4. AppExplorer shows the symbols around your cursor.
+5. Drag a card onto the board to add that code to your diagram.
+6. Select a card later to navigate back to the linked code.
 
-- Omit `host` for production sessions (`host=0` is the default)
-- Use `host=1` for development sessions on `https://dev.appexplorer.dev`
+## Best fit
 
-## Main pieces
+AppExplorer is a good fit when you want to:
 
-- **Next.js app**: serves the web UI and hosts the Socket.IO relay
-- **VS Code extension**: waits for a session URL, then connects the workspace to
-  the selected host
-- **Miro client**: runs inside the Miro iframe and relays board events through
-  the app host
-- **Sidebar UI**: shows cards around the current cursor position and starts
-  VS Code sessions
+- explain a system to teammates
+- map an architecture as you learn it
+- document important flows without losing the connection to implementation
+- create diagrams that remain useful after the first draft
 
-The relay is routing-only. It forwards session events between workspace, Miro,
-and sidebar clients and does not own board or workspace state.
+## Before you start
 
-## Development
+AppExplorer depends on language-server symbol information, so it works best in
+projects and languages where VS Code can already identify functions, classes,
+and other code symbols.
 
-Start the local app host:
+You will usually get the best results when your cursor is **inside** a symbol,
+not on blank lines, imports, or the top of the file.
 
-```bash
-npm run dev
-```
+## Commands
 
-That runs the app and relay together on `http://localhost:3000`.
+- **AppExplorer: Navigate to Card**
+- **AppExplorer: Disconnect Session**
 
-In development, the Node server still listens on port `3000`, but browsers and
-the VS Code extension should use the SSL-terminating proxy host
-`https://dev.appexplorer.dev`.
+## Learn more
 
-Useful commands:
+- Interactive demo: <https://appexplorer.dev/demo>
+- Public architecture board: <https://miro.com/app/board/uXjVJpT6jCA=/?moveToWidget=3458764665695719632&cot=14>
+- Project site: <https://appexplorer.dev>
 
-```bash
-npm run typecheck
-npm run build
-. ./setup-xvfb.sh && npm test
-```
+## Feedback
 
-`./record-tests.sh` remains the higher-level end-to-end test workflow.
+If you want to report a bug, request a feature, or share how you would use
+AppExplorer, visit:
 
-## Important files
-
-- `src/host-config.ts`: host index to origin mapping
-- `src/app-explorer-session.ts`: session URL parsing and socket URL helpers
-- `src/extension-session.ts`: extension-side session coordination
-- `src/workspace-card-storage.ts`: workspace socket lifecycle
-- `src/app/sockets/main.ts`: Next.js Socket.IO bootstrap
-- `src/server/server.ts`: routing-only relay implementation
-- `src/miro.ts`: Miro client integration
-- `src/components/app-explorer-sidebar.tsx`: sidebar session startup UI
+<https://appexplorer.dev>
