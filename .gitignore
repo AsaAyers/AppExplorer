@@ -16,7 +16,7 @@ app-explorer.cjs
 app-explorer.cjs.map
 screenshots/
 *.png
-!public/logo-128x128.png
+!public/logo-*.png
 .next/
 code.deb
 *.tsbuildinfo
