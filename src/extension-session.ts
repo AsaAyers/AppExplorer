@@ -214,7 +214,7 @@ export class AppExplorerSessionCoordinator
       log("(session_start)", {
         hostIndex: session.hostIndex,
         hostOrigin: origin,
-        sessionId: session.sessionId,
+        sessionToken: session.sessionToken,
       });
 
       await this.connectWorkspaceSocket();

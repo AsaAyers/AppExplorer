@@ -1,12 +1,8 @@
 import { Counter, Gauge, Registry, collectDefaultMetrics } from "prom-client";
 
-type ActiveSessionCountProvider = () => number;
-const SESSION_NAMESPACE_REGEX =
-  /^\/session\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+import { getSessionTokenFromNamespace } from "@/session-transport";
 
-const getSessionIdFromNamespace = (namespace: string) => {
-  return SESSION_NAMESPACE_REGEX.exec(namespace)?.[1] ?? null;
-};
+type ActiveSessionCountProvider = () => number;
 
 type SessionCounters = {
   activeSessionGauge: Gauge;
@@ -106,14 +102,14 @@ const getMetricsState = (): MetricsState => {
 export const sessionMetrics = {
   onSocketConnected(namespace: string) {
     const metrics = getMetricsState();
-    const sessionId = getSessionIdFromNamespace(namespace);
-    if (!sessionId) {
+    const sessionToken = getSessionTokenFromNamespace(namespace);
+    if (!sessionToken) {
       return;
     }
 
-    const currentConnections = metrics.trackedSessions.get(sessionId) ?? 0;
+    const currentConnections = metrics.trackedSessions.get(sessionToken) ?? 0;
     const newConnections = currentConnections + 1;
-    metrics.trackedSessions.set(sessionId, newConnections);
+    metrics.trackedSessions.set(sessionToken, newConnections);
 
     if (currentConnections === 0) {
       metrics.sessionsStartedCounter.inc();
@@ -121,15 +117,15 @@ export const sessionMetrics = {
   },
   onSocketDisconnected(namespace: string) {
     const metrics = getMetricsState();
-    const sessionId = getSessionIdFromNamespace(namespace);
-    if (!sessionId) {
+    const sessionToken = getSessionTokenFromNamespace(namespace);
+    if (!sessionToken) {
       return;
     }
 
-    const currentConnections = metrics.trackedSessions.get(sessionId) ?? 0;
+    const currentConnections = metrics.trackedSessions.get(sessionToken) ?? 0;
 
     if (currentConnections <= 1) {
-      metrics.trackedSessions.delete(sessionId);
+      metrics.trackedSessions.delete(sessionToken);
 
       if (currentConnections === 1) {
         metrics.sessionsEndedCounter.inc();
@@ -137,7 +133,7 @@ export const sessionMetrics = {
       return;
     }
 
-    metrics.trackedSessions.set(sessionId, currentConnections - 1);
+    metrics.trackedSessions.set(sessionToken, currentConnections - 1);
   },
   setActiveSessionCountProvider(provider: ActiveSessionCountProvider) {
     getMetricsState().activeSessionCountProvider = provider;

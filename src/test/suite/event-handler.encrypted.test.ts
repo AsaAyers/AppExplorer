@@ -9,6 +9,13 @@ import type { HandlerMethodMap } from "@/event-handlers/types";
 import { encryptedEventName } from "@/socket-events";
 import { isEventHandlerOptOutError } from "@/unhandled-event-ack";
 import { randomHex } from "@/utils/to-hex";
+import { encryptUuidToken } from "@/utils/uuid-token";
+
+const sessionSecret = process.env.SESSION_SECRET;
+assert.strictEqual(typeof sessionSecret, "string");
+
+const makeSessionToken = () =>
+  encryptUuidToken(crypto.randomUUID(), sessionSecret);
 
 class MockSocket extends EventEmitter {
   id = "mock-socket";
@@ -160,7 +167,7 @@ suite("Encrypted EventHandler transport", () => {
     const senderSocket = new MockSocket();
     const receiverSocket = new MockSocket();
     const session = zAppExplorerSession.parse({
-      sessionId: crypto.randomUUID(),
+      sessionToken: makeSessionToken(),
       hostIndex: 0,
       key: randomHex(512),
       insiders: false,
@@ -207,7 +214,7 @@ suite("Encrypted EventHandler transport", () => {
     responderSocket.peer = requesterSocket;
 
     const session = zAppExplorerSession.parse({
-      sessionId: crypto.randomUUID(),
+      sessionToken: makeSessionToken(),
       hostIndex: 0,
       key: randomHex(512),
       insiders: false,

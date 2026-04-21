@@ -553,7 +553,6 @@ export abstract class EventHandler<
     );
     return encrypt(
       {
-        sessionId: this.#session.sessionId,
         eventName,
         args,
       },
@@ -589,10 +588,7 @@ export abstract class EventHandler<
     payload: unknown,
   ) {
     const parsedPayload = await this.parseEncryptedEnvelope(payload);
-    if (
-      parsedPayload.sessionId !== this.#session?.sessionId ||
-      parsedPayload.eventName !== expectedEventName
-    ) {
+    if (parsedPayload.eventName !== expectedEventName) {
       return null;
     }
 
@@ -618,8 +614,7 @@ export abstract class EventHandler<
   ) {
     const parsedPayload = await this.parseEncryptedEnvelope(payload);
     invariant(
-      parsedPayload.sessionId === this.#session?.sessionId &&
-        parsedPayload.eventName === eventName,
+      parsedPayload.eventName === eventName,
       `Encrypted result mismatch for ${eventName}`,
     );
     invariant(

@@ -64,7 +64,6 @@ export const zRequestCardsAroundCursor = z.function({
   output: z.promise(z.void()),
 });
 export const zEncryptedEvent = z.object({
-  sessionId: z.string().min(1),
   eventName: z.string().min(1),
   args: z.array(z.unknown()),
 });

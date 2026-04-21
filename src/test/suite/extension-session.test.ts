@@ -1,6 +1,7 @@
 import * as assert from "node:assert";
 
 import {
+  makeSessionToken,
   makeSessionUrl,
   parseSessionUri,
   zAppExplorerSession,
@@ -13,7 +14,7 @@ suite("Extension session URLs", () => {
     for (const insiders of [true, false]) {
       test(`parses session URLs with hostIndex=${hostIndex} and insiders=${insiders}`, () => {
         const sessionConfig = zAppExplorerSession.parse({
-          sessionId: crypto.randomUUID(),
+          sessionToken: makeSessionToken(),
           key: randomHex(512),
           insiders,
           hostIndex,
@@ -28,7 +29,7 @@ suite("Extension session URLs", () => {
 
   test("omits the host query parameter for production sessions", () => {
     const sessionConfig = zAppExplorerSession.parse({
-      sessionId: crypto.randomUUID(),
+      sessionToken: makeSessionToken(),
       key: randomHex(512),
       hostIndex: 0,
     });

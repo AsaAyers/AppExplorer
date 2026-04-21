@@ -6,6 +6,7 @@ import {
   AppExplorerSession,
   makeSessionUrl,
   parseSessionUri,
+  requestSessionToken,
   zAppExplorerSession,
 } from "@/app-explorer-session";
 import type { CardData } from "@/card-data";
@@ -16,7 +17,10 @@ import { getIndexFromOrigin } from "@/host-config";
 import { isAppCard } from "@/miro/is-app-card";
 import { updateCard } from "@/miro/update-card";
 import { connectSidebarHandler } from "@/sidebar/connect-sidebar-socket";
+import { createDebug } from "@/utils/create-debug";
 import { randomHex } from "@/utils/to-hex";
+
+const log = createDebug("app-explorer:sidebar");
 
 function getCaptureSessionLink() {
   return (
@@ -26,11 +30,12 @@ function getCaptureSessionLink() {
   ).captureSessionLink;
 }
 
-function makeFreshSession(
+async function makeFreshSession(
   base: null | Partial<AppExplorerSession> = null,
-): AppExplorerSession {
+  signal?: AbortSignal,
+): Promise<AppExplorerSession> {
   return zAppExplorerSession.parse({
-    sessionId: base?.sessionId ?? crypto.randomUUID(),
+    sessionToken: base?.sessionToken ?? (await requestSessionToken(signal)),
     key: base?.key ?? randomHex(512),
     insiders: base?.insiders ?? false,
     hostIndex: base?.hostIndex ?? getIndexFromOrigin(location.origin),
@@ -40,7 +45,22 @@ function makeFreshSession(
 export function AppExplorerSidebar() {
   const [session, setSession] = React.useState<null | AppExplorerSession>(null);
   React.useEffect(() => {
-    setSession(makeFreshSession());
+    const abortController = new AbortController();
+    void makeFreshSession(null, abortController.signal)
+      .then((nextSession) => {
+        if (!abortController.signal.aborted) {
+          setSession(nextSession);
+        }
+      })
+      .catch((error) => {
+        if (!abortController.signal.aborted) {
+          log("Failed to create session", { error });
+        }
+      });
+
+    return () => {
+      abortController.abort();
+    };
   }, []);
   const [activeSession, setActiveSession] = React.useState<
     AppExplorerSession | undefined
@@ -100,7 +120,13 @@ export function AppExplorerSidebar() {
       setCardsAroundCursor([]);
       setSidebarHandler(undefined);
       setActiveSession(undefined);
-      setSession((previous) => makeFreshSession(previous));
+      void makeFreshSession()
+        .then((nextSession) => {
+          setSession(nextSession);
+        })
+        .catch((error) => {
+          log("Failed to refresh session", { error });
+        });
       sidebarHandler.dispose();
       sidebarHandler.socketClient.disconnect();
     };
@@ -222,11 +248,9 @@ export function AppExplorerSidebar() {
                 checked={session.insiders}
                 onChange={(event) => {
                   const insiders = event.target.checked;
-                  setSession((previous) => ({
-                    ...makeFreshSession(previous),
-                    ...previous,
-                    insiders,
-                  }));
+                  setSession((previous) =>
+                    previous ? { ...previous, insiders } : previous,
+                  );
                 }}
                 type="checkbox"
               />

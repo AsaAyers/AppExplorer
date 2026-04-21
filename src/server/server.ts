@@ -8,6 +8,7 @@ import { allowedSocketOrigin } from "@/allowed-socket-origin";
 import {
   APP_EXPLORER_SESSION_NAMESPACE,
   appExplorerSessionRoles,
+  getSessionTokenFromNamespace,
   type AppExplorerSessionRole,
 } from "@/session-transport";
 import {
@@ -17,7 +18,9 @@ import {
 } from "@/socket-events";
 import { isEventHandlerOptOutError } from "@/unhandled-event-ack";
 import { createDebug } from "@/utils/create-debug";
+import { getSessionSecretString } from "@/utils/keys";
 import { eventMetrics, sessionMetrics } from "@/utils/metrics";
+import { decryptUuidToken } from "@/utils/uuid-token";
 
 const debug = createDebug("app-explorer:server");
 const debugEvents = debug.extend("events");
@@ -51,6 +54,7 @@ const getRecipients = (
 
 export class MiroServer {
   subscriptions = [] as vscode.Disposable[];
+  readonly #io: Server;
 
   public static publicPath = [__dirname, "public"].join("/");
   constructor(httpServer: ReturnType<typeof createServer>) {
@@ -60,16 +64,32 @@ export class MiroServer {
         credentials: true,
       },
     });
+    this.#io = io;
     const sessionNamespace = io.of(APP_EXPLORER_SESSION_NAMESPACE);
     const roleSchema = z.enum(appExplorerSessionRoles);
 
     sessionNamespace.use((socket, next) => {
+      const sessionToken = getSessionTokenFromNamespace(socket.nsp.name);
+      if (!sessionToken) {
+        next(new Error("Invalid AppExplorer session namespace"));
+        return;
+      }
+
+      try {
+        decryptUuidToken(sessionToken, getSessionSecretString());
+      } catch {
+        next(new Error("Invalid AppExplorer session token"));
+        socket.disconnect(true);
+        return;
+      }
+
       const role = roleSchema.safeParse(socket.handshake.auth?.role);
       if (!role.success) {
         next(new Error("Invalid AppExplorer session role"));
         return;
       }
 
+      socket.data.sessionToken = sessionToken;
       socket.data.role = role.data;
       next();
     });
@@ -143,6 +163,7 @@ export class MiroServer {
   }
 
   dispose() {
+    this.#io.close();
     this.subscriptions.forEach((s) => s.dispose());
   }
 }

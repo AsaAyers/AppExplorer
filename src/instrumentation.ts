@@ -1,11 +1,17 @@
 import * as Sentry from "@sentry/nextjs";
 
-import { socketHandler } from "@/app/sockets/main";
-import { MetricsRegistry, metricsRegistry as registry } from "@/utils/metrics";
+import type { socketHandler as socketHandlerType } from "@/app/sockets/main";
+import type { MetricsRegistry } from "@/utils/metrics";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     await import("../sentry.server.config");
+    const [{ socketHandler }, { metricsRegistry }] = await Promise.all([
+      import("@/app/sockets/main"),
+      import("@/utils/metrics"),
+    ]);
+    globalThis.socketHandler = socketHandler;
+    globalThis.metricsRegistry = metricsRegistry;
   }
 
   if (process.env.NEXT_RUNTIME === "edge") {
@@ -15,9 +21,7 @@ export async function register() {
 
 export const onRequestError = Sentry.captureRequestError;
 
-globalThis.socketHandler = socketHandler;
-globalThis.metricsRegistry = registry;
-
 declare global {
+  var socketHandler: typeof socketHandlerType | undefined;
   var metricsRegistry: MetricsRegistry | undefined;
 }

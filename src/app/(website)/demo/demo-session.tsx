@@ -147,7 +147,7 @@ export function DemoSessionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [{ sessionId, sessionHexKey }] = useDemoSession();
+  const demoSession = useDemoSession();
   const [, dispatch] = useDemoBoardStorage();
   const [cardsAroundCursor, setCardsAroundCursor] = React.useState<CardData[]>(
     [],
@@ -166,15 +166,19 @@ export function DemoSessionProvider({
   }, []);
 
   React.useEffect(() => {
+    if (!demoSession) {
+      return;
+    }
+
     setSession(
       zAppExplorerSession.parse({
-        sessionId,
-        key: sessionHexKey,
+        sessionToken: demoSession.sessionToken,
+        key: demoSession.sessionHexKey,
         insiders: false,
         hostIndex: getIndexFromOrigin(window.location.origin),
       }),
     );
-  }, [sessionHexKey, sessionId]);
+  }, [demoSession]);
 
   React.useEffect(() => {
     if (!session) {

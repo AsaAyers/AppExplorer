@@ -118,9 +118,9 @@ export async function createBrowserPage(
       return;
     }
     const parsedUrl = new URL(url);
-    const sessionId = parsedUrl.pathname.match(/\/session\/([^/]+)$/)?.[1];
+    const sessionToken = parsedUrl.pathname.match(/\/session\/([^/]+)$/)?.[1];
     const key = parsedUrl.searchParams.get("key");
-    assert.ok(sessionId, "Session ID should be present in the URL path");
+    assert.ok(sessionToken, "Session token should be present in the URL path");
     assert.ok(key, "Session key should be present in the URL");
 
     vscode.commands.executeCommand(

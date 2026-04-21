@@ -1,40 +1,57 @@
 "use client";
 import React from "react";
+import { z } from "zod";
 
+import { requestSessionToken, zSessionToken } from "@/app-explorer-session";
 import { randomHex } from "@/utils/to-hex";
 
-const SESSION_ID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const zDemoSessionState = z.object({
+  sessionToken: zSessionToken,
+  sessionHexKey: z.string().min(1),
+});
 
 export function useDemoSession() {
-  return React.useState(() => {
-    const initialValue = {
-      sessionId: crypto.randomUUID(),
-      sessionHexKey: randomHex(512),
-    };
-    if (typeof window === "undefined") {
-      return initialValue;
-    }
+  const [demoSession, setDemoSession] = React.useState<
+    z.infer<typeof zDemoSessionState> | undefined
+  >();
 
-    const storedValue = window.localStorage.getItem("demo-session");
-    if (!storedValue) {
-      window.localStorage.setItem("demo-session", JSON.stringify(initialValue));
-      return initialValue;
-    }
+  React.useEffect(() => {
+    const abortController = new AbortController();
 
-    try {
-      const parsedValue = JSON.parse(storedValue) as typeof initialValue;
-      if (!SESSION_ID_REGEX.test(parsedValue.sessionId)) {
-        window.localStorage.setItem(
-          "demo-session",
-          JSON.stringify(initialValue),
-        );
-        return initialValue;
+    void (async () => {
+      const storedValue = window.localStorage.getItem("demo-session");
+      if (storedValue) {
+        try {
+          const parsedValue = zDemoSessionState.safeParse(
+            JSON.parse(storedValue),
+          );
+          if (parsedValue.success) {
+            setDemoSession(parsedValue.data);
+            return;
+          }
+        } catch {
+          // Fall through and replace the invalid cached value.
+        }
       }
-      return parsedValue;
-    } catch {
-      window.localStorage.setItem("demo-session", JSON.stringify(initialValue));
-      return initialValue;
-    }
-  });
+
+      const nextDemoSession = zDemoSessionState.parse({
+        sessionToken: await requestSessionToken(abortController.signal),
+        sessionHexKey: randomHex(512),
+      });
+
+      window.localStorage.setItem(
+        "demo-session",
+        JSON.stringify(nextDemoSession),
+      );
+      if (!abortController.signal.aborted) {
+        setDemoSession(nextDemoSession);
+      }
+    })();
+
+    return () => {
+      abortController.abort();
+    };
+  }, []);
+
+  return demoSession;
 }
