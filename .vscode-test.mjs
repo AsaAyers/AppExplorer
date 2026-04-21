@@ -5,8 +5,10 @@ const projectDir = process.cwd();
 env.loadEnvConfig(projectDir);
 const DEBUG = "app-explorer:*";
 
+const skipTests = process.env.SKIP_TESTS === "true";
+
 export default defineConfig({
-  files: ".tests-out/**/*.test.cjs",
+  files: skipTests ? ".tests-out/**/*.test.cjs" : "skip-tests/*.cjs",
   workspaceFolder: "./sample-workspace",
   env: {
     DEBUG,
