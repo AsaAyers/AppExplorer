@@ -94,6 +94,7 @@ export function AppExplorerSidebar() {
         previous?.socketClient.disconnect();
         return nextHandler;
       });
+      setCardsAroundCursor(nextHandler.latestCardsAroundCursor ?? []);
     });
 
     return () => {
@@ -110,8 +111,6 @@ export function AppExplorerSidebar() {
     if (!sidebarHandler) {
       return;
     }
-
-    setCardsAroundCursor(sidebarHandler.latestCardsAroundCursor ?? []);
 
     const handleCardsAroundCursor = (cards: CardData[]) => {
       setCardsAroundCursor(cards);

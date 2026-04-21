@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
@@ -170,14 +171,16 @@ export function DemoSessionProvider({
       return;
     }
 
-    setSession(
-      zAppExplorerSession.parse({
-        sessionToken: demoSession.sessionToken,
-        key: demoSession.sessionHexKey,
-        insiders: false,
-        hostIndex: getIndexFromOrigin(window.location.origin),
-      }),
-    );
+    setTimeout(() => {
+      setSession(
+        zAppExplorerSession.parse({
+          sessionToken: demoSession.sessionToken,
+          key: demoSession.sessionHexKey,
+          insiders: false,
+          hostIndex: getIndexFromOrigin(window.location.origin),
+        }),
+      );
+    }, 1);
   }, [demoSession]);
 
   React.useEffect(() => {
@@ -257,6 +260,8 @@ export function DemoSessionProvider({
     [workspaceHandler],
   );
 
+  const router = useRouter();
+  const path = useSearchParams().get("path") ?? undefined;
   const navigateTo = React.useCallback(
     (card: CardData) => {
       if (!sidebarHandler) {
@@ -264,9 +269,15 @@ export function DemoSessionProvider({
         return;
       }
 
+      if (card.path !== path) {
+        router.push(
+          `/demo?${new URLSearchParams({ path: card.path ?? "" }).toString()}`,
+        );
+      }
+
       void sidebarHandler.emitEncrypted("navigateTo", card);
     },
-    [dispatch, sidebarHandler],
+    [dispatch, path, router, sidebarHandler],
   );
 
   const contextValue = React.useMemo(() => {

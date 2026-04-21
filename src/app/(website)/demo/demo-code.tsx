@@ -1,6 +1,5 @@
 "use client";
 import classNames from "classnames";
-import { useRouter } from "next/navigation";
 import React from "react";
 
 import "@/app/(website)/demo/demo-code.css";
@@ -186,15 +185,6 @@ export function DemoCodeImpl({
       dispatch({ type: "selectionStart", value: selectionPosition.start });
     }
   }, [dispatch, selectionPosition.start]);
-
-  const router = useRouter();
-
-  // Keep URL as the source of truth for the active file.
-  React.useEffect(() => {
-    if (selected && selected.path !== path) {
-      router.replace("?path=" + selected.path);
-    }
-  }, [path, router, selected]);
 
   // Build a nested symbol tree so each symbol gets a single wrapper span.
   type SymbolNode = {

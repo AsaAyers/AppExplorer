@@ -49,7 +49,7 @@ export function useDemoSession() {
     })();
 
     return () => {
-      abortController.abort();
+      abortController.abort("useEffect cleanup");
     };
   }, []);
 

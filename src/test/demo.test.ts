@@ -107,7 +107,10 @@ suite("Demo walkthrough", function () {
     );
 
     await focusBoardCard(demoPage, "saveDoc");
-    await demoPage.locator(".tab-active").getByText("saveDoc.ts").waitFor();
+    // Find the emit tab and wait for it to get the .tab-active class
+    await demoPage.waitForSelector(
+      '.tab.tab-active:has(a:has-text("emit.ts"))',
+    );
     await expectTaskCompleted(
       demoPage,
       "Select a card to navigate between files",
