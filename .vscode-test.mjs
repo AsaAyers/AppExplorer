@@ -8,7 +8,7 @@ const DEBUG = "app-explorer:*";
 const skipTests = process.env.SKIP_TESTS === "true";
 
 export default defineConfig({
-  files: skipTests ? ".tests-out/**/*.test.cjs" : "skip-tests/*.cjs",
+  files: skipTests ? "skip-tests/*.cjs" : ".tests-out/**/*.test.cjs",
   workspaceFolder: "./sample-workspace",
   env: {
     DEBUG,
