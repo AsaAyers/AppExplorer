@@ -30,6 +30,7 @@
     "docker": "docker build -t app-explorer:latest . && docker run --rm -p 3000:3000 app-explorer:latest",
     "lint": "eslint src --fix --max-warnings 0",
     "font-icon": "npx svgtofont --sources public/logo/ --output ./font --fontName app-explorer",
+    "logo-128": "node scripts/make-logo-128x128.mjs",
     "validate": "npm-run-all format lint typecheck test",
     "vscode:prepublish": "npm-run-all --serial validate 'build:extension --production'",
     "prepare": "[ -d '.husky' ] && husky install || true",
