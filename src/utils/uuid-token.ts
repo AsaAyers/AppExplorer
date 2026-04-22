@@ -97,54 +97,50 @@ const formatUuid = (uuidBytes: Uint8Array) => {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 };
 
-export const encryptUuidToken = (
+export const encryptUuidToken = async (
   uuid: string,
   secretKey: SessionSecretInput = getSessionKey(),
 ) => {
-  return (async () => {
-    const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-    const encryptedBytes = new Uint8Array(
-      await crypto.subtle.encrypt(
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const encryptedBytes = new Uint8Array(
+    await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv,
+        tagLength: AUTH_TAG_BYTES * 8,
+      },
+      await getUuidTokenKey(secretKey),
+      parseUuid(uuid),
+    ),
+  );
+
+  return toBase64Url(concatBytes(iv, encryptedBytes));
+};
+
+export const decryptUuidToken = async (
+  token: string,
+  secretKey: SessionSecretInput = getSessionKey(),
+) => {
+  const tokenBytes = fromBase64Url(token);
+  invariant(
+    tokenBytes.length === TOKEN_BYTES,
+    `Invalid UUID token length: ${tokenBytes.length}`,
+  );
+
+  const iv = tokenBytes.subarray(0, IV_BYTES);
+  const encryptedBytes = tokenBytes.subarray(IV_BYTES);
+
+  return formatUuid(
+    new Uint8Array(
+      await crypto.subtle.decrypt(
         {
           name: "AES-GCM",
           iv,
           tagLength: AUTH_TAG_BYTES * 8,
         },
         await getUuidTokenKey(secretKey),
-        parseUuid(uuid),
+        encryptedBytes,
       ),
-    );
-
-    return toBase64Url(concatBytes(iv, encryptedBytes));
-  })();
-};
-
-export const decryptUuidToken = (
-  token: string,
-  secretKey: SessionSecretInput = getSessionKey(),
-) => {
-  return (async () => {
-    const tokenBytes = fromBase64Url(token);
-    invariant(
-      tokenBytes.length === TOKEN_BYTES,
-      `Invalid UUID token length: ${tokenBytes.length}`,
-    );
-
-    const iv = tokenBytes.subarray(0, IV_BYTES);
-    const encryptedBytes = tokenBytes.subarray(IV_BYTES);
-
-    return formatUuid(
-      new Uint8Array(
-        await crypto.subtle.decrypt(
-          {
-            name: "AES-GCM",
-            iv,
-            tagLength: AUTH_TAG_BYTES * 8,
-          },
-          await getUuidTokenKey(secretKey),
-          encryptedBytes,
-        ),
-      ),
-    );
-  })();
+    ),
+  );
 };

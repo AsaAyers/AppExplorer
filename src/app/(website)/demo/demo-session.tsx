@@ -171,7 +171,7 @@ export function DemoSessionProvider({
       return;
     }
 
-    setTimeout(() => {
+    const t = setTimeout(() => {
       setSession(
         zAppExplorerSession.parse({
           sessionToken: demoSession.sessionToken,
@@ -181,6 +181,7 @@ export function DemoSessionProvider({
         }),
       );
     }, 1);
+    return () => clearTimeout(t);
   }, [demoSession]);
 
   React.useEffect(() => {

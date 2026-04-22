@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
 
+import { useClientOnly } from "@/utils/useClientOnly";
+
 function isParentSameOrigin() {
   try {
     void window.parent.location.href;
@@ -11,17 +13,9 @@ function isParentSameOrigin() {
 }
 
 export function useIsInMiroIframe() {
-  const [isInMiroIframe, setIsInMiroIframe] = React.useState<boolean | null>(
-    null,
-  );
+  const isClient = useClientOnly();
 
-  React.useEffect(() => {
-    if (isInMiroIframe === null) {
-      setTimeout(() => {
-        setIsInMiroIframe(!isParentSameOrigin());
-      });
-    }
-  }, [isInMiroIframe]);
-
-  return isInMiroIframe;
+  return React.useMemo(() => {
+    return isClient ? !isParentSameOrigin() : null;
+  }, [isClient]);
 }

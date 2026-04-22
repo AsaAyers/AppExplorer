@@ -49,7 +49,7 @@ export function useDemoSession() {
     })();
 
     return () => {
-      abortController.abort(null);
+      abortController.abort();
     };
   }, []);
 
