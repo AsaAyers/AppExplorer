@@ -84,5 +84,5 @@ export const makeSessionUrl = (session: AppExplorerSession) => {
 export const parseSessionUri = (url: string): AppExplorerSession => {
   return zAppExplorerSessionUri.decode(url);
 };
-export const makeSessionToken = () =>
+export const makeSessionToken = async () =>
   encryptUuidToken(crypto.randomUUID(), process.env.SESSION_SECRET);

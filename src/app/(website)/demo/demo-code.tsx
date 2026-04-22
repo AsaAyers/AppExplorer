@@ -1,6 +1,5 @@
 "use client";
 import classNames from "classnames";
-import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 
 import "@/app/(website)/demo/demo-code.css";
@@ -14,26 +13,14 @@ const log = createDebug("app-explorer:demo");
 
 export function DemoCode() {
   const { code, symbols, path } = useDemoFile();
-  const lastSelectedCardId = React.useRef<string | undefined>(undefined);
-  return (
-    <DemoCodeImpl
-      key={path}
-      path={path}
-      symbols={symbols}
-      code={code}
-      lastSelectedCardId={lastSelectedCardId}
-    />
-  );
+  return <DemoCodeImpl key={path} path={path} symbols={symbols} code={code} />;
 }
 
 export function DemoCodeImpl({
   code,
   symbols,
   path,
-  lastSelectedCardId,
-}: ReturnType<typeof useDemoFile> & {
-  lastSelectedCardId: React.MutableRefObject<string | undefined>;
-}) {
+}: ReturnType<typeof useDemoFile>) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [{ selected }, dispatch] = useDemoBoardStorage();
   const { emitCardsAroundCursor } = useDemoSessionTransport();
@@ -125,19 +112,48 @@ export function DemoCodeImpl({
     },
   );
 
+  const selectedSymbol = React.useMemo(() => {
+    if (!selected || selected.path !== path) {
+      return undefined;
+    }
+
+    return symbols.find(
+      (symbol) =>
+        symbol.card.title === selected.title &&
+        symbol.card.path === selected.path,
+    );
+  }, [path, selected, symbols]);
+
+  const selectionAnchors = React.useMemo(() => {
+    if (selectedSymbol) {
+      return {
+        start: selectedSymbol.start,
+        end: selectedSymbol.end,
+      };
+    }
+
+    return {
+      start: state.start,
+      end: state.end,
+    };
+  }, [selectedSymbol, state.end, state.start]);
+
   const selectionPosition = React.useMemo(() => {
     const position = {
-      start: Math.max(0, Math.min(state.start, state.end)),
-      end: Math.max(1, Math.max(state.start, state.end)),
+      start: Math.max(
+        0,
+        Math.min(selectionAnchors.start, selectionAnchors.end),
+      ),
+      end: Math.max(1, Math.max(selectionAnchors.start, selectionAnchors.end)),
     };
     position.end = Math.max(position.start + 1, position.end);
 
     return position;
-  }, [state.end, state.start]);
+  }, [selectionAnchors.end, selectionAnchors.start]);
 
   log("selectionPosition", selectionPosition.start, selectionPosition.end);
 
-  const selectionStart = state.start;
+  const selectionStart = selectionPosition.start;
   const { cardsAroundCursor } = React.useMemo(() => {
     const cards = symbols
       .filter((s) => {
@@ -162,45 +178,13 @@ export function DemoCodeImpl({
   React.useEffect(() => {
     log("useEffect cardsAroundCursor");
     emitCardsAroundCursor(cardsAroundCursor);
-  }, [cardsAroundCursor, emitCardsAroundCursor, path, symbols]);
+  }, [cardsAroundCursor, emitCardsAroundCursor]);
 
   React.useEffect(() => {
     if (selectionPosition.start != null) {
       dispatch({ type: "selectionStart", value: selectionPosition.start });
     }
   }, [dispatch, selectionPosition.start]);
-
-  const searchPath = useSearchParams().get("path");
-  const router = useRouter();
-
-  // Update selection when a symbol is selected
-  React.useEffect(() => {
-    if (!selected) {
-      lastSelectedCardId.current = undefined;
-      return;
-    }
-
-    const selectionChanged = lastSelectedCardId.current !== selected.id;
-    lastSelectedCardId.current = selected.id;
-
-    if (selectionChanged && searchPath !== selected.path) {
-      router.replace("?path=" + selected.path);
-      return;
-    }
-
-    const symbol = symbols.find(
-      (e) => e.card.title === selected.title && e.card.path === selected.path,
-    );
-    log({ symbol });
-    if (symbol) {
-      updateState({
-        start: symbol.start,
-        end: symbol.end,
-        selectionStart: null,
-      });
-      log({ searchPath }, symbol.card.path);
-    }
-  }, [lastSelectedCardId, path, router, searchPath, selected, symbols]);
 
   // Build a nested symbol tree so each symbol gets a single wrapper span.
   type SymbolNode = {
@@ -287,7 +271,7 @@ export function DemoCodeImpl({
 
   // Render symbol nodes recursively, ensuring each symbol gets a single span
   const renderSymbolNodes = React.useCallback(
-    (nodes: SymbolNode[], base = 0): React.ReactNode => {
+    function renderSymbolNodes(nodes: SymbolNode[], base = 0): React.ReactNode {
       const out: React.ReactNode[] = [];
       let cursor = base;
 

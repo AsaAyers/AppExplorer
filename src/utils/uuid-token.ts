@@ -1,10 +1,3 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHash,
-  randomBytes,
-} from "node:crypto";
-
 import invariant from "tiny-invariant";
 
 import {
@@ -22,76 +15,132 @@ const UUID_TOKEN_CONTEXT = "app-explorer:uuid-token:v1";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const derivedUuidTokenKeys = new Map<string, Buffer>();
+const derivedUuidTokenKeys = new Map<string, Promise<CryptoKey>>();
 
-const getUuidTokenKey = (secretKey: SessionSecretInput = getSessionKey()) => {
+const toHex = (bytes: Uint8Array) =>
+  [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+
+const concatBytes = (...parts: Uint8Array[]) => {
+  const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.length;
+  }
+
+  return result;
+};
+
+const toBase64Url = (bytes: Uint8Array) => {
+  const base64 = btoa(String.fromCharCode(...bytes));
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+};
+
+const fromBase64Url = (value: string) => {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const paddedBase64 = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    "=",
+  );
+  return Uint8Array.from(atob(paddedBase64), (char) => char.charCodeAt(0));
+};
+
+const getUuidTokenKey = async (
+  secretKey: SessionSecretInput = getSessionKey(),
+) => {
   const normalizedKey = normalizeSessionKey(secretKey);
-  const cacheKey = Buffer.from(normalizedKey).toString("hex");
+  const cacheKey = toHex(normalizedKey);
   const existingKey = derivedUuidTokenKeys.get(cacheKey);
   if (existingKey) {
     return existingKey;
   }
 
-  const derivedKey = createHash("sha256")
-    .update(normalizedKey)
-    .update(UUID_TOKEN_CONTEXT)
-    .digest()
-    .subarray(0, AES_KEY_BYTES);
+  const derivedKey = (async () => {
+    const hash = await crypto.subtle.digest(
+      "SHA-256",
+      concatBytes(normalizedKey, new TextEncoder().encode(UUID_TOKEN_CONTEXT)),
+    );
+
+    return crypto.subtle.importKey(
+      "raw",
+      new Uint8Array(hash).subarray(0, AES_KEY_BYTES),
+      {
+        name: "AES-GCM",
+      },
+      false,
+      ["encrypt", "decrypt"],
+    );
+  })();
   derivedUuidTokenKeys.set(cacheKey, derivedKey);
   return derivedKey;
 };
 
 const parseUuid = (uuid: string) => {
   invariant(UUID_REGEX.test(uuid), `Invalid UUID: ${uuid}`);
-  return Buffer.from(uuid.replaceAll("-", ""), "hex");
+  return Uint8Array.from(
+    uuid
+      .replaceAll("-", "")
+      .match(/.{2}/g)!
+      .map((byte) => parseInt(byte, 16)),
+  );
 };
 
-const formatUuid = (uuidBytes: Buffer) => {
+const formatUuid = (uuidBytes: Uint8Array) => {
   invariant(
     uuidBytes.length === UUID_BYTES,
     `Expected ${UUID_BYTES} UUID bytes, got ${uuidBytes.length}`,
   );
 
-  const hex = uuidBytes.toString("hex");
+  const hex = toHex(uuidBytes);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 };
 
-export const encryptUuidToken = (
+export const encryptUuidToken = async (
   uuid: string,
   secretKey: SessionSecretInput = getSessionKey(),
 ) => {
-  const iv = randomBytes(IV_BYTES);
-  const cipher = createCipheriv("aes-256-gcm", getUuidTokenKey(secretKey), iv);
-  const ciphertext = Buffer.concat([
-    cipher.update(parseUuid(uuid)),
-    cipher.final(),
-  ]);
-  const authTag = cipher.getAuthTag();
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+  const encryptedBytes = new Uint8Array(
+    await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv,
+        tagLength: AUTH_TAG_BYTES * 8,
+      },
+      await getUuidTokenKey(secretKey),
+      parseUuid(uuid),
+    ),
+  );
 
-  return Buffer.concat([iv, ciphertext, authTag]).toString("base64url");
+  return toBase64Url(concatBytes(iv, encryptedBytes));
 };
 
-export const decryptUuidToken = (
+export const decryptUuidToken = async (
   token: string,
   secretKey: SessionSecretInput = getSessionKey(),
 ) => {
-  const tokenBytes = Buffer.from(token, "base64url");
+  const tokenBytes = fromBase64Url(token);
   invariant(
     tokenBytes.length === TOKEN_BYTES,
     `Invalid UUID token length: ${tokenBytes.length}`,
   );
 
   const iv = tokenBytes.subarray(0, IV_BYTES);
-  const ciphertext = tokenBytes.subarray(IV_BYTES, IV_BYTES + UUID_BYTES);
-  const authTag = tokenBytes.subarray(IV_BYTES + UUID_BYTES);
-  const decipher = createDecipheriv(
-    "aes-256-gcm",
-    getUuidTokenKey(secretKey),
-    iv,
-  );
-  decipher.setAuthTag(authTag);
+  const encryptedBytes = tokenBytes.subarray(IV_BYTES);
 
   return formatUuid(
-    Buffer.concat([decipher.update(ciphertext), decipher.final()]),
+    new Uint8Array(
+      await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv,
+          tagLength: AUTH_TAG_BYTES * 8,
+        },
+        await getUuidTokenKey(secretKey),
+        encryptedBytes,
+      ),
+    ),
   );
 };
