@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
 
+import { OnboardingState } from "@/onboarding-state";
 import { createDebug } from "@/utils/create-debug";
 import { WorkspaceCardStorage } from "@/workspace-card-storage";
 const debug = createDebug("app-explorer:status-bar-manager");
 
 export class StatusBarManager {
   public statusBar: vscode.StatusBarItem;
+  readonly #disposables: vscode.Disposable[] = [];
   private eventListeners: {
     boardUpdate: () => void;
     cardUpdate: () => void;
@@ -14,8 +16,13 @@ export class StatusBarManager {
   };
 
   #cardStorage: WorkspaceCardStorage;
-  constructor(cardStorage: WorkspaceCardStorage) {
+  #onboardingState: OnboardingState;
+  constructor(
+    cardStorage: WorkspaceCardStorage,
+    onboardingState: OnboardingState,
+  ) {
     this.#cardStorage = cardStorage;
+    this.#onboardingState = onboardingState;
     this.statusBar = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
       100,
@@ -41,6 +48,14 @@ export class StatusBarManager {
       "workspaceBoards",
       this.eventListeners.workspaceBoards,
     );
+    this.#disposables.push(
+      this.#onboardingState.onDidChange(() => {
+        this.renderStatusBar();
+      }),
+      vscode.window.onDidChangeWindowState(() => {
+        this.renderStatusBar();
+      }),
+    );
     this.renderStatusBar();
   }
 
@@ -56,12 +71,25 @@ export class StatusBarManager {
       "workspaceBoards",
       this.eventListeners.workspaceBoards,
     );
+    this.#disposables.forEach((disposable) => {
+      disposable.dispose();
+    });
 
     // Dispose of status bar
     this.statusBar.dispose();
   }
 
   renderStatusBar() {
+    if (!this.#onboardingState.hasCompletedFirstSession()) {
+      this.statusBar.text = "$(app-explorer) Set up AppExplorer";
+      this.statusBar.tooltip =
+        "Open the AppExplorer welcome walkthrough and install the Miro app";
+      this.statusBar.command = "app-explorer.openWelcome";
+      debug(this.statusBar.text);
+      this.statusBar.show();
+      return;
+    }
+
     const connectedBoards = this.#cardStorage.getConnectedBoards();
     if (connectedBoards.length >= 0) {
       // this.statusBar.text = "$(app-explorer) (No Miro connections)";
@@ -79,6 +107,8 @@ export class StatusBarManager {
       })`;
     }
 
+    this.statusBar.command = undefined;
+    this.statusBar.tooltip = "AppExplorer board and card status";
     debug(this.statusBar.text);
     this.statusBar.show();
   }

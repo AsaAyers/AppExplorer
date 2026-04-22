@@ -50,6 +50,14 @@
         "title": "AppExplorer: Update Extension"
       },
       {
+        "command": "app-explorer.openWelcome",
+        "title": "AppExplorer: Open Welcome"
+      },
+      {
+        "command": "app-explorer.installMiroApp",
+        "title": "AppExplorer: Install Miro App"
+      },
+      {
         "command": "app-explorer.disconnectSession",
         "title": "AppExplorer: Disconnect Session"
       }
@@ -65,11 +73,52 @@
           "when": "config.appExplorer.updateExtension"
         },
         {
+          "command": "app-explorer.openWelcome",
+          "when": "appExplorer.enabled"
+        },
+        {
+          "command": "app-explorer.installMiroApp",
+          "when": "appExplorer.enabled && !appExplorer.hasCompletedFirstSession"
+        },
+        {
           "command": "app-explorer.disconnectSession",
           "when": "appExplorer.enabled"
         }
       ]
     },
+    "walkthroughs": [
+      {
+        "id": "appExplorerGettingStarted",
+        "title": "Set up AppExplorer",
+        "description": "Install the AppExplorer Miro app and start your first VS Code session.",
+        "steps": [
+          {
+            "id": "installMiroApp",
+            "title": "Install the AppExplorer Miro app",
+            "description": "Use [Install the AppExplorer Miro app](command:app-explorer.installMiroApp) to add AppExplorer to your Miro team.",
+            "media": {
+              "image": "public/logo-128x128.png",
+              "altText": "AppExplorer logo"
+            },
+            "completionEvents": [
+              "onCommand:app-explorer.installMiroApp"
+            ]
+          },
+          {
+            "id": "startFirstSession",
+            "title": "Start your first AppExplorer session",
+            "description": "Open AppExplorer inside a Miro board and choose **Start VSCode session**. This step completes automatically after VS Code connects to your first session.",
+            "media": {
+              "image": "public/logo-128x128.png",
+              "altText": "AppExplorer logo"
+            },
+            "completionEvents": [
+              "onContext:appExplorer.hasCompletedFirstSession"
+            ]
+          }
+        ]
+      }
+    ],
     "colors": [
       {
         "id": "appExplorer.background",

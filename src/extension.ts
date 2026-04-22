@@ -11,6 +11,12 @@ import { EditorDecorator } from "@/editor-decorator";
 import { AppExplorerSessionCoordinator } from "@/extension-session";
 import { LocationFinder } from "@/location-finder";
 import { logger as baseLogger, logger } from "@/logger";
+import {
+  GlobalOnboardingPersistence,
+  OnboardingState,
+  openAppExplorerWalkthrough,
+  openMiroAppInstallPage,
+} from "@/onboarding-state";
 import { MiroServer } from "@/server/server";
 import { StatusBarManager } from "@/status-bar-manager";
 import { listenToAllEvents } from "@/test/helpers/listen-to-all-events";
@@ -58,6 +64,23 @@ export async function activate(
     vscode.window.registerUriHandler(sessionCoordinator),
   );
   await sessionCoordinator.initialize();
+  const onboardingState = new OnboardingState(
+    new GlobalOnboardingPersistence(context),
+    context.extension.packageJSON.version ?? "0.0.0",
+  );
+  await onboardingState.initialize();
+  await syncOnboardingContext(onboardingState);
+  context.subscriptions.push(
+    onboardingState,
+    onboardingState.onDidChange(() => {
+      void syncOnboardingContext(onboardingState);
+    }),
+    sessionCoordinator.onDidStartSession(() => {
+      void onboardingState.completeFirstSession().catch((error) => {
+        debug("Failed to persist onboarding completion", error);
+      });
+    }),
+  );
 
   cardStorage.on("disconnect", () => {
     if (!sessionCoordinator.hasActiveSession()) {
@@ -69,7 +92,9 @@ export async function activate(
 
   debug("AppExplorer extension activating");
 
-  context.subscriptions.push(new StatusBarManager(cardStorage));
+  context.subscriptions.push(
+    new StatusBarManager(cardStorage, onboardingState),
+  );
 
   // Create handler context with the proxy as the only CardStorage
   const handlerContext: HandlerContext = {
@@ -112,6 +137,13 @@ export async function activate(
       { scheme: "file" },
       new AppExplorerLens(handlerContext),
     ),
+    vscode.commands.registerCommand("app-explorer.openWelcome", async () => {
+      await onboardingState.markWelcomeShown();
+      await openAppExplorerWalkthrough(context.extension.id);
+    }),
+    vscode.commands.registerCommand("app-explorer.installMiroApp", async () => {
+      await openMiroAppInstallPage();
+    }),
     vscode.commands.registerCommand("app-explorer.disconnectSession", () =>
       sessionCoordinator.disconnectSession(),
     ),
@@ -125,6 +157,9 @@ export async function activate(
   vscode.workspace.onDidChangeWorkspaceFolders(() => {
     setUpdateCommandContext(context);
   });
+  if (onboardingState.shouldShowWelcomeOnActivate()) {
+    await vscode.commands.executeCommand("app-explorer.openWelcome");
+  }
 
   return {
     __watchOutput(debugValue: string, callback: (line: string) => void) {
@@ -191,6 +226,11 @@ export function deactivate() {
   vscode.commands.executeCommand("setContext", "appExplorer.enabled", false);
   vscode.commands.executeCommand(
     "setContext",
+    "appExplorer.hasCompletedFirstSession",
+    false,
+  );
+  vscode.commands.executeCommand(
+    "setContext",
     "app-explorer.enableUpdate",
     false,
   );
@@ -203,4 +243,12 @@ export function selectRangeInEditor(
   const newSelection = new vscode.Selection(range.start, range.end);
   editor.selection = newSelection;
   editor.revealRange(newSelection);
+}
+
+async function syncOnboardingContext(onboardingState: OnboardingState) {
+  await vscode.commands.executeCommand(
+    "setContext",
+    "appExplorer.hasCompletedFirstSession",
+    onboardingState.hasCompletedFirstSession(),
+  );
 }

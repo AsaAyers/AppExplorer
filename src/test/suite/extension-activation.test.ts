@@ -41,7 +41,9 @@ suite("Extension Activation Tests", () => {
     // Verify key commands are registered
     const expectedCommands = [
       "app-explorer.disconnectSession",
+      "app-explorer.installMiroApp",
       "app-explorer.navigate",
+      "app-explorer.openWelcome",
       "app-explorer.updateExtension",
     ];
 

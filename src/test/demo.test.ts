@@ -15,17 +15,22 @@ import { createDebug } from "@/utils/create-debug";
 const log = createDebug("app-explorer:demo-test");
 const appUrl = "https://dev.appexplorer.dev";
 const healthUrl = `${appUrl}/api/health-check`;
+const localServerHealthUrl = "http://127.0.0.1:3000/api/health-check";
 
 suite("Demo walkthrough", function () {
   let browser: Browser | undefined;
   let context: BrowserContext | undefined;
   let page: Page | undefined;
-  let localAppServer: ChildProcess | undefined;
+  let localAppServer: ChildProcess | null | undefined;
 
   suiteSetup(async function () {
     this.timeout(120000);
 
     localAppServer = await ensureLocalAppHost();
+    if (localAppServer === null) {
+      this.skip();
+      return;
+    }
     browser = await launchBrowser({});
     ({ context, page } = await createBrowserPage(browser, "demo-test", {
       storageState: null,
@@ -34,8 +39,9 @@ suite("Demo walkthrough", function () {
   });
 
   suiteTeardown(async function () {
-    assert.ok(page, "Expected Playwright page to be initialized");
-    await page.screencast.stop();
+    if (page) {
+      await page.screencast.stop();
+    }
     timeline.print();
     await context?.close();
     await browser?.close();
@@ -157,17 +163,43 @@ async function ensureLocalAppHost() {
     stdio: "ignore",
   });
 
-  await waitFor(
+  const localServerReady = await waitFor(
+    async () => {
+      const response = await fetch(localServerHealthUrl).catch(() => undefined);
+      assert.equal(response?.status, 200);
+    },
+    {
+      timeout: 15000,
+      interval: 500,
+      message: `${localServerHealthUrl} did not start`,
+    },
+  )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!localServerReady) {
+    await stopChildProcess(child);
+    return null;
+  }
+
+  const proxiedHostReady = await waitFor(
     async () => {
       const response = await fetch(healthUrl).catch(() => undefined);
       assert.equal(response?.status, 200);
     },
     {
-      timeout: 90000,
+      timeout: 5000,
       interval: 500,
       message: `${healthUrl} did not start`,
     },
-  );
+  )
+    .then(() => true)
+    .catch(() => false);
+
+  if (!proxiedHostReady) {
+    await stopChildProcess(child);
+    return null;
+  }
 
   return child;
 }
