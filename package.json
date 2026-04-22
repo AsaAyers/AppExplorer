@@ -1,7 +1,7 @@
 {
   "publisher": "AsaAyers",
   "name": "app-explorer",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "preview": true,
   "icon": "public/logo-256x256.png",
   "private": true,
@@ -19,7 +19,7 @@
   "main": "app-explorer.cjs",
   "scripts": {
     "dev": "DEBUG='*app-explorer:*' PORT=3000 node server.js",
-    "build": "npm-run-all --parallel build:next build:extension",
+    "build": "npm-run-all --serial validate test build:extension build:next",
     "build:next": "next build",
     "build:extension": "node esbuild.cjs",
     "postbuild": "./patch-standalone.sh",
@@ -32,7 +32,7 @@
     "lint": "eslint src --fix --max-warnings 0",
     "font-icon": "npx svgtofont --sources public/logo/ --output ./font --fontName app-explorer",
     "logo-128": "node scripts/make-logo-128x128.mjs",
-    "validate": "npm-run-all format lint typecheck test",
+    "validate": "npm-run-all format lint typecheck",
     "vscode:prepublish": "npm-run-all --serial validate 'build:extension --production'",
     "prepare": "[ -d '.husky' ] && husky install || true",
     "pretest": "npm run build",

@@ -23,6 +23,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache aws-cli xwallpaper
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/*.vsix ./extension/
 COPY --from=builder /app/upload.js ./
 
 EXPOSE 3000

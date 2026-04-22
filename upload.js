@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { access } from "node:fs/promises";
 
 const STATIC_DIR = ".next/static";
+const EXTENSION_DIR = "extension";
 const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 function getRequiredEnv(name) {
@@ -76,6 +77,7 @@ async function uploadStaticAssets() {
   }
 
   await access(STATIC_DIR);
+  await access(EXTENSION_DIR);
 
   const assetBucket = getRequiredEnv("ASSET_BUCKET");
   const endpointUrl = getRequiredEnv("S3_ENDPOINT_URL");
@@ -98,6 +100,12 @@ async function uploadStaticAssets() {
 
   console.log("[asset-upload] Uploading static assets...");
   await run("aws", args);
+
+  console.log("[asset-upload] Uploading extension...");
+  args[2] = EXTENSION_DIR;
+  args.push("--no-overwrite");
+  await run("aws", args);
+
   console.log("[asset-upload] Upload complete.");
 }
 
