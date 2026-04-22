@@ -1,7 +1,7 @@
 {
   "publisher": "AsaAyers",
   "name": "app-explorer",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "preview": true,
   "icon": "public/logo-256x256.png",
   "private": true,
