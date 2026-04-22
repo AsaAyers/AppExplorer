@@ -13,8 +13,9 @@ ARG ASSET_PREFIX
 ENV ASSET_PREFIX=${ASSET_PREFIX}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN corepack enable yarn && yarn run build
+RUN corepack enable yarn
 RUN npx vsce pack --allow-missing-repository
+RUN yarn run build:next
 RUN cp -r public/ .next/standalone/ && cp -r .next/static/ .next/standalone/.next/
 
 # Stage 3: Production server
