@@ -84,8 +84,14 @@ export async function createBrowserPage(
   });
 
   context.on("weberror", (error) => {
+    const webError = error.error();
+    // React's strict mode mounts and unmounts effects, which trigger this error
+    // in Playwright.
+    if (webError.message.includes("signal is aborted without reason")) {
+      return;
+    }
     // eslint-disable-next-line no-console
-    console.log(colorText("error", "[Browser] WebError:"), error.error());
+    console.log(colorText("error", "[Browser] WebError:"), webError);
   });
   // Enable access to local resources
   await context.grantPermissions([

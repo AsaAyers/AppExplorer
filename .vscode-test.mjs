@@ -17,7 +17,7 @@ export default defineConfig({
     MIRO_TEST_PASSWORD: process.env.MIRO_TEST_PASSWORD,
   },
   coverage: {
-    enabled: true,
+    reporter: ["json"],
   },
   mocha: {
     timeout: 30000, // 30 seconds timeout for all tests
