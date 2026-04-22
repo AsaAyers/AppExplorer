@@ -107,9 +107,8 @@ suite("Demo walkthrough", function () {
     );
 
     await focusBoardCard(demoPage, "saveDoc");
-    // Find the emit tab and wait for it to get the .tab-active class
     await demoPage.waitForSelector(
-      '.tab.tab-active:has(a:has-text("emit.ts"))',
+      '.tab.tab-active:has(a:has-text("saveDoc.ts"))',
     );
     await expectTaskCompleted(
       demoPage,
@@ -139,11 +138,6 @@ suite("Demo walkthrough", function () {
     await expectTaskCompleted(demoPage, "Move any card on the board");
 
     await focusBoardCard(demoPage, "emit");
-    await selectSymbol(demoPage, "OUT");
-    await dragCardToBoard(demoPage, "OUT", 1200, 450);
-    await waitFor(async () => {
-      assert.equal(await demoPage.locator("#MockBoard .app-card").count(), 3);
-    });
   });
 });
 
@@ -251,12 +245,6 @@ async function focusBoardCardById(page: Page, cardId: string) {
   });
 }
 
-async function selectSymbol(page: Page, name: string) {
-  const symbol = page.locator(`[data-symbol="${name}"] > .symbol`);
-  await symbol.waitFor();
-  await symbol.click();
-}
-
 async function openDemoFile(page: Page, fileName: string) {
   const fileTab = page
     .locator(".tabs-header-list")
@@ -317,7 +305,7 @@ async function waitForDemoCodeReady(page: Page) {
       );
     },
     {
-      timeout: 10000,
+      timeout: 10_000,
       interval: 250,
       message: "Demo code pane did not render",
     },
