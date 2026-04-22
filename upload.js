@@ -103,7 +103,6 @@ async function uploadStaticAssets() {
 
   console.log("[asset-upload] Uploading extension...");
   args[2] = EXTENSION_DIR;
-  args.push("--no-overwrite");
   await run("aws", args);
 
   console.log("[asset-upload] Upload complete.");
