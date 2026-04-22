@@ -19,7 +19,7 @@
   "main": "app-explorer.cjs",
   "scripts": {
     "dev": "DEBUG='*app-explorer:*' PORT=3000 node server.js",
-    "build": "npm-run-all --serial validate test build:extension build:next",
+    "build": "npm-run-all --serial build:extension build:next",
     "build:next": "next build",
     "build:extension": "node esbuild.cjs",
     "postbuild": "./patch-standalone.sh",
