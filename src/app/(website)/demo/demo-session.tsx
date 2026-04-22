@@ -6,7 +6,7 @@ import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
-import { useDemoSession } from "@/app/(website)/demo/useDemoSession";
+import { useDemoSession } from "@/app/(website)/demo/use-demo-session";
 import {
   type AppExplorerSession,
   getSocketUrl,

@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 
-import { useClientOnly } from "@/utils/useClientOnly";
+import { useClientOnly } from "@/utils/use-client-only";
 
 function isParentSameOrigin() {
   try {
