@@ -56,7 +56,9 @@ jobs:
           TAG_VERSION="${{ github.ref_name }}"
           # Strip leading 'v'
           TAG_VERSION="${TAG_VERSION#v}"
-          curl https://assets.appexplorer.dev/_next/static/app-explorer-$TAG_VERSION.vsix
+          curl --fail https://assets.appexplorer.dev/_next/static/app-explorer-$TAG_VERSION.vsix -O
+      - name: Install vsce
+        run: npm install -g vsce
       - name: Publish extension
         run: npx vsce publish --no-dependencies --packagePath app-explorer-*.vsix
         env:
