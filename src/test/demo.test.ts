@@ -28,7 +28,7 @@ suite("Demo walkthrough", function () {
     localAppServer = await ensureLocalAppHost();
     browser = await launchBrowser({});
     ({ context, page } = await createBrowserPage(browser, "demo-test", {
-      storageState: undefined,
+      storageState: null,
     }));
     await activateAppExplorer();
   });

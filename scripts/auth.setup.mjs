@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from "node:fs/promises";
 
 import { chromium } from "playwright";
@@ -40,6 +42,7 @@ export async function setup() {
   log("Waiting for dashboard");
   await page.waitForURL("https://miro.com/app/dashboard/", {
     waitUntil: "domcontentloaded",
+    timeout: 0,
   });
 
   log("Saving authentication state to", storageState);
@@ -49,6 +52,11 @@ export async function setup() {
   await context.close();
 }
 
-setup().catch((error) => {
-  console.error("Error during auth setup:", error);
-});
+setup()
+  .catch((error) => {
+    console.error("Error during auth setup:", error);
+    process.exit(1);
+  })
+  .then(() => {
+    process.exit(0);
+  });

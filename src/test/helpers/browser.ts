@@ -52,7 +52,7 @@ export async function createBrowserPage(
   {
     storageState = "playwright/.auth/user.json",
   }: {
-    storageState?: string;
+    storageState?: string | null;
   } = {},
 ): Promise<BrowserPage> {
   const context = await browser.newContext({

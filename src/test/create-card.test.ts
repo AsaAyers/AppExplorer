@@ -207,7 +207,7 @@ suiteFn("Create Card", function () {
       const horizontalGap = 500 * scale;
       const verticalGap = 250 * scale;
 
-      const userProfileXY = [centerX, topY] as const;
+      const userProfileXY = [centerX, topY + verticalGap] as const;
       const sessionXY = [centerX, topY + verticalGap * 2] as const;
       const generateIdXY = [
         centerX + horizontalGap,

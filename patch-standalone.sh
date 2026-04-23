@@ -10,4 +10,4 @@ grep -Ev  '^(import|declare)' server.js >> .next/standalone/server.$$.js
 
 mv .next/standalone/server.$$.js .next/standalone/server.js
 
-cp *.vsix .next/static/
+cp *.vsix .next/static/ || true
