@@ -106,11 +106,3 @@ export async function updateSession(updates: Partial<SessionPayload>) {
   });
 }
 
-const ASA = "3458764514899667689";
-export async function isAsa() {
-  const { userId } = await readSession();
-
-  if (userId !== ASA) {
-    forbidden();
-  }
-}
