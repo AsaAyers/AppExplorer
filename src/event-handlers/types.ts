@@ -1,5 +1,4 @@
 import { Namespace, Socket as ServerSocket } from "socket.io";
-import type { Socket as ClientSocket } from "socket.io-client";
 
 import {
   SocketEntity,
@@ -9,6 +8,7 @@ import {
   RoutedEvents,
   SocketIoEventMap,
 } from "@/socket-events";
+import type { ClientSocket } from "@/socketio";
 
 type SourceSocketEventMap<Sources extends SocketEntity> = MergeUnionOfObjects<
   {

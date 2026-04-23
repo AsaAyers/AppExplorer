@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import React from "react";
-import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { useDemoBoardStorage } from "@/app/(website)/demo/demo-storage";
@@ -21,6 +20,7 @@ import {
 } from "@/event-handlers/types";
 import { getIndexFromOrigin } from "@/host-config";
 import { connectSidebarHandler } from "@/sidebar/connect-sidebar-socket";
+import { socketIO } from "@/socketio";
 import { createDebug } from "@/utils/create-debug";
 
 const log = createDebug("app-explorer:demo:session");

@@ -1,9 +1,8 @@
 import * as assert from "node:assert";
 import { createServer } from "node:http";
 
-import { io as socketIO } from "socket.io-client";
-
 import { MiroServer } from "@/server/server";
+import { socketIO } from "@/socketio";
 
 suite("Session namespace validation", () => {
   test("disconnects clients that connect with an invalid session token", async () => {

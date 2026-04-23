@@ -1,8 +1,7 @@
-import { io as socketIO } from "socket.io-client";
-
 import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
 import { SidebarClientEventHandler } from "@/event-handlers/sidebar-client-event-handler";
 import { SidebarSocket } from "@/event-handlers/types";
+import { socketIO } from "@/socketio";
 import { createDebug } from "@/utils/create-debug";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

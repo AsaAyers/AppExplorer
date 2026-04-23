@@ -1,6 +1,5 @@
 import { Debugger } from "debug";
 import { Socket as ServerSocket } from "socket.io";
-import type { Socket as ClientSocket } from "socket.io-client";
 import invariant from "tiny-invariant";
 import { Disposable } from "vscode";
 import { z } from "zod";
@@ -26,6 +25,7 @@ import {
   socketEventMap,
   zEncryptedEvent,
 } from "@/socket-events";
+import type { ClientSocket } from "@/socketio";
 import {
   EventHandlerOptOutError,
   serializeEventHandlerError,

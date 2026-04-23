@@ -9,7 +9,6 @@ import type {
   Rect,
   Tag,
 } from "@mirohq/websdk-types";
-import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 
 import { AppExplorerSession, getSocketUrl } from "@/app-explorer-session";
@@ -19,6 +18,7 @@ import { MiroEventHandler } from "@/event-handlers/miro-event-handler";
 import { MiroSocket } from "@/event-handlers/types";
 import { isAppCard } from "@/miro/is-app-card";
 import { updateCard } from "@/miro/update-card";
+import { socketIO } from "@/socketio";
 import { createDebug } from "@/utils/create-debug";
 import { notEmpty } from "@/utils/not-empty";
 

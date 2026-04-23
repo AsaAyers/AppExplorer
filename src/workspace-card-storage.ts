@@ -1,4 +1,3 @@
-import { io as socketIO } from "socket.io-client";
 import invariant from "tiny-invariant";
 import * as vscode from "vscode";
 
@@ -13,6 +12,7 @@ import { WorkspaceSocket } from "@/event-handlers/types";
 import { WorkspaceEventHandler } from "@/event-handlers/workspace-event-handler";
 import { HandlerContext, selectRangeInEditor } from "@/extension";
 import { getGitHubUrl } from "@/get-github-url";
+import { socketIO } from "@/socketio";
 
 export class WorkspaceCardStorage
   extends CardStorage

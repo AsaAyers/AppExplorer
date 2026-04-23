@@ -1,8 +1,12 @@
+import { createDebug } from "@/utils/create-debug";
+
 const allowedSocketOrigins = new Set([
   "https://appexplorer.dev",
   "https://dev.appexplorer.dev",
 ]);
 const allowedLoopbackPorts = new Set(["3000", "3100"]);
+
+const log = createDebug("app-explorer:allowed-socket-origin");
 
 const isLoopbackOrigin = (origin: string) => {
   try {
@@ -19,6 +23,7 @@ const isLoopbackOrigin = (origin: string) => {
 };
 
 export const isAllowedSocketOrigin = (origin?: string) => {
+  log("Checking socket origin:", origin);
   // Node-based clients like the VS Code extension do not send an Origin header.
   if (!origin) {
     return true;
