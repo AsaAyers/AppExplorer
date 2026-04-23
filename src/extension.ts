@@ -68,8 +68,6 @@ export async function activate(
     new GlobalOnboardingPersistence(context),
     context.extension.packageJSON.version ?? "0.0.0",
   );
-  await onboardingState.initialize();
-  await syncOnboardingContext(onboardingState);
   context.subscriptions.push(
     onboardingState,
     onboardingState.onDidChange(() => {
@@ -81,6 +79,8 @@ export async function activate(
       });
     }),
   );
+  await onboardingState.initialize();
+  await syncOnboardingContext(onboardingState);
 
   cardStorage.on("disconnect", () => {
     if (!sessionCoordinator.hasActiveSession()) {
@@ -138,8 +138,8 @@ export async function activate(
       new AppExplorerLens(handlerContext),
     ),
     vscode.commands.registerCommand("app-explorer.openWelcome", async () => {
-      await onboardingState.markWelcomeShown();
       await openAppExplorerWalkthrough(context.extension.id);
+      await onboardingState.markWelcomeShown();
     }),
     vscode.commands.registerCommand("app-explorer.installMiroApp", async () => {
       await openMiroAppInstallPage();
@@ -158,7 +158,11 @@ export async function activate(
     setUpdateCommandContext(context);
   });
   if (onboardingState.shouldShowWelcomeOnActivate()) {
-    await vscode.commands.executeCommand("app-explorer.openWelcome");
+    try {
+      await vscode.commands.executeCommand("app-explorer.openWelcome");
+    } catch (error) {
+      debug("Failed to open welcome walkthrough during activation", error);
+    }
   }
 
   return {

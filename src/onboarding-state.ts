@@ -9,7 +9,7 @@ const log = createDebug("app-explorer:onboarding-state");
 
 export const appExplorerWalkthroughId = "appExplorerGettingStarted";
 export const miroAppInstallUrl =
-  "https://miro.com/app-install/?response_type=code&client_id=3458764531189693223&redirect_uri=http%3A%2F%2Flocalhost%3A9042%2F";
+  "https://miro.com/app-install/?response_type=code&client_id=3458764531189693223&redirect_uri=https%3A%2F%2Fappexplorer.dev%2Fredirect";
 
 export type OnboardingSnapshot = {
   hasCompletedFirstSession: boolean;
