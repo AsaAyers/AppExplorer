@@ -1,5 +1,7 @@
 import { createServer } from "node:http";
 
+import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
 import { Server, type Socket } from "socket.io";
 import * as vscode from "vscode";
 import { z } from "zod";
@@ -55,6 +57,7 @@ const getRecipients = (
 export class MiroServer {
   subscriptions = [] as vscode.Disposable[];
   readonly #io: Server;
+  #redisClients: Array<{ destroy(): void }> = [];
 
   public static publicPath = [__dirname, "public"].join("/");
   constructor(httpServer: ReturnType<typeof createServer>) {
@@ -164,8 +167,37 @@ export class MiroServer {
     });
   }
 
+  async initialize() {
+    await this.#configureAdapter();
+    return this;
+  }
+
+  async #configureAdapter() {
+    const redisUrl = process.env.REDIS_URL?.trim();
+    if (!redisUrl) {
+      debug("Socket.IO Redis adapter disabled because REDIS_URL is not set");
+      return;
+    }
+
+    const pubClient = createClient({ url: redisUrl });
+    const subClient = pubClient.duplicate();
+
+    try {
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+    } catch (error) {
+      pubClient.destroy();
+      subClient.destroy();
+      throw error;
+    }
+
+    this.#io.adapter(createAdapter(pubClient, subClient));
+    this.#redisClients = [pubClient, subClient];
+    debug("Socket.IO Redis adapter enabled");
+  }
+
   dispose() {
     this.#io.close();
+    this.#redisClients.forEach((client) => client.destroy());
     this.subscriptions.forEach((s) => s.dispose());
   }
 }

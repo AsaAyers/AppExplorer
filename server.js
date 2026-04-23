@@ -15,43 +15,49 @@ const app = next.default({
 });
 const handler = app.getRequestHandler();
 
-app.prepare().then(() => {
-  const httpServer = createServer(handler);
-  const nextUpgradeHandler = app.getUpgradeHandler();
+app
+  .prepare()
+  .then(async () => {
+    const httpServer = createServer(handler);
+    const nextUpgradeHandler = app.getUpgradeHandler();
 
-  globalThis.socketHandler?.(httpServer);
+    await globalThis.socketHandler?.(httpServer);
 
-  httpServer.on("upgrade", (req, socket, head) => {
-    const url = new URL(req.url || "/", `https://${hostName}`);
-    const { pathname } = url;
+    httpServer.on("upgrade", (req, socket, head) => {
+      const url = new URL(req.url || "/", `https://${hostName}`);
+      const { pathname } = url;
 
-    // Pass HMR requests to Next.js's internal handler
-    if (pathname === "/_next/webpack-hmr") {
-      nextUpgradeHandler(req, socket, head);
-    } else {
-      // I think socket.io is handling this for me
-    }
-  });
+      // Pass HMR requests to Next.js's internal handler
+      if (pathname === "/_next/webpack-hmr") {
+        nextUpgradeHandler(req, socket, head);
+      } else {
+        // I think socket.io is handling this for me
+      }
+    });
 
-  httpServer.once("error", (err) => {
+    httpServer.once("error", (err) => {
+      console.error(err);
+      process.exit(1);
+    });
+    httpServer.listen(port, () => {
+      const addressInfo = httpServer.address();
+      let serverUrl = "(unknown)";
+      if (typeof addressInfo === "string") {
+        serverUrl = `http://${addressInfo}`;
+      } else if (addressInfo && typeof addressInfo.port === "number") {
+        serverUrl = `http://${hostName}:${addressInfo.port}`;
+      } else {
+        console.error("Failed to determine server URL");
+      }
+
+      // eslint-disable-next-line no-console
+      console.log(`> Ready on ${serverUrl}`);
+    });
+  })
+  .catch((err) => {
     console.error(err);
     process.exit(1);
   });
-  httpServer.listen(port, () => {
-    const addressInfo = httpServer.address();
-    let serverUrl = "(unknown)";
-    if (typeof addressInfo === "string") {
-      serverUrl = `http://${addressInfo}`;
-    } else if (addressInfo && typeof addressInfo.port === "number") {
-      serverUrl = `http://${hostName}:${addressInfo.port}`;
-    } else {
-      console.error("Failed to determine server URL");
-    }
-
-    // eslint-disable-next-line no-console
-    console.log(`> Ready on ${serverUrl}`);
-  });
-});
 
 const metricsPort = Number(port + 1);
 

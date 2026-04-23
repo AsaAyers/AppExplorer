@@ -7,10 +7,10 @@ import { createDebug } from "@/utils/create-debug";
 const log = createDebug("app-explorer:sockets:main");
 
 export function socketHandler(httpServer: httpServer) {
-  return new MiroServer(httpServer);
+  return new MiroServer(httpServer).initialize();
 }
 
 declare global {
-  var socketHandler: undefined | ((server: httpServer) => MiroServer);
+  var socketHandler: undefined | ((server: httpServer) => Promise<MiroServer>);
 }
 globalThis.socketHandler = socketHandler;
